@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-14T11:36:00.000Z",
+  "title": "Design System: myScrap",
+  "extensions": {
+    "colorMeta": {
+      "magnet": { "role": "primary", "displayName": "Magnet cobalt", "canonical": "oklch(45% 0.12 262)" },
+      "magnet-deep": { "role": "primary", "displayName": "Magnet deep", "canonical": "oklch(35% 0.11 262)" },
+      "magnet-ink": { "role": "neutral", "displayName": "Enamel highlight", "canonical": "oklch(97% 0.01 240)" },
+      "enamel": { "role": "neutral", "displayName": "Cool enamel", "canonical": "oklch(93% 0.008 240)" },
+      "enamel-deep": { "role": "neutral", "displayName": "Deep enamel", "canonical": "oklch(88% 0.01 240)" },
+      "enamel-ink": { "role": "neutral", "displayName": "Enamel shade", "canonical": "oklch(82% 0.012 240)" },
+      "gasket": { "role": "neutral", "displayName": "Gasket charcoal", "canonical": "oklch(27% 0.015 240)" },
+      "gasket-soft": { "role": "neutral", "displayName": "Soft gasket", "canonical": "oklch(36% 0.015 240)" },
+      "ink": { "role": "neutral", "displayName": "Graphite ink", "canonical": "oklch(22% 0.02 240)" },
+      "ink-soft": { "role": "neutral", "displayName": "Soft ink", "canonical": "oklch(35% 0.02 240)" },
+      "muted": { "role": "neutral", "displayName": "Kitchen mute", "canonical": "oklch(42% 0.025 240)" },
+      "paper": { "role": "neutral", "displayName": "Note paper", "canonical": "oklch(96% 0.015 95)" },
+      "photo-mat": { "role": "neutral", "displayName": "Photo mat", "canonical": "oklch(97% 0.005 90)" },
+      "manila": { "role": "neutral", "displayName": "Manila slip", "canonical": "oklch(84% 0.08 90)" },
+      "manila-ink": { "role": "neutral", "displayName": "Manila ink", "canonical": "oklch(38% 0.07 75)" },
+      "disc": { "role": "neutral", "displayName": "Audio disc", "canonical": "oklch(28% 0.015 240)" },
+      "danger": { "role": "error", "displayName": "Peel rust", "canonical": "oklch(42% 0.12 28)" },
+      "kitchen-wall": { "role": "neutral", "displayName": "Kitchen wall", "canonical": "oklch(84% 0.012 240)" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Login lead only." },
+      "headline": { "displayName": "Headline", "purpose": "Wordmark." },
+      "title": { "displayName": "Title", "purpose": "Link and document titles." },
+      "body": { "displayName": "Body", "purpose": "UI copy and notes." },
+      "label": { "displayName": "Label", "purpose": "Type tags and timestamps." }
+    },
+    "shadows": [
+      { "name": "door", "value": "6px 10px 22px rgba(28, 35, 41, 0.18)", "purpose": "Enamel slab lift." },
+      { "name": "clipping", "value": "3px 5px 12px rgba(28, 35, 41, 0.16)", "purpose": "Paper on the door." },
+      { "name": "fab", "value": "3px 6px 14px rgba(22, 61, 120, 0.35)", "purpose": "Floating magnet." }
+    ],
+    "motion": [
+      { "name": "magnet-snap", "value": "220ms cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "New clipping landing on the door." }
+    ],
+    "breakpoints": [
+      { "name": "mobile", "value": "720px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Cobalt magnet action: Browse, Stick.",
+      "html": "<button class=\"ds-btn-primary\">둘러보기</button>",
+      "css": ".ds-btn-primary { background: #2156a6; color: #f4f7fb; border: 0; border-radius: 4px; min-height: 48px; padding: 10px 16px; font-weight: 650; cursor: pointer; } .ds-btn-primary:hover { background: #163d78; } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 3px #e7ecef, 0 0 0 5px #2156a6; }"
+    },
+    {
+      "name": "Composer field",
+      "kind": "input",
+      "refersTo": "input-composer",
+      "description": "Paper strip on the freezer band.",
+      "html": "<textarea class=\"ds-composer\" placeholder=\"붙여넣기 할 내용이나 파일을 첨부해주세요.\"></textarea>",
+      "css": ".ds-composer { width: 100%; min-height: 44px; border: 0; background: #f6f3ea; padding: 10px 8px; font: 15px/1.45 SUIT, sans-serif; color: #1c2329; resize: vertical; } .ds-composer::placeholder { color: #5a6758; } .ds-composer:focus-visible { outline: none; box-shadow: 0 0 0 3px #e7ecef, 0 0 0 5px #2156a6; }"
+    },
+    {
+      "name": "Type tag",
+      "kind": "chip",
+      "refersTo": "chip-tag",
+      "description": "Disc-magnet pill naming a media type.",
+      "html": "<span class=\"ds-tag\">메모</span>",
+      "css": ".ds-tag { display: inline-flex; align-items: center; min-height: 22px; padding: 0 8px; border-radius: 999px; background: #2156a6; color: #f4f7fb; font-size: 0.75rem; font-weight: 700; }"
+    },
+    {
+      "name": "Clipping",
+      "kind": "card",
+      "refersTo": "scrap-clipping",
+      "description": "Paper stuck with a magnet, not a product card.",
+      "html": "<article class=\"ds-clip\"><span class=\"ds-magnet\"></span><span class=\"ds-tag\">링크</span><p>A URL you just saw.</p></article>",
+      "css": ".ds-clip { position: relative; background: #f6f3ea; border: 1px solid rgba(28,35,41,0.12); border-radius: 0; box-shadow: 3px 5px 12px rgba(28,35,41,0.16); padding: 14px; } .ds-magnet { position: absolute; top: -8px; left: 18px; width: 18px; height: 18px; border-radius: 50%; background: #2156a6; box-shadow: 1px 2px 0 #163d78, 2px 3px 6px rgba(28,35,41,0.25); } .ds-tag { display: inline-flex; min-height: 22px; padding: 0 8px; border-radius: 999px; background: #2156a6; color: #f4f7fb; font-size: 0.75rem; font-weight: 700; }"
+    },
+    {
+      "name": "Language switch",
+      "kind": "nav",
+      "refersTo": "button-icon",
+      "description": "Two magnet cells in the header.",
+      "html": "<div class=\"ds-lang\"><button class=\"is-on\">KO</button><button>EN</button></div>",
+      "css": ".ds-lang { display: flex; border: 1px solid #3d4850; background: #e7ecef; padding: 2px; gap: 2px; } .ds-lang button { border: 0; background: transparent; padding: 5px 10px; color: #4d5b66; cursor: pointer; } .ds-lang button.is-on { background: #2156a6; color: #f4f7fb; } .ds-lang button:focus-visible { outline: none; box-shadow: 0 0 0 3px #e7ecef, 0 0 0 5px #2156a6; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Kitchen Fridge Door",
+    "overview": "myScrap is a personal capture box, not a knowledge base. The surface is a cool enamel fridge door standing in mixed indoor kitchen light: rubber gasket, stainless handle, cobalt disc magnets, and paper clippings of uneven size. You open the door (sign in or browse), stick something in the freezer-band composer, and it snaps onto the door already tagged.\n\nThe product is Operate-mode. Brand lives in material details (gasket, magnets, clipping rotation) while controls stay familiar. Korean and English share one layout. Light theme is locked because enamel under window-plus-overhead light is a pale field; tokens exist so a later dark stainless door could be added without rewriting components.",
+    "keyCharacteristics": [
+      "Cool enamel ground, one cobalt magnet accent",
+      "Square clippings, not equal rounded cards",
+      "Capture composer first; recency list second",
+      "Personal voice: stick, peel, empty the door"
+    ],
+    "rules": [
+      { "name": "The One Magnet Rule", "body": "Cobalt is the only accent. It marks the thing you can press or the tag that names a type. It does not wash backgrounds or glow.", "section": "colors" },
+      { "name": "The One Face Rule", "body": "Do not pair a Latin display serif or Inter-like default with SUIT. Hangul and English share the same cuts.", "section": "typography" },
+      { "name": "The Offset Rule", "body": "Shadows carry offset and blur. A colored halo is not depth.", "section": "elevation" }
+    ],
+    "dos": [
+      "Speak like a personal box: stick, peel, empty the door, this device.",
+      "Show the media itself (image, hover-play, OG, PDF first page).",
+      "Label synthetic scraps as Sample / 견본.",
+      "Keep KO and EN on one layout."
+    ],
+    "donts": [
+      "Build a Notion sidebar of equal cards, or a purple AI chat on cream.",
+      "Use Inter, Space Grotesk, IBM Plex, Outfit, Plus Jakarta, DM Sans, or Instrument Sans as the UI face.",
+      "Put camera on fine-pointer desktop as a dead control.",
+      "Invent team, workspace, or research-lab language.",
+      "Use em-dashes in product copy."
+    ]
+  }
+}
