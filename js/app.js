@@ -110,8 +110,8 @@
     const surface = document.documentElement.getAttribute("data-surface") || "login";
     if (meta) {
       let color = "#ffffff";
-      if (resolved === "dark") color = palette === "basalt" ? "#1c1c1a" : "#302b26";
-      else if (surface !== "login") color = palette === "basalt" ? "#eceae6" : "#fff7f2";
+      if (resolved === "dark") color = "#302b26";
+      else if (surface !== "login") color = "#fff7f2";
       meta.setAttribute("content", color);
     }
     syncThemeButtons();

@@ -29,15 +29,12 @@ colors:
   dark-kitchen-lo: "#1f1c19"
   dark-muted: "#c5b8a8"
   dark-ink: "#f4eee6"
-  basalt-wall: "#eceae6"
-  basalt-wall-lo: "#dddbd6"
-  basalt-enamel: "#f1f0ed"
-  basalt-ink: "#2c2c2a"
-  basalt-muted: "#6c6b67"
-  basalt-dark-wall: "#1c1c1a"
-  basalt-dark-wall-lo: "#141413"
-  basalt-dark-enamel: "#2a2a28"
-  basalt-dark-ink: "#ecebe8"
+  basalt: "#3a3936"
+  basalt-deep: "#2a2a28"
+  basalt-ink: "#f4f3f0"
+  dark-basalt: "#c8c6c1"
+  dark-basalt-deep: "#dddcd8"
+  dark-basalt-ink: "#1c1c1a"
 typography:
   display:
     fontFamily: "SUIT, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif"
@@ -176,10 +173,10 @@ components:
 
 myScrap is a personal capture box, not a knowledge base. The surface is a warm enamel fridge door: rubber gasket, stainless handle, Jeju tangerine (hallabong) disc magnets, and paper clippings of uneven size. You open the door (sign in or browse), stick something in the freezer-band composer, and it snaps onto the door already tagged.
 
-The product is Operate-mode. Brand lives in material details (gasket, magnets, clipping rotation) while controls stay familiar. Korean and English share one layout. Login is a white doorstep. After you open the door, the ground is either porcelain peach (default) or Jeju basalt. Light and dark still apply on both grounds. Both keep the tangerine magnet.
+The product is Operate-mode. Brand lives in material details (gasket, magnets, clipping rotation) while controls stay familiar. Korean and English share one layout. Login is a white doorstep. After you open the door, light is a peach porcelain kitchen; dark is a night kitchen. The pressable magnet is Jeju tangerine by default, or Jeju basalt when that palette is on.
 
 **Key Characteristics:**
-- White login ground; peach porcelain (default) or Jeju basalt door after sign-in; one Jeju tangerine magnet accent
+- White login ground; peach porcelain door after sign-in; one magnet accent (tangerine by default, basalt as the test swap)
 - Centered capture column on every breakpoint
 - Soft rounded clippings (18px), not razor-square paper and not identical SaaS cards
 - Capture composer first; recency list second
@@ -190,7 +187,8 @@ The product is Operate-mode. Brand lives in material details (gasket, magnets, c
 Restrained palette: one Jeju tangerine plus neutrals in the same hue family. Yellow-gray 미색 made the magnet look dirty. Complementary blue would pop the orange but would not be a kitchen.
 
 ### Primary
-- **Jeju tangerine** (#e56f0a light, #f4a24a dark): Stick, Browse, KO/EN selected, tags, magnet discs, focus companion, FAB. Ink on tangerine is #2a1a08 so small type stays AA.
+- **Jeju tangerine** (#e56f0a light, #f4a24a dark): Default magnet. Stick, Browse, KO/EN selected, tags, magnet discs, focus companion, FAB. Ink on tangerine is #2a1a08 so small type stays AA.
+- **Jeju basalt** (#3a3936 light, #c8c6c1 dark): Test swap for that magnet. Same slots. Ink on dark stone is #f4f3f0; ink on light stone in dark mode is #1c1c1a. Does not retint the kitchen wall.
 
 ### Neutral
 - **Login white** (#ffffff): Light-mode login wall and login sheet. No kitchen glow on the doorstep.
@@ -207,19 +205,19 @@ Restrained palette: one Jeju tangerine plus neutrals in the same hue family. Yel
 
 ### Palettes
 
-Header switch: **기본** (kitchen) and **현무암** (basalt). Remembered on this device. Light / system / dark still apply.
+Header switch: **기본** (tangerine magnet) and **현무암** (basalt magnet). Remembered on this device. Light / system / dark still apply. The peach kitchen wall does not change.
 
-- **Kitchen (default):** Porcelain peach wall `#fff7f2` → `#f3e7de`, warm enamel, warm ink. Current style.
-- **Jeju basalt:** Cool stone dust `#eceae6` → `#dddbd6`, basalt charcoal ink `#2c2c2a`, light enamel `#f1f0ed`. Dark is night stone `#1c1c1a` → `#141413`, not a cave. Muted `#6c6b67` on `#eceae6` stays AA. Tangerine magnet does not change.
+- **Kitchen (default):** Magnet `#e56f0a` / dark `#f4a24a`. Current style.
+- **Jeju basalt:** Magnet `#3a3936` / dark `#c8c6c1`. Replaces the orange only: Stick, Browse, selected chips, tags, FAB, brand disc, focus ring. Ground stays porcelain peach / night kitchen.
 
 ### Named Rules
-**The One Magnet Rule.** Tangerine is the only accent. It marks the thing you can press or the tag that names a type. It does not wash backgrounds or glow.
+**The One Magnet Rule.** One accent at a time. It marks the thing you can press or the tag that names a type. It does not wash backgrounds.
 
-**The Two Grounds Rule.** Kitchen porcelain is the default door. Jeju basalt is a test ground: cool gray stone, charcoal ink. Do not retint the magnet when switching grounds.
+**The Two Magnets Rule.** Default magnet is hallabong tangerine. 현무암 swaps that accent to Jeju basalt charcoal. Do not retint enamel, paper, or the kitchen wall when testing basalt.
 
-**The White Doorstep.** Light login is white on both palettes. The chosen ground starts after the door opens. Dark login stays a night kitchen or night stone, not a white flash.
+**The White Doorstep.** Light login is white. The peach kitchen starts after the door opens. Dark login stays a night kitchen, not a white flash.
 
-**The Cave Check.** Light kitchen wall stays porcelain peach (#fff7f2 → #f3e7de). Light basalt stays stone dust (#eceae6 → #dddbd6). Dark kitchen is `#2a2622` → `#1f1c19`. Dark basalt is `#1c1c1a` → `#141413`, not `#0c0b0a`. If a fill looks like printer toner, lift it. Muted copy must stay AA on the ground (≥4.5:1).
+**The Cave Check.** Light kitchen wall stays porcelain peach (#fff7f2 → #f3e7de). Dark mode is a night kitchen (#2a2622 → #1f1c19), not #0c0b0a. If a fill looks like printer toner, lift it. Muted copy must stay AA on enamel (≥4.5:1): light #6e665c on #fff7f2 (~5.4:1); dark #c5b8a8 on #302b26 (~7.2:1).
 
 ## Type, icon, and control pattern
 
@@ -300,7 +298,7 @@ Slight clipping rotation (±0.45deg) on every third scrap. That is the fridge, n
 ## Components
 
 - **Auth stack:** Apple charcoal, Google outlined, Browse tangerine. Vertical, on a 32px login sheet. 48px controls, 18px marks, 15px label. Light login wall is white.
-- **Palette switch:** Pill track, 40px cells. 기본 (peach swatch) and 현무암 (basalt swatch). Default is kitchen.
+- **Palette switch:** Pill track, 40px cells. 기본 (tangerine swatch) and 현무암 (basalt swatch). Swaps the magnet, not the wall. Default is tangerine.
 - **Theme switch:** Light, system, and dark magnets in a pill track, 40px cells, 18px glyphs.
 - **Composer:** 24px shell; 22px +; 15px field; Stick 48px / 14px. Focus ring follows the 24px shell (`:has(.composer-field:focus)`), not a square on the textarea and not a pill.
 - **+ menu:** 40px rows, 18px glyphs, hairline border.
@@ -356,7 +354,7 @@ These rules are binding for login, capture, draft, list, menu, and lightbox. Dur
 - Label synthetic scraps as Sample / 견본.
 - Keep KO and EN on one layout.
 - Use the type / icon / control scale. Do not invent a one-off size.
-- Keep fills inside the Cave Check. Porcelain peach or basalt stone, not toner. Login is white.
+- Keep fills inside the Cave Check. Porcelain peach kitchen, night kitchen, not toner. Login is white.
 - Honor `prefers-reduced-motion`.
 - Keep two-step confirms for peel, Leave-with-draft, and Empty.
 
