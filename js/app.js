@@ -551,6 +551,22 @@
     els.draftPanel.replaceChildren();
   }
 
+  function discardOpenCapture() {
+    if (!draft || draft.editing) return false;
+    fileQueue = [];
+    draft = null;
+    showStatus("");
+    return true;
+  }
+
+  function captureBlockedByEdit() {
+    if (draft && draft.editing) {
+      showStatus(t("draftBusy"), "info");
+      return true;
+    }
+    return false;
+  }
+
   async function cancelDraft(silent) {
     draft = null;
     fileQueue = [];
@@ -757,10 +773,8 @@
   async function ingestText(text) {
     const value = String(text || "").trim();
     if (!value) return;
-    if (draft) {
-      showStatus(t("draftBusy"), "info");
-      return false;
-    }
+    if (captureBlockedByEdit()) return false;
+    discardOpenCapture();
     const analyzed = tagger.analyzeText(value);
     const scrap = createScrap({
       type: analyzed.type,
@@ -775,12 +789,29 @@
     return true;
   }
 
+  function ingestFiles(files) {
+    const list = Array.from(files || []).filter(Boolean);
+    if (!list.length) return;
+    if (draft && draft.editing) {
+      list.forEach((file) => fileQueue.push(file));
+      showStatus(t("queued", { n: fileQueue.length }), "info");
+      return;
+    }
+    ingestFile(list[0]);
+    list.slice(1).forEach((file) => fileQueue.push(file));
+    if (list.length > 1) showStatus(t("queued", { n: fileQueue.length }), "info");
+  }
+
   async function ingestFile(file) {
     if (!file) return;
-    if (draft) {
+    if (draft && draft.editing) {
       fileQueue.push(file);
       showStatus(t("queued", { n: fileQueue.length }), "info");
       return;
+    }
+    if (draft) {
+      fileQueue = [];
+      showStatus("");
     }
     const analyzed = tagger.analyzeFile(file);
     const scrap = createScrap({
@@ -822,9 +853,11 @@
           patch.error = "doc";
         }
       }
+      if (!draft || draft.id !== scrap.id) return;
       patchWorking(scrap.id, patch);
       showStatus(fileQueue.length ? t("queued", { n: fileQueue.length }) : "");
     } catch (err) {
+      if (!draft || draft.id !== scrap.id) return;
       patchWorking(scrap.id, { analyzing: false, error: "file" });
       showStatus(t("errorFile"));
     }
@@ -857,20 +890,19 @@
     const items = data.items ? Array.from(data.items) : [];
     let used = false;
     if (files.length) {
-      ingestFile(files[0]);
-      files.slice(1).forEach((file) => fileQueue.push(file));
-      if (files.length > 1) showStatus(t("queued", { n: files.length - 1 }), "info");
+      ingestFiles(files);
       used = true;
     } else {
+      const picked = [];
       items.forEach((item) => {
-        if (item.kind === "file") {
-          const file = item.getAsFile();
-          if (file) {
-            ingestFile(file);
-            used = true;
-          }
-        }
+        if (item.kind !== "file") return;
+        const file = item.getAsFile();
+        if (file) picked.push(file);
       });
+      if (picked.length) {
+        ingestFiles(picked);
+        used = true;
+      }
     }
     const text = data.getData && data.getData("text/plain");
     if (text && text.trim() && !used) {
@@ -1507,10 +1539,7 @@
       updateStick();
       return;
     }
-    if (draft) {
-      showStatus(t("draftBusy"), "info");
-      return;
-    }
+    if (captureBlockedByEdit()) return;
     els.input.value = "";
     updateStick();
     growComposer();
@@ -1541,7 +1570,7 @@
     els.composer.classList.remove("is-drop");
     const files = ev.dataTransfer && ev.dataTransfer.files;
     if (files && files.length) {
-      Array.from(files).forEach((file) => ingestFile(file));
+      ingestFiles(files);
       return;
     }
     const text = ev.dataTransfer && ev.dataTransfer.getData("text/plain");
@@ -1695,7 +1724,7 @@
     document.addEventListener("paste", onPaste);
     [els.filePhoto, els.fileCamera, els.fileAny].forEach((input) => {
       input.addEventListener("change", () => {
-        Array.from(input.files || []).forEach((file) => ingestFile(file));
+        ingestFiles(input.files);
         input.value = "";
       });
     });

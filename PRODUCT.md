@@ -42,6 +42,7 @@ Confirmed from brief and implemented in this static client:
 - i18n: Korean, English.
 - Auto-tag pasted/dropped content by type: text, image, video, audio, link, document extension.
 - Classify-then-save draft (type, tags, memo, preview) before the item hits the recency list.
+- A new Stick, paste, or drop replaces an open classify draft. Leave and Empty still confirm.
 - Link: Open Graph preview and basic site info.
 - Link drafts show an on-device phishing-risk meter (URL shape only). Compact mark on saved link scraps.
 - Image: show the image.
