@@ -134,7 +134,7 @@ components:
   input-composer:
     backgroundColor: "{colors.paper}"
     textColor: "{colors.ink}"
-    rounded: "{rounded.pill}"
+    rounded: "{rounded.lg}"
     padding: "12px 10px"
     height: "{controls.md}"
     fontSize: "{typography.ui.fontSize}"
@@ -271,11 +271,11 @@ Hybrid: the login sheet and clippings lift off the kitchen wall with a soft, dif
 ### Named Rules
 **The Offset Rule.** Shadows carry offset and blur. A colored halo is not depth.
 
-**The Focus Follows Form Rule.** Every focusable control has a radius from the scale. The tangerine companion ring is `box-shadow` so it follows that radius. Composer focus sits on the pill bar. Do not leave focus on a child that has no radius (the composer textarea).
+**The Focus Follows Form Rule.** Every focusable control has a radius from the scale. The tangerine companion ring is `box-shadow` so it follows that radius. Composer shell stays `--radius-lg` (24px) so it sits with the 14px + and Stick. Focus is that shell, not a square on the textarea, and not a pill that fights the inner buttons.
 
 ## Shapes
 
-Soft squircles, not 90-degree stamps. Scale: 10 / 14 / 18 / 24 / 32, pills 999, discs 50%. Login sheet 32px. Composer is a pill so the tangerine focus ring is a capsule, not a rounded rectangle. Clippings and auth 18px. Stick and + 14px. Language and theme switches, search, and tags are pills. Magnets and FAB stay discs.
+Soft squircles, not 90-degree stamps. Scale: 10 / 14 / 18 / 24 / 32, pills 999, discs 50%. Login sheet 32px. Composer 24px. Clippings and auth 18px. Stick and + 14px. Language and theme switches, search, and tags are pills. Magnets and FAB stay discs.
 
 Slight clipping rotation (±0.45deg) on every third scrap. That is the fridge, not decoration for its own sake.
 
@@ -283,7 +283,7 @@ Slight clipping rotation (±0.45deg) on every third scrap. That is the fridge, n
 
 - **Auth stack:** Apple warm charcoal (#3a342e), Google outlined, Browse tangerine. Vertical, on a 32px login sheet. 48px controls, 18px marks, 15px label. Light login wall is white.
 - **Theme switch:** Light, system, and dark magnets in a pill track, 40px cells, 18px glyphs.
-- **Composer:** Pill bar; 22px +; 15px field; Stick 48px. Focus ring follows the capsule (`:has(.composer-field:focus)`), not a square around the textarea.
+- **Composer:** 24px shell; 22px +; 15px field; Stick 48px / 14px. Focus ring follows the 24px shell (`:has(.composer-field:focus)`), not a square on the textarea and not a pill.
 - **+ menu:** 40px rows, 18px glyphs, hairline border.
 - **Clipping:** Magnet 18px, caption tags 13px / `--control-tag` 26px tall, peel/edit 40px hits with 18px glyphs.
 - **Search:** 48px capsule, 15px type. Type chips 34px / 13px.
@@ -318,7 +318,7 @@ These rules are binding for login, capture, draft, list, menu, and lightbox. Dur
 
 - **Hover** (fine pointer only): clippings lift 3px; + and type chips darken or pick up a tangerine border. No hover lift on coarse pointers.
 - **Pressed:** buttons scale to 0.98 (chips and FAB 0.96). Release returns on `--dur-fast`.
-- **Focus-visible:** tangerine ring (`--focus`). The ring follows the control radius. Composer focus is the rounded bar, never a rectangle on the inner field. Never rely on hover color alone for the focused control.
+- **Focus-visible:** tangerine ring (`--focus`). The ring follows the control radius. Composer focus is the 24px shell, never a rectangle on the inner field and never a pill. Never rely on hover color alone for the focused control.
 - **Disabled Stick:** opacity 0.45, `not-allowed`, no press scale that implies it will fire.
 - **Two-step:** peel, Leave with a draft, and Empty the door arm for 4s, then revert. The second press does the work. No browser `confirm()`.
 - **Drop:** composer background and dashed outline update on `--dur-fast`.
