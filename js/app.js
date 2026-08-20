@@ -174,14 +174,85 @@
     return !els.viewApp.hidden;
   }
 
-  async function enterApp(method) {
+  const motionTokens = new WeakMap();
+
+  function prefersReducedMotion() {
+    return !!(reducedMotion || window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  }
+
+  function nextMotion(el) {
+    const id = (motionTokens.get(el) || 0) + 1;
+    motionTokens.set(el, id);
+    return id;
+  }
+
+  function isMotion(el, id) {
+    return motionTokens.get(el) === id;
+  }
+
+  function playMotion(el, className, id) {
+    return new Promise((resolve) => {
+      if (!el) return resolve();
+      el.classList.remove("is-enter", "is-exit");
+      if (prefersReducedMotion()) return resolve();
+      void el.offsetWidth;
+      el.classList.add(className);
+      let settled = false;
+      const finish = () => {
+        if (settled || !isMotion(el, id)) return;
+        settled = true;
+        el.classList.remove(className);
+        resolve();
+      };
+      const onEnd = (ev) => {
+        if (ev.target !== el) return;
+        el.removeEventListener("animationend", onEnd);
+        finish();
+      };
+      el.addEventListener("animationend", onEnd);
+      setTimeout(finish, className === "is-exit" ? 200 : 280);
+    });
+  }
+
+  async function reveal(el) {
+    if (!el) return;
+    const id = nextMotion(el);
+    el.hidden = false;
+    await playMotion(el, "is-enter", id);
+  }
+
+  async function conceal(el) {
+    if (!el || el.hidden) return;
+    const id = nextMotion(el);
+    await playMotion(el, "is-exit", id);
+    if (!isMotion(el, id)) return;
+    el.hidden = true;
+  }
+
+  function swapInstant(hideEl, showEl) {
+    if (hideEl) {
+      hideEl.hidden = true;
+      hideEl.classList.remove("is-enter", "is-exit");
+    }
+    if (showEl) {
+      showEl.hidden = false;
+      showEl.classList.remove("is-enter", "is-exit");
+    }
+  }
+
+  async function enterApp(method, opts) {
     if (!storage.isRemote()) {
       storage.setSession({ method: method, enteredAt: Date.now() });
     }
-    els.viewLogin.hidden = true;
-    els.viewApp.hidden = false;
+    const instant = !!(opts && opts.instant);
     els.logoutBtn.hidden = false;
     els.clearBtn.hidden = false;
+    if (instant || prefersReducedMotion()) {
+      swapInstant(els.viewLogin, els.viewApp);
+    } else {
+      await conceal(els.viewLogin);
+      await reveal(els.viewApp);
+    }
     if (storage.isRemote()) {
       showStatus(t("migrating"), "info");
       const migrated = await storage.migrateLocalIfNeeded();
@@ -268,13 +339,21 @@
 
   async function leaveApp() {
     await storage.signOut();
-    els.viewApp.hidden = true;
-    els.viewLogin.hidden = false;
+    closeMenu();
+    await closeLightbox();
+    await cancelDraft(true);
     els.logoutBtn.hidden = true;
     els.clearBtn.hidden = true;
-    closeMenu();
-    closeLightbox();
-    cancelDraft(true);
+    if (els.toTop) {
+      els.toTop.classList.remove("is-shown");
+      els.toTop.hidden = true;
+    }
+    if (prefersReducedMotion()) {
+      swapInstant(els.viewApp, els.viewLogin);
+    } else {
+      await conceal(els.viewApp);
+      await reveal(els.viewLogin);
+    }
     typeFilter = "";
     tagFilter = "";
     searchQuery = "";
@@ -338,8 +417,9 @@
   }
 
   function openMenu() {
-    els.addMenu.hidden = false;
+    if (!els.addMenu || !els.addMenu.hidden) return;
     els.addBtn.setAttribute("aria-expanded", "true");
+    reveal(els.addMenu);
     placeMenu();
     const items = visibleMenuItems();
     menuIndex = 0;
@@ -347,8 +427,9 @@
   }
 
   function closeMenu() {
-    els.addMenu.hidden = true;
+    if (!els.addMenu || els.addMenu.hidden) return;
     els.addBtn.setAttribute("aria-expanded", "false");
+    conceal(els.addMenu);
   }
 
   function toggleMenu() {
@@ -417,23 +498,27 @@
     mergeTags(scrap);
     if (!scrap.memo) scrap.memo = "";
     draft = scrap;
-    if (els.draftPanel) els.draftPanel.hidden = false;
+    const wasHidden = !els.draftPanel || els.draftPanel.hidden;
     renderDraft();
+    if (els.draftPanel && wasHidden) reveal(els.draftPanel);
     if (els.draftPanel) {
       els.draftPanel.scrollIntoView({
         block: "nearest",
-        behavior: reducedMotion ? "auto" : "smooth",
+        behavior: prefersReducedMotion() ? "auto" : "smooth",
       });
     }
   }
 
-  function cancelDraft(silent) {
+  async function hideDraftPanel() {
+    if (!els.draftPanel || els.draftPanel.hidden) return;
+    await conceal(els.draftPanel);
+    els.draftPanel.replaceChildren();
+  }
+
+  async function cancelDraft(silent) {
     draft = null;
     fileQueue = [];
-    if (els.draftPanel) {
-      els.draftPanel.hidden = true;
-      els.draftPanel.replaceChildren();
-    }
+    await hideDraftPanel();
     if (!silent) showStatus("");
   }
 
@@ -444,10 +529,7 @@
     delete item.editing;
     if (!editing) item.createdAt = Date.now();
     draft = null;
-    if (els.draftPanel) {
-      els.draftPanel.hidden = true;
-      els.draftPanel.replaceChildren();
-    }
+    await hideDraftPanel();
     if (editing) {
       const idx = scraps.findIndex((s) => s.id === item.id);
       if (idx >= 0) scraps[idx] = Object.assign({}, scraps[idx], item, { updatedAt: Date.now() });
@@ -484,13 +566,7 @@
   }
 
   function renderDraft() {
-    if (!els.draftPanel) return;
-    if (!draft) {
-      els.draftPanel.hidden = true;
-      els.draftPanel.replaceChildren();
-      return;
-    }
-    els.draftPanel.hidden = false;
+    if (!els.draftPanel || !draft) return;
     const type = draft.type || "text";
     const types = ["link", "text", "image", "video", "audio", "document"];
     const detect = t("detected." + type);
@@ -939,14 +1015,14 @@
     if (!item || !item.dataUrl || !els.lightbox || !els.lightboxImage) return;
     els.lightboxImage.src = item.dataUrl;
     els.lightboxImage.alt = item.filename || t("types.image");
-    els.lightbox.hidden = false;
+    reveal(els.lightbox);
     document.body.style.overflow = "hidden";
     if (els.lightboxClose) els.lightboxClose.focus();
   }
 
-  function closeLightbox() {
-    if (!els.lightbox) return;
-    els.lightbox.hidden = true;
+  async function closeLightbox() {
+    if (!els.lightbox || els.lightbox.hidden) return;
+    await conceal(els.lightbox);
     if (els.lightboxImage) {
       els.lightboxImage.removeAttribute("src");
       els.lightboxImage.alt = "";
@@ -1365,12 +1441,19 @@
   function updateFab() {
     if (!els.toTop) return;
     const y = window.scrollY || document.documentElement.scrollTop || 0;
-    els.toTop.hidden = !isAppOpen() || y < 80;
+    const show = isAppOpen() && y >= 80;
+    if (!isAppOpen()) {
+      els.toTop.classList.remove("is-shown");
+      els.toTop.hidden = true;
+      return;
+    }
+    els.toTop.hidden = false;
+    els.toTop.classList.toggle("is-shown", show);
   }
 
   async function confirmClear() {
     if (els.clearBtn.dataset.armed === "1") {
-      cancelDraft(true);
+      await cancelDraft(true);
       scraps = [];
       await persist();
       renderList();
@@ -1518,7 +1601,9 @@
       });
     }
     if (els.lightboxClose) els.lightboxClose.addEventListener("click", closeLightbox);
-    els.toTop.addEventListener("click", () => window.scrollTo({ top: 0, behavior: reducedMotion ? "auto" : "smooth" }));
+    els.toTop.addEventListener("click", () =>
+      window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? "auto" : "smooth" })
+    );
     window.addEventListener("scroll", updateFab, { passive: true });
     const onViewportChange = () => {
       updateCameraItem();
@@ -1559,7 +1644,7 @@
       if (document.visibilityState === "visible") reloadRemoteScraps();
     });
     if (storage.getSession()) {
-      await enterApp(storage.getSession().method);
+      await enterApp(storage.getSession().method, { instant: true });
     } else {
       try {
         scraps = await storage.loadScraps();

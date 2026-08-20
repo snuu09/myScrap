@@ -210,7 +210,44 @@ Slight clipping rotation (±0.45deg) on every third scrap. That is the fridge, n
 - **FAB:** Disc, bottom-right, hidden at scroll top.
 - **Language magnets:** Pill switch in the header.
 
-States required: hover, focus-visible, disabled (Stick), loading (OG skeleton), error (OG fallback copy), empty ("항목이 없습니다." / English equivalent).
+States required: hover, focus-visible, disabled (Stick), loading (OG skeleton), error (OG fallback copy), empty ("항목이 없습니다." / English equivalent), pressed (`:active` scale), enter/exit for views.
+
+## Motion & interaction
+
+These rules are binding for login, capture, draft, list, menu, and lightbox. Duration and easing live as CSS variables in [`css/styles.css`](css/styles.css): `--dur-fast` 140ms, `--dur-mid` 220ms, `--dur-slow` 320ms, `--ease-out` (`cubic-bezier(0.16, 1, 0.3, 1)`), `--ease-in` (`cubic-bezier(0.4, 0, 1, 1)`).
+
+### Named rules
+
+**The Quiet Door Rule.** Motion is short and decelerates. Nothing loops except the OG skeleton sheen. No bounce, no page-wide parallax, no confetti.
+
+**The One Job Rule.** One transition at a time for a given surface: login hands off to the app, the draft exits before the new clipping snaps on, the + menu closes before another overlay opens.
+
+**The Reduced-Motion Rule.** `prefers-reduced-motion: reduce` turns off animation and transition, including hover-play on video/audio. Instant show/hide. Smooth scroll becomes `auto`. First paint after a saved session never plays the door-open motion.
+
+### View changes
+
+- **Open the door (login → app):** login sheet exits down and fades (140ms in-ease). Capture view enters from 14px below (220ms out-ease). Header Leave / Empty appear with the app. A returning session skips this and swaps instantly.
+- **Leave (app → login):** reverse. Draft, lightbox, and + menu dismiss first. Scraps clear after the app view has exited.
+- **Draft:** classify-then-save panel uses the same sheet motion. Editing a saved scrap reuses the open panel (no second enter). Cancel and save wait for the exit before removing DOM.
+- **+ menu:** pop from the plus control (140ms). Click outside, Escape, or picking an item closes it.
+- **Lightbox:** dim fade plus a slight zoom on the photo. Backdrop, close control, and Escape share the same exit.
+- **New clipping:** `magnet-snap` (220ms) as it sticks to the door. Filter/search only hide and show; they do not animate layout.
+- **Back to top:** the FAB fades and rises when the app is scrolled. Hidden when the door is closed.
+
+### Pointer and keys
+
+- **Hover** (fine pointer only): clippings lift 3px; + and type chips darken or pick up a tangerine border. No hover lift on coarse pointers.
+- **Pressed:** buttons scale to 0.98 (chips and FAB 0.96). Release returns on `--dur-fast`.
+- **Focus-visible:** tangerine ring (`--focus`). Never rely on hover color alone for the focused control.
+- **Disabled Stick:** opacity 0.45, `not-allowed`, no press scale that implies it will fire.
+- **Two-step:** peel, Leave with a draft, and Empty the door arm for 4s, then revert. The second press does the work. No browser `confirm()`.
+- **Drop:** composer background and dashed outline update on `--dur-fast`.
+
+### Do not
+
+- Animate width/height of the composer or list (use the existing auto-grow without a layout tween).
+- Crossfade login and app on top of each other (sequential handoff only).
+- Persist `hidden` off during an exit; after the motion ends, `hidden` must go back on so the node leaves the accessibility tree.
 
 ## Do's and Don'ts
 
@@ -219,6 +256,8 @@ States required: hover, focus-visible, disabled (Stick), loading (OG skeleton), 
 - Show the media itself (image, hover-play, OG, PDF first page).
 - Label synthetic scraps as Sample / 견본.
 - Keep KO and EN on one layout.
+- Honor `prefers-reduced-motion`.
+- Keep two-step confirms for peel, Leave-with-draft, and Empty.
 
 **Don't**
 - Build a Notion sidebar of equal cards, or a purple AI chat on cream.
@@ -231,4 +270,4 @@ States required: hover, focus-visible, disabled (Stick), loading (OG skeleton), 
 
 Phase 1, 2, and 3 of [ROADMAP.md](ROADMAP.md) are in the client. Phase 3 stays dormant until [`js/config.js`](js/config.js) has a project URL and anon key. Do not reopen a Notion sidebar, folder tree, or AI chat on cream.
 
-Code folders and layers: [ARCHITECTURE.md](ARCHITECTURE.md). Visual tokens stay in this file.
+Code folders and layers: [ARCHITECTURE.md](ARCHITECTURE.md). Visual tokens, motion, and interaction rules stay in this file.
