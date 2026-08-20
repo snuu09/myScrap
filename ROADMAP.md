@@ -4,14 +4,19 @@ Personal capture box: paste or drop once, see type tags and a preview, find it a
 
 Related: [README.md](README.md) · [PRODUCT.md](PRODUCT.md) · [DESIGN.md](DESIGN.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
 
-**Order of work:** Phase 1 (tech debt), Phase 2 (UI/UX), and Phase 3 (Supabase wiring) are in this client. The app stays static HTML / CSS / JS with no build step. Folders follow a typical static site plus `supabase/` ([ARCHITECTURE.md](ARCHITECTURE.md)). API keys are not in the repo; fill [`js/config.js`](js/config.js) later. Empty or placeholder keys keep the on-device `localStorage` path.
+**Shipped:** Phase 1 (tech debt), Phase 2 (UI/UX), and Phase 3 (Supabase wiring) are in this client.
+
+**Next:** Phase 4 (intro, header login, date calendar filter, Korean legal footer). Binding product and visual rules: [PRODUCT.md](PRODUCT.md) and [DESIGN.md](DESIGN.md). Do not start a new product surface outside this phase.
+
+The app stays static HTML / CSS / JS with no build step. Folders follow a typical static site plus `supabase/` ([ARCHITECTURE.md](ARCHITECTURE.md)). API keys are not in the repo; fill [`js/config.js`](js/config.js) later. Empty or placeholder keys keep the on-device `localStorage` path.
 
 ```mermaid
 flowchart TB
   p1[Phase1_tech_debt]
   p2[Phase2_ui_ux]
   p3[Phase3_supabase]
-  p1 --> p2 --> p3
+  p4[Phase4_intro_calendar_footer]
+  p1 --> p2 --> p3 --> p4
 ```
 
 ---
@@ -49,6 +54,7 @@ Static client. With empty [`js/config.js`](js/config.js), Apple / Google / Brows
 - [x] Unsaved draft warning on Leave and Empty the door. Composer auto-grows. Edit a saved scrap.
 - [x] Type chips, tag click-to-filter, light search. Image lightbox. Copy URL / save file when media is stored.
 - [x] View motion: login ↔ app, draft, + menu, lightbox, clipping snap, FAB. Hover lift and press scale. Honors `prefers-reduced-motion`. See [DESIGN.md](DESIGN.md).
+- [x] Header color theme: 기본 (tangerine magnet) and 현무암 (basalt magnet). Swaps the accent only. Kitchen wall stays porcelain peach. Sample photos retint; 견본 tag is hairline ink.
 
 ---
 
@@ -153,6 +159,75 @@ Server-side AI tagging stays optional and is not required to close Phase 3.
 
 ---
 
+## Phase 4 — Intro, calendar filter, Korean footer (next)
+
+Public first screen, header auth, date findability, and the legal chrome a Korean web service needs. Keep classify-then-save, the fridge-door app, and no-build static HTML / CSS / JS. Binding visuals: [DESIGN.md](DESIGN.md) Phase 4 rules. Do not add a Notion sidebar, a calendar product, or a purple SaaS landing.
+
+### Sequence inside Phase 4
+
+1. Intro page + header login (entry).
+2. Korean legal footer on intro and app (the intro is public).
+3. 일자별 calendar filter in list tools.
+
+### Main screen: intro instead of login
+
+Today `#view-login` is the first page. Replace that full-page auth wall with an **intro** page. Login does not own the first viewport.
+
+- [ ] **`data-surface`:** `"intro"` | `"app"`. Drop `"login"` as a full-page surface. First visit with no session paints intro. A saved session still skips intro and opens the door (`app`), same as today.
+- [ ] **First viewport:** Hero plus a short product line, then interactive scenes that show the job: paste/drop, classify-then-save, recency list. Visualize those three jobs with fridge-door materials (composer, tags, magnet snap), not generic SaaS bento cards or a phone mock full of fake metrics.
+- [ ] **Trend, still this product.** Large type, generous space, sticky compact header, pointer or scroll reveals. Stay on SUIT, peach kitchen / night kitchen, and one magnet accent. Not Inter, not Linear/Stripe purple, not a looping Lottie, not page-wide parallax, not confetti. Honor `prefers-reduced-motion` (static frames, no autoplay motion).
+- [ ] **Primary CTA** on the intro starts capture: opens the header auth menu, or Browse if that is the one-tap path. Copy stays personal (문을 연다 / 붙인다). Do not invent customers, download counts, or AI claims. Demo scraps on the intro are labeled 견본 / Sample.
+- [ ] **Motion.** Intro → app reuses the existing door-open handoff. Returning session still instant. Quiet Door and One Job still apply.
+
+### Login moves to the header
+
+- [ ] **Header 들어가기.** Apple / Google / Browse leave the main column. They live in the header on intro (and remain available on app until a session exists, if needed). Compact control: 들어가기 opens a paper sheet or menu anchored to the header, 32px radius, 48px auth rows, 18px marks. Light sheet is white (the old doorstep, now in the header). Dark sheet is night enamel.
+- [ ] **Browse** stays the no-account path. Empty config: demo `myscrap.session`. Filled config: OAuth / anonymous, unchanged.
+- [ ] **After session:** session chip + 나가기 as today. Intro is not shown again until they leave. Leave with a draft still two-step confirms, then returns to intro (not to a full-page login).
+- [ ] **KO/EN, palette, theme** stay in the header on intro and app.
+
+### Calendar-based scrap management
+
+Findability stays on the recency list. This is a **date filter**, not a calendar app and not a second home.
+
+- [ ] **일자별 control** in `#list-tools`, with the type chips (not a new page, not a sidebar, not a filters drawer). Label: 일자별 / By day.
+- [ ] **Month calendar** in the list-tools area. Local calendar dates from `createdAt`. Each day that has scraps shows the **count** stuck that day. Empty days stay muted with no number. Today is marked without looking like a selected filter.
+- [ ] **Click a day** to filter the list to scraps created that local day. One selected day at a time. Selected day uses the magnet. Click again or 조건 지우기 clears the date filter.
+- [ ] **Combine** with type chips, tag filter, and search (AND). Inside a day, order is still newest first.
+- [ ] **Month prev/next.** Keyboard: arrows between days when the calendar is open, Escape closes or clears according to existing menu patterns.
+- [ ] **View-only.** Do not persist the selected day in `localStorage`. Counts come from in-memory scraps (local or already-loaded remote). Do not add a backend date index in this phase.
+- [ ] **Empty.** No scraps that day uses the existing filter-empty copy plus 조건 지우기.
+
+### Korean web-service footer
+
+The current footer is a one-line product note plus 비우기. Public Korean web services need identity and policy links on every page, including intro.
+
+- [ ] **Always on intro and app:** service name, operator identity, contact, policy links, copyright. 비우기 stays app-only, in the footer tools, two-step as today.
+- [ ] **Policy links:** 이용약관, **개인정보처리방침** (visually distinct: bolder or magnet, so it is easy to find). Optional 고객센터 / 문의 if it points at the same contact email. Static pages: [`legal/terms.html`](legal/terms.html) and [`legal/privacy.html`](legal/privacy.html) (no build step, same header/footer chrome). KO and EN.
+- [ ] **Identity block** (footer, small caption type). Placeholders until real operator data exists. Do **not** invent a 사업자등록번호 or 통신판매업 신고번호.
+
+| Field | Notes |
+| --- | --- |
+| 서비스명 | myScrap |
+| 운영 주체 / 대표자 | Placeholder until filled |
+| 주소 | Placeholder; include a complaints address when real |
+| 전화 | Placeholder |
+| 이메일 | Placeholder (문의) |
+| 사업자등록번호 | Omit or "해당 시 표시" until a real number exists |
+| 통신판매업 신고번호 | Omit until the service sells. This product is not a mall yet. |
+| 호스팅 제공자 | Placeholder (e.g. the host you actually use) |
+| 저작권 | © year myScrap |
+
+- [ ] **Config, not git secrets.** Put operator strings in one obvious place ([`js/config.js`](js/config.js) or a small `js/legal.js` i18n table) so they can be filled later. Empty placeholders must look like placeholders, not fake registrations.
+- [ ] **Privacy page** must describe what this client actually stores today (this-device `localStorage` vs Supabase account after keys). Do not claim a data-protection officer or EU DPO that does not exist.
+- [ ] Footer stays readable on peach and night kitchen (Cave Check, ≥4.5:1). Do not turn it into a four-column marketing sitemap.
+
+### Out of Phase 4
+
+Folder tree, share/export, account settings beyond 나가기, cookie consent banners (no trackers ship today), a standalone calendar product, paid plans, or rewriting into a framework.
+
+---
+
 ## Suggested sequence inside a phase
 
 Phase 1: `typeFromMime` → `el()` innerHTML → hover-play → clipboard ingest → error copy → `storedMedia` persist → Stick disabled → confirm `MyScrapStorage` is the only persist API.
@@ -160,3 +235,5 @@ Phase 1: `typeFromMime` → `el()` innerHTML → hover-play → clipboard ingest
 Phase 2: missing-media slip → Stick/draft safety (unsaved warning, auto-grow) → theme system reset → edit saved scrap → type chips → tag filter → search → lightbox → copy/save → peel confirm.
 
 Phase 3: storage adapter behind `MyScrapStorage` → Auth → tables + RLS → Storage buckets → OG function → localStorage migration. Keys stay out of git until you paste them into `js/config.js`.
+
+Phase 4: intro + header login → Korean legal footer on intro and app → 일자별 calendar filter in list tools.

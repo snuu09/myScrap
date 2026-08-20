@@ -14,6 +14,7 @@ css/           presentation
 js/            behavior, split by layer
 assets/        static files (favicon)
 supabase/      schema, storage policies, Edge Functions
+legal/         terms + privacy HTML (Phase 4)
 ```
 
 That is the same layout used by GitHub Pages sites, MDN-style demos, and other no-build clients. `supabase/` at the repo root is the documented Supabase CLI layout (`migrations/`, `functions/`).
@@ -42,7 +43,7 @@ flowchart TB
 
 | Layer | Files | Role |
 | --- | --- | --- |
-| View | [`index.html`](index.html), [`css/styles.css`](css/styles.css), [`assets/`](assets/) | Markup, chrome, fridge-door CSS. Semantic `header` / `main` / `footer`. |
+| View | [`index.html`](index.html), [`css/styles.css`](css/styles.css), [`assets/`](assets/) | Markup, chrome, fridge-door CSS. Semantic `header` / `main` / `footer`. Phase 4 adds intro markup and `legal/` policy pages. |
 | Config | [`js/config.js`](js/config.js) | Project URL and anon key. Empty or `YOUR_*` keeps the local path. Never `service_role`. |
 | App | [`js/app.js`](js/app.js) | Controller: events, draft, list, auth UI. Talks to storage and services only. |
 | Services | [`js/i18n.js`](js/i18n.js), [`js/tagger.js`](js/tagger.js), [`js/phish.js`](js/phish.js), [`js/og.js`](js/og.js), [`js/preview.js`](js/preview.js) | Copy, classify, on-device URL-shape phishing check, Open Graph, media/document preview. |
@@ -54,11 +55,11 @@ Scripts are IIFE modules that hang a `MyScrap*` object on `window`. Load order i
 
 ## Data flow
 
-1. **Entry.** Login view. Empty config: demo session in `myscrap.session`. Filled config: OAuth or anonymous auth via `MyScrapBackend`.
+1. **Entry.** Login view (`#view-login`). Empty config: demo session in `myscrap.session`. Filled config: OAuth or anonymous auth via `MyScrapBackend`. Phase 4 replaces this full-page wall with an intro surface; auth moves to the header. A saved session still opens the app.
 2. **Capture.** Composer paste/drop/`+` menu. `MyScrapTagger` sets type and tags. If the scrap is a web link, `MyScrapPhish.assess` scores the URL shape in the draft (not persisted). A new capture replaces an open classify draft. Draft stays in memory until save.
 3. **Preview.** Images/video/audio/docs through `MyScrapPreview`. Links through `MyScrapOg` (Edge Function when signed in, else public proxies).
 4. **Save.** `MyScrapStorage.saveScraps`. Local path: JSON in `myscrap.scraps` with a ~4.2MB budget. Remote path: row in `public.scraps`, bytes in `scrap-media/{userId}/{scrapId}/`.
-5. **List.** Newest first in the client. Filters and search are view-only. Remote tabs reload on visibility and on realtime.
+5. **List.** Newest first in the client. Type, tag, and search filters are view-only. Phase 4 adds a 일자별 calendar filter on `createdAt` (still view-only). Remote tabs reload on visibility and on realtime.
 
 Language, theme, and color palette stay on this device in both paths. The inline boot script in `index.html` reads `myscrap.theme` and `myscrap.palette` before CSS so the first paint does not flash. That is the one intentional bypass of `MyScrapStorage`.
 
@@ -78,3 +79,5 @@ The layout already matches typical static-web architecture. These are hygiene it
 - Split `js/app.js` (UI chrome vs draft vs list) if it keeps growing past a single controller.
 - ES modules (`type="module"`) if `file://` is dropped as a first-class open path.
 - A root `.gitignore` for editor junk and accidental filled keys (committed `js/config.js` must stay empty placeholders).
+
+Phase 4 layout notes (when that work starts): `data-surface` becomes `"intro"` | `"app"`. Header auth is a sheet, not a third surface. Policy pages stay static HTML next to `index.html`. Operator identity strings are placeholders in config or i18n, never invented registrations.
