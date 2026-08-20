@@ -301,6 +301,7 @@ Slight clipping rotation (±0.45deg) on every third scrap. That is the fridge, n
 - **Palette switch:** Pill track, 40px cells. 기본 (tangerine swatch) and 현무암 (basalt swatch). Swaps the magnet, not the wall. Default is tangerine.
 - **Theme switch:** Light, system, and dark magnets in a pill track, 40px cells, 18px glyphs.
 - **Composer:** 24px shell; 22px +; 15px field; Stick 48px / 14px. Focus ring follows the 24px shell (`:has(.composer-field:focus)`), not a square on the textarea and not a pill.
+- **Classify draft:** A new Stick, paste, or drop replaces the open classify card in place. Editing a saved scrap still asks to save or cancel first.
 - **+ menu:** 40px rows, 18px glyphs, hairline border.
 - **Clipping:** Magnet 18px, caption tags 13px / `--control-tag` 26px tall, peel/edit 40px hits with 18px glyphs.
 - **Search:** 48px capsule, 15px type. Type chips 34px / 13px.

@@ -55,7 +55,7 @@ Scripts are IIFE modules that hang a `MyScrap*` object on `window`. Load order i
 ## Data flow
 
 1. **Entry.** Login view. Empty config: demo session in `myscrap.session`. Filled config: OAuth or anonymous auth via `MyScrapBackend`.
-2. **Capture.** Composer paste/drop/`+` menu. `MyScrapTagger` sets type and tags. If the scrap is a web link, `MyScrapPhish.assess` scores the URL shape in the draft (not persisted). Draft stays in memory until save.
+2. **Capture.** Composer paste/drop/`+` menu. `MyScrapTagger` sets type and tags. If the scrap is a web link, `MyScrapPhish.assess` scores the URL shape in the draft (not persisted). A new capture replaces an open classify draft. Draft stays in memory until save.
 3. **Preview.** Images/video/audio/docs through `MyScrapPreview`. Links through `MyScrapOg` (Edge Function when signed in, else public proxies).
 4. **Save.** `MyScrapStorage.saveScraps`. Local path: JSON in `myscrap.scraps` with a ~4.2MB budget. Remote path: row in `public.scraps`, bytes in `scrap-media/{userId}/{scrapId}/`.
 5. **List.** Newest first in the client. Filters and search are view-only. Remote tabs reload on visibility and on realtime.
