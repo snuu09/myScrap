@@ -200,7 +200,7 @@ Slight clipping rotation (±0.45deg) on every third scrap. That is the fridge, n
 ## Components
 
 - **Auth stack:** Apple, Google outlined, Browse tangerine. Vertical, not a three-up marketing row.
-- **Theme switch:** Light and dark magnets in the header, next to KO/EN. Default follows the system until the user picks.
+- **Theme switch:** Light, system, and dark magnets in the header, next to KO/EN. Default follows the system until the user picks. System remains available after a pick.
 - **Composer:** Paper field, 44px + button, textarea, Stick. Drop overlay uses a dashed magnet outline.
 - **+ menu:** Fixed overlay so the door's overflow cannot clip it. Keyboard: Escape, arrows, Enter.
 - **Clipping:** Magnet disc, type pills, timestamp, peel control, type-specific preview.
@@ -226,14 +226,4 @@ States required: hover, focus-visible, disabled (Stick), loading (OG skeleton), 
 
 ## Open UX gaps
 
-North star above stays. These states and controls are specified or implied and not fully in the UI yet. Sequence and checkboxes: [ROADMAP.md](ROADMAP.md) Phase 2.
-
-- **Disabled Stick.** Shipped in Phase 1: the Stick button disables when the composer is empty.
-- **Missing media.** Quota or ephemeral files can strip `dataUrl`. Show a filename slip, not a broken image or silent empty frame.
-- **Unsaved draft.** Leave and empty-the-door can drop a draft with no warning.
-- **Theme.** Light and dark magnets exist. After a pick, there is no way back to system.
-- **Edit clipping.** Saved scraps only peel. Type, tags, and memo should reopen.
-- **Composer grow.** Textarea stays `rows="1"` while paste can be longer.
-- **Ask otherwise.** Recency is shipped. Type chips, tag click-to-filter, and a light search field are not.
-- **Lightbox and file actions.** Photos have no enlarge. Links have no copy-URL control. Files have no save/open when media is stored.
-- **Peel confirm.** Empty the door is two-step; a single peel is immediate.
+Phase 1 and 2 of [ROADMAP.md](ROADMAP.md) are in the client. Remaining product work is Phase 3 (Supabase): real auth, sync, and server storage. Do not reopen a Notion sidebar, folder tree, or AI chat on cream.

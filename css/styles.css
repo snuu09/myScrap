@@ -246,7 +246,8 @@ a:hover {
 .theme-switch button {
   display: grid;
   place-items: center;
-  padding: 5px 8px;
+  padding: 5px 7px;
+  min-width: 40px;
 }
 
 .theme-switch svg {
@@ -464,7 +465,8 @@ a:hover {
   width: 100%;
   min-height: 44px;
   max-height: 160px;
-  resize: vertical;
+  resize: none;
+  overflow: hidden;
   border: 0;
   background: transparent;
   padding: 10px 8px;
@@ -752,6 +754,139 @@ a:hover {
   margin-inline: auto;
 }
 
+.list-tools {
+  width: 100%;
+  max-width: var(--content-w);
+  margin: 0 auto 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.scrap-search {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--composer-border);
+  background: var(--paper);
+  color: var(--ink);
+  padding: 10px 12px;
+  box-shadow: var(--shadow-scrap);
+}
+
+.type-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.type-chips button,
+.tag-filter-bar button {
+  border: 1px solid var(--gasket-soft);
+  background: var(--enamel);
+  color: var(--ink-soft);
+  min-height: 32px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-family: inherit;
+}
+
+.type-chips button[aria-pressed="true"],
+.tag[aria-pressed="true"] {
+  background: var(--magnet);
+  color: var(--magnet-ink);
+  border-color: var(--magnet);
+}
+
+.tag-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+.scrap-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.scrap-actions .text-btn {
+  padding: 4px 0;
+  font-size: 0.8125rem;
+}
+
+.media-missing {
+  margin: 0;
+  padding: 12px;
+  border: 1px dashed var(--gasket-soft);
+  background: color-mix(in srgb, var(--paper) 88%, var(--enamel-deep));
+}
+
+.media-missing strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.media-frame.photo {
+  cursor: zoom-in;
+}
+
+.scrap-head-actions {
+  display: flex;
+  align-items: center;
+}
+
+.icon-tiny.is-armed {
+  opacity: 1;
+  color: var(--danger);
+}
+
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 48px 16px 16px;
+  background: color-mix(in srgb, var(--gasket) 82%, transparent);
+}
+
+.lightbox[hidden] {
+  display: none !important;
+}
+
+.lightbox img {
+  max-width: min(100%, 56rem);
+  max-height: calc(100dvh - 72px);
+  object-fit: contain;
+  box-shadow: var(--shadow);
+}
+
+.lightbox-close {
+  position: absolute;
+  top: 12px;
+  right: max(12px, var(--gutter));
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--magnet);
+  color: var(--magnet-ink);
+  display: grid;
+  place-items: center;
+  box-shadow: var(--shadow-fab);
+}
+
+.lightbox-close svg {
+  width: 20px;
+  height: 20px;
+}
+
 .scrap-list {
   display: grid;
   grid-template-columns: 1fr;
@@ -856,12 +991,15 @@ a:hover {
   align-items: center;
   min-height: 22px;
   padding: 0 8px;
+  border: 0;
   border-radius: 999px;
   background: var(--magnet);
   color: var(--magnet-ink);
   font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.01em;
+  font-family: inherit;
+  cursor: pointer;
 }
 
 .scrap.is-document .tag {

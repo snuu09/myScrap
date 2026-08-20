@@ -24,8 +24,8 @@ Then visit [http://localhost:8080](http://localhost:8080).
 
 1. Pick Apple ID, Google, or Browse. These are demo sign-ins. Nothing talks to Apple or Google.
 2. Paste text or a URL, drop a file, or use **+** (clipboard, camera on phones, photo, file).
-3. Items land newest-first, tagged in the browser by type, MIME, extension, and URL.
-4. KO / EN and light / dark in the header. Both are remembered on this device. Dark follows the system until you pick one.
+3. Confirm the type tags in the preview, then save. Items land newest-first. Search, type chips, and tag filters sit above the list.
+4. KO / EN and light / system / dark in the header. Theme follows the system until you pick light or dark. You can return to system. Language and theme are remembered on this device.
 
 ## What is demo vs real
 

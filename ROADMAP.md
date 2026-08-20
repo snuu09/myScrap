@@ -4,7 +4,7 @@ Personal capture box: paste or drop once, see type tags and a preview, find it a
 
 Related: [README.md](README.md) · [PRODUCT.md](PRODUCT.md) · [DESIGN.md](DESIGN.md)
 
-**Order of work:** Phase 1 (tech debt) → Phase 2 (UI/UX) → Phase 3 (Supabase). Do not start Phase 3 until 1 and 2 are done. Phase 1 and 2 stay static HTML / CSS / JS with no build step.
+**Order of work:** Phase 1 (tech debt) and Phase 2 (UI/UX) are done in this client. Phase 3 (Supabase) is last. Phase 1 and 2 stay static HTML / CSS / JS with no build step.
 
 ```mermaid
 flowchart TB
@@ -39,11 +39,14 @@ Client-only. No accounts, no sync, no real OAuth.
 
 ### List and chrome
 
-- [x] Recency list, newest first. Peel (delete) one item. Empty the door with a two-step confirm.
-- [x] KO / EN in one layout. Light / dark. Follows the system until the user picks one. Both remembered on this device.
+- [x] Recency list, newest first. Peel (delete) one item with a two-step confirm. Empty the door with a two-step confirm.
+- [x] KO / EN in one layout. Light / system / dark. Follows the system until the user picks light or dark. Can return to system. Remembered on this device.
 - [x] Empty state ("항목이 없습니다." / English equivalent). Scroll-to-top FAB when not at the top.
 - [x] Skip link, visible focus, `prefers-reduced-motion`.
 - [x] Persist scraps in `localStorage` (~4.2MB budget). Large files may stay session-only. Over quota, media data URLs are stripped.
+- [x] Missing-media slip (filename, extension, size) instead of a broken preview.
+- [x] Unsaved draft warning on Leave and Empty the door. Composer auto-grows. Edit a saved scrap.
+- [x] Type chips, tag click-to-filter, light search. Image lightbox. Copy URL / save file when media is stored.
 
 ---
 
@@ -98,25 +101,25 @@ Fill gaps already implied by [PRODUCT.md](PRODUCT.md) principles and [DESIGN.md]
 
 ### Spec gaps
 
-- [ ] **Missing-media slip.** If `storedMedia` is false or `dataUrl` is gone, show filename, extension, and size. Never a broken `<img>` or empty video. Copy should say the file stayed on this device only for the session, or was dropped to free space.
-- [ ] **Unsaved draft.** Leaving the app or emptying the door while a draft is open must confirm. Cancel keeps the draft.
-- [ ] **Theme: return to system.** After the user picks light or dark, they cannot follow the system again. Add a system option or a clear control. Default remains system until the first explicit pick.
-- [ ] **Edit a saved scrap.** Peel is not enough. Re-open type, tags, and memo (same draft fields) without forcing a delete-and-restick.
-- [ ] **Composer auto-grow.** `#composer-input` is `rows="1"` and does not grow with pasted text. Grow with content; cap at a few lines, then scroll.
+- [x] **Missing-media slip.** If `storedMedia` is false or `dataUrl` is gone, show filename, extension, and size. Never a broken `<img>` or empty video. Copy should say the file stayed on this device only for the session, or was dropped to free space.
+- [x] **Unsaved draft.** Leaving the app or emptying the door while a draft is open must confirm. Cancel keeps the draft.
+- [x] **Theme: return to system.** After the user picks light or dark, they cannot follow the system again. Add a system option or a clear control. Default remains system until the first explicit pick.
+- [x] **Edit a saved scrap.** Peel is not enough. Re-open type, tags, and memo (same draft fields) without forcing a delete-and-restick.
+- [x] **Composer auto-grow.** `#composer-input` is `rows="1"` and does not grow with pasted text. Grow with content; cap at a few lines, then scroll.
 
 Stick disabled is listed in Phase 1 (behavior). Visual disabled state already exists in CSS.
 
 ### Findability (principle 3: recency until the user asks)
 
-- [ ] **Type filter chips.** note / photo / video / audio / link / document. One type at a time or all. Newest-first inside the filter. No sidebar.
-- [ ] **Filter by tag.** Clicking a tag on a clipping filters the list to that tag. Clear control to return to the full recency list.
-- [ ] **Light search.** One field above the list: title, body, filename, URL, tags. No search page, no filters drawer.
+- [x] **Type filter chips.** note / photo / video / audio / link / document. One type at a time or all. Newest-first inside the filter. No sidebar.
+- [x] **Filter by tag.** Clicking a tag on a clipping filters the list to that tag. Clear control to return to the full recency list.
+- [x] **Light search.** One field above the list: title, body, filename, URL, tags. No search page, no filters drawer.
 
 ### Preview quality
 
-- [ ] **Image lightbox.** Tap a photo clipping to enlarge. Close on backdrop, Escape, or a peel-adjacent close control. Honor reduced motion.
-- [ ] **Copy link / save file.** Link clippings: copy URL. File clippings: open or download the original data URL when `storedMedia` is true.
-- [ ] **Peel confirm.** Individual delete gets a short confirm, same voice as empty-the-door (`떼어내기` / Peel off), not a generic browser `confirm()` if a two-step control fits.
+- [x] **Image lightbox.** Tap a photo clipping to enlarge. Close on backdrop, Escape, or a peel-adjacent close control. Honor reduced motion.
+- [x] **Copy link / save file.** Link clippings: copy URL. File clippings: open or download the original data URL when `storedMedia` is true.
+- [x] **Peel confirm.** Individual delete gets a short confirm, same voice as empty-the-door (`떼어내기` / Peel off), not a generic browser `confirm()` if a two-step control fits.
 
 ### Out of Phase 2
 

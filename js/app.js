@@ -16,6 +16,12 @@
   let mqSmall;
   let mqDark;
   let mqCoarse;
+  let typeFilter = "";
+  let tagFilter = "";
+  let searchQuery = "";
+  let peelArmedId = "";
+  let peelArmedTimer = 0;
+  let leaveArmedTimer = 0;
 
   function $(sel, root) {
     return (root || document).querySelector(sel);
@@ -50,10 +56,6 @@
     $all("[data-lang]").forEach((btn) => {
       btn.setAttribute("aria-pressed", btn.getAttribute("data-lang") === lang ? "true" : "false");
     });
-    const resolved = resolvedTheme();
-    $all("[data-theme-choice]").forEach((btn) => {
-      btn.setAttribute("aria-pressed", btn.getAttribute("data-theme-choice") === resolved ? "true" : "false");
-    });
     const session = storage.getSession();
     const chip = els.sessionChip;
     if (session && chip) {
@@ -68,6 +70,7 @@
     } else if (chip) {
       chip.hidden = true;
     }
+    syncThemeButtons();
     renderList();
     if (draft) renderDraft();
   }
@@ -89,13 +92,18 @@
     document.documentElement.style.colorScheme = resolved;
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute("content", resolved === "dark" ? "#221e1a" : "#f3eee6");
+    syncThemeButtons();
+  }
+
+  function syncThemeButtons() {
     $all("[data-theme-choice]").forEach((btn) => {
-      btn.setAttribute("aria-pressed", btn.getAttribute("data-theme-choice") === resolved ? "true" : "false");
+      btn.setAttribute("aria-pressed", btn.getAttribute("data-theme-choice") === themePref ? "true" : "false");
     });
   }
 
   function setTheme(next) {
-    themePref = next === "dark" ? "dark" : "light";
+    if (next === "system") themePref = "system";
+    else themePref = next === "dark" ? "dark" : "light";
     storage.setTheme(themePref);
     applyTheme();
   }
@@ -138,6 +146,15 @@
     els.sendBtn.disabled = !els.input.value.trim();
   }
 
+  function growComposer() {
+    if (!els.input) return;
+    els.input.style.height = "auto";
+    const max = 160;
+    const next = Math.min(Math.max(els.input.scrollHeight, 44), max);
+    els.input.style.height = next + "px";
+    els.input.style.overflowY = els.input.scrollHeight > max ? "auto" : "hidden";
+  }
+
   function isAppOpen() {
     return !els.viewApp.hidden;
   }
@@ -152,6 +169,29 @@
     els.input.focus();
     updateCameraItem();
     updateFab();
+    growComposer();
+  }
+
+  function resetLeaveArm() {
+    if (!els.logoutBtn) return;
+    els.logoutBtn.dataset.armed = "0";
+    els.logoutBtn.textContent = t("logout");
+  }
+
+  function requestLeave() {
+    if (!draft) {
+      leaveApp();
+      return;
+    }
+    if (els.logoutBtn.dataset.armed === "1") {
+      resetLeaveArm();
+      leaveApp();
+      return;
+    }
+    els.logoutBtn.dataset.armed = "1";
+    els.logoutBtn.textContent = t("leaveDraftConfirm");
+    clearTimeout(leaveArmedTimer);
+    leaveArmedTimer = setTimeout(resetLeaveArm, 4000);
   }
 
   function leaveApp() {
@@ -161,7 +201,13 @@
     els.logoutBtn.hidden = true;
     els.clearBtn.hidden = true;
     closeMenu();
+    closeLightbox();
     cancelDraft(true);
+    typeFilter = "";
+    tagFilter = "";
+    searchQuery = "";
+    if (els.search) els.search.value = "";
+    resetLeaveArm();
     applyI18n();
     updateFab();
   }
@@ -268,12 +314,7 @@
   }
 
   function extraTagsFor(type) {
-    if (type === "link") return lang === "en" ? ["url", "reading", "auto"] : ["URL", "읽기", "자동분류"];
-    if (type === "text") return lang === "en" ? ["note", "auto"] : ["메모", "자동분류"];
-    if (type === "image") return lang === "en" ? ["photo", "auto"] : ["사진", "자동분류"];
-    if (type === "video") return lang === "en" ? ["video", "auto"] : ["영상", "자동분류"];
-    if (type === "audio") return lang === "en" ? ["audio", "auto"] : ["소리", "자동분류"];
-    if (type === "document") return lang === "en" ? ["file", "auto"] : ["문서", "자동분류"];
+    if (type === "link") return lang === "en" ? ["reading", "auto"] : ["읽기", "자동분류"];
     return lang === "en" ? ["auto"] : ["자동분류"];
   }
 
@@ -322,17 +363,38 @@
 
   function saveDraft() {
     if (!draft) return;
-    const item = Object.assign({}, draft, { createdAt: Date.now() });
+    const editing = !!draft.editing;
+    const item = Object.assign({}, draft);
+    delete item.editing;
+    if (!editing) item.createdAt = Date.now();
     draft = null;
     if (els.draftPanel) {
       els.draftPanel.hidden = true;
       els.draftPanel.replaceChildren();
     }
-    addScrap(item);
+    if (editing) {
+      const idx = scraps.findIndex((s) => s.id === item.id);
+      if (idx >= 0) scraps[idx] = Object.assign({}, scraps[idx], item);
+      else scraps.unshift(item);
+      persist();
+      renderList();
+    } else {
+      addScrap(item);
+    }
     showStatus("");
     const next = fileQueue.shift();
     if (next) ingestFile(next);
     else if (els.input) els.input.focus();
+  }
+
+  function editScrap(id) {
+    if (draft) {
+      showStatus(t("draftBusy"), "info");
+      return;
+    }
+    const item = scraps.find((s) => s.id === id);
+    if (!item) return;
+    showDraft(Object.assign({}, item, { editing: true }));
   }
 
   function inputPreview(item) {
@@ -358,7 +420,7 @@
     const detect = t("detected." + type);
     const head = el("div", { class: "draft-head" }, [
       el("div", {}, [
-        el("p", { class: "draft-kicker", text: t("classifyTitle") }),
+        el("p", { class: "draft-kicker", text: draft.editing ? t("editTitle") : t("classifyTitle") }),
         el("p", { class: "draft-detect", text: detect }),
       ]),
       el("span", { class: "draft-badge", text: t("types." + type) }),
@@ -405,7 +467,7 @@
           ])
         );
       }
-      previewKids.push(renderMedia(draft));
+      previewKids.push(renderMedia(draft, { preview: true }));
     }
     const previewBlock = el("div", { class: "draft-preview" }, previewKids);
     const tags = el("div", { class: "draft-tags" });
@@ -503,6 +565,10 @@
   async function ingestText(text) {
     const value = String(text || "").trim();
     if (!value) return;
+    if (draft) {
+      showStatus(t("draftBusy"), "info");
+      return false;
+    }
     const analyzed = tagger.analyzeText(value);
     const scrap = createScrap({
       type: analyzed.type,
@@ -514,6 +580,7 @@
     });
     showDraft(scrap);
     if (scrap.url) hydrateOg(scrap.id, scrap.url);
+    return true;
   }
 
   async function ingestFile(file) {
@@ -768,11 +835,89 @@
     });
   }
 
-  function renderMedia(item) {
+  function mediaMissing(item) {
+    if (item.analyzing) return false;
+    if (item.type === "image" || item.type === "video" || item.type === "audio") {
+      return !item.dataUrl;
+    }
+    if (item.type === "document") {
+      return !item.dataUrl && !item.posterUrl && !item.previewText && item.storedMedia === false;
+    }
+    return false;
+  }
+
+  function missingMediaSlip(item) {
+    const name = item.filename || t("types." + (item.type || "document"));
+    const meta = [item.extension, item.size ? tagger.formatBytes(item.size) : ""]
+      .filter(Boolean)
+      .join(" · ");
+    const note = item.ephemeral ? t("mediaSessionOnly") : t("mediaDropped");
+    return el("div", { class: "media-missing" }, [
+      el("strong", { text: name }),
+      meta ? el("p", { class: "muted", text: meta }) : null,
+      el("p", { class: "muted", text: note }),
+    ]);
+  }
+
+  function openLightbox(item) {
+    if (!item || !item.dataUrl || !els.lightbox || !els.lightboxImage) return;
+    els.lightboxImage.src = item.dataUrl;
+    els.lightboxImage.alt = item.filename || t("types.image");
+    els.lightbox.hidden = false;
+    document.body.style.overflow = "hidden";
+    if (els.lightboxClose) els.lightboxClose.focus();
+  }
+
+  function closeLightbox() {
+    if (!els.lightbox) return;
+    els.lightbox.hidden = true;
+    if (els.lightboxImage) {
+      els.lightboxImage.removeAttribute("src");
+      els.lightboxImage.alt = "";
+    }
+    document.body.style.overflow = "";
+  }
+
+  function copyLink(url) {
+    const value = String(url || "");
+    if (!value) return;
+    const done = () => showStatus(t("copied"), "info");
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(value).then(done).catch(() => {
+        showStatus(value, "info");
+      });
+      return;
+    }
+    showStatus(value, "info");
+  }
+
+  function saveFile(item) {
+    if (!item || !item.dataUrl) return;
+    const a = document.createElement("a");
+    a.href = item.dataUrl;
+    a.download = item.filename || "scrap";
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
+  function renderMedia(item, opts) {
+    const interactive = !(opts && opts.preview);
+    if (mediaMissing(item)) return missingMediaSlip(item);
     if (item.type === "image" && item.dataUrl) {
-      return el("div", { class: "media-frame photo" }, [
-        el("img", { src: item.dataUrl, alt: item.filename || t("types.image") }),
-      ]);
+      return el(
+        "div",
+        {
+          class: "media-frame photo",
+          onclick: interactive
+            ? () => {
+                openLightbox(item);
+              }
+            : undefined,
+        },
+        [el("img", { src: item.dataUrl, alt: item.filename || t("types.image") })]
+      );
     }
     if (item.type === "video" && item.dataUrl) {
       const video = el("video", {
@@ -891,50 +1036,202 @@
     return card;
   }
 
+  function visibleScraps() {
+    const q = searchQuery.trim().toLowerCase();
+    return scraps.filter((item) => {
+      if (typeFilter && item.type !== typeFilter) return false;
+      if (tagFilter) {
+        const wanted = String(tagFilter).toLowerCase();
+        const tags = Array.isArray(item.tags) ? item.tags : [];
+        if (!tags.some((tag) => String(tag).toLowerCase() === wanted)) return false;
+      }
+      if (!q) return true;
+      const hay = [
+        item.title,
+        item.text,
+        item.filename,
+        item.url,
+        item.memo,
+        item.domain,
+        ...(item.tags || []),
+      ]
+        .join(" ")
+        .toLowerCase();
+      return hay.includes(q);
+    });
+  }
+
+  function setTypeFilter(next) {
+    typeFilter = next || "";
+    renderList();
+  }
+
+  function setTagFilter(tag) {
+    tagFilter = tag || "";
+    renderList();
+  }
+
+  function clearFilters() {
+    typeFilter = "";
+    tagFilter = "";
+    searchQuery = "";
+    if (els.search) els.search.value = "";
+    renderList();
+  }
+
+  function tagLabel(tag) {
+    const key = "types." + tag;
+    const translated = t(key);
+    return translated !== key ? translated : tag;
+  }
+
+  function renderListTools() {
+    if (!els.listTools || !els.typeChips) return;
+    const hasAny = scraps.length > 0;
+    els.listTools.hidden = !hasAny;
+    if (!hasAny) return;
+    const types = ["", "text", "image", "video", "audio", "link", "document"];
+    els.typeChips.replaceChildren(
+      ...types.map((name) =>
+        el("button", {
+          type: "button",
+          "aria-pressed": (name || "") === typeFilter ? "true" : "false",
+          text: name ? t("types." + name) : t("filterAll"),
+          onclick: () => setTypeFilter(name),
+        })
+      )
+    );
+    if (els.tagFilterBar) {
+      if (!tagFilter) {
+        els.tagFilterBar.hidden = true;
+        els.tagFilterBar.replaceChildren();
+      } else {
+        els.tagFilterBar.hidden = false;
+        els.tagFilterBar.replaceChildren(
+          el("span", { text: t("filterTag", { tag: tagLabel(tagFilter) }) }),
+          el("button", { type: "button", text: t("clearFilter"), onclick: () => setTagFilter("") })
+        );
+      }
+    }
+  }
+
+  function scrapActions(item) {
+    const kids = [];
+    if (item.url) {
+      kids.push(
+        el("button", {
+          type: "button",
+          class: "text-btn",
+          text: t("copyLink"),
+          onclick: () => copyLink(item.url),
+        })
+      );
+    }
+    if (item.dataUrl && item.storedMedia !== false) {
+      kids.push(
+        el("button", {
+          type: "button",
+          class: "text-btn",
+          text: t("saveFile"),
+          onclick: () => saveFile(item),
+        })
+      );
+    }
+    if (!kids.length) return null;
+    return el("div", { class: "scrap-actions" }, kids);
+  }
+
+  function requestPeel(id) {
+    if (peelArmedId === id) {
+      peelArmedId = "";
+      clearTimeout(peelArmedTimer);
+      removeScrap(id);
+      return;
+    }
+    peelArmedId = id;
+    clearTimeout(peelArmedTimer);
+    peelArmedTimer = setTimeout(() => {
+      peelArmedId = "";
+      renderList();
+    }, 4000);
+    renderList();
+  }
+
   function renderList() {
     if (!els.list) return;
-    const has = scraps.length > 0;
-    els.empty.hidden = has || !!draft;
-    els.list.hidden = !has;
+    renderListTools();
+    const hasAny = scraps.length > 0;
+    const shown = visibleScraps();
+    const filteredOut = hasAny && shown.length === 0;
+    els.empty.hidden = hasAny || !!draft;
+    if (els.filterEmpty) els.filterEmpty.hidden = !filteredOut;
+    els.list.hidden = !shown.length;
     const sampleBtn = $("[data-action='samples']");
     if (sampleBtn) {
       const hasSamples = scraps.some((s) => s.sample);
       sampleBtn.textContent = hasSamples ? t("hideSamples") : t("loadSamples");
-      sampleBtn.hidden = has && !hasSamples;
+      sampleBtn.hidden = hasAny && !hasSamples;
     }
     els.list.replaceChildren();
-    scraps.forEach((item) => {
+    shown.forEach((item) => {
       const tags = el("div", { class: "tags" });
       item.tags.forEach((tag) => {
-        const label = t("types." + tag) !== "types." + tag ? t("types." + tag) : tag;
-        tags.appendChild(el("span", { class: "tag", text: label }));
+        tags.appendChild(
+          el("button", {
+            type: "button",
+            class: "tag",
+            text: tagLabel(tag),
+            "aria-pressed": tagFilter && String(tag).toLowerCase() === String(tagFilter).toLowerCase() ? "true" : "false",
+            onclick: () => setTagFilter(tag),
+          })
+        );
       });
       if (item.sample) {
         tags.appendChild(el("span", { class: "tag sample-tag", text: t("sample") }));
       }
+      const peeling = peelArmedId === item.id;
       const li = el("li", { class: "scrap is-" + item.type, dataset: { id: item.id } }, [
         el("span", { class: "magnet-dot", "aria-hidden": "true" }),
         el("article", { class: "scrap-body" }, [
           el("div", { class: "scrap-head" }, [
             tags,
             el("time", { class: "time", datetime: new Date(item.createdAt).toISOString(), text: formatWhen(item.createdAt) }),
-            el(
-              "button",
-              {
-                type: "button",
-                class: "icon-tiny",
-                "aria-label": t("deleteItem"),
-                onclick: () => removeScrap(item.id),
-              },
-              [
-                el("svg", { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "1.8", "aria-hidden": "true" }, [
-                  el("path", { d: "M6 6l12 12M18 6L6 18" }),
-                ]),
-              ]
-            ),
+            el("div", { class: "scrap-head-actions" }, [
+              el(
+                "button",
+                {
+                  type: "button",
+                  class: "icon-tiny",
+                  "aria-label": t("editItem"),
+                  onclick: () => editScrap(item.id),
+                },
+                [
+                  el("svg", { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "1.8", "aria-hidden": "true" }, [
+                    el("path", { d: "M4 20h4l10-10-4-4L4 16v4z" }),
+                    el("path", { d: "M14 6l4 4" }),
+                  ]),
+                ]
+              ),
+              el(
+                "button",
+                {
+                  type: "button",
+                  class: "icon-tiny" + (peeling ? " is-armed" : ""),
+                  "aria-label": peeling ? t("peelConfirm") : t("deleteItem"),
+                  title: peeling ? t("peelConfirm") : t("deleteItem"),
+                  onclick: () => requestPeel(item.id),
+                },
+                [
+                  el("svg", { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "1.8", "aria-hidden": "true" }, [
+                    el("path", { d: "M6 6l12 12M18 6L6 18" }),
+                  ]),
+                ]
+              ),
+            ]),
           ]),
           renderMedia(item),
           item.memo ? el("p", { class: "scrap-memo", text: item.memo }) : null,
+          scrapActions(item),
         ]),
       ]);
       els.list.appendChild(li);
@@ -948,8 +1245,13 @@
       updateStick();
       return;
     }
+    if (draft) {
+      showStatus(t("draftBusy"), "info");
+      return;
+    }
     els.input.value = "";
     updateStick();
+    growComposer();
     ingestText(value);
   }
 
@@ -992,6 +1294,7 @@
 
   function confirmClear() {
     if (els.clearBtn.dataset.armed === "1") {
+      cancelDraft(true);
       scraps = [];
       persist();
       renderList();
@@ -1000,7 +1303,7 @@
       return;
     }
     els.clearBtn.dataset.armed = "1";
-    els.clearBtn.textContent = t("clearConfirm");
+    els.clearBtn.textContent = draft ? t("clearDraftConfirm") : t("clearConfirm");
     setTimeout(() => {
       if (els.clearBtn.dataset.armed === "1") {
         els.clearBtn.dataset.armed = "0";
@@ -1028,6 +1331,14 @@
     els.fileCamera = $("#file-camera");
     els.fileAny = $("#file-any");
     els.sendBtn = $("#send-btn");
+    els.listTools = $("#list-tools");
+    els.search = $("#scrap-search");
+    els.typeChips = $("#type-chips");
+    els.tagFilterBar = $("#tag-filter-bar");
+    els.filterEmpty = $("#filter-empty");
+    els.lightbox = $("#lightbox");
+    els.lightboxClose = $("#lightbox-close");
+    els.lightboxImage = $("#lightbox-image");
   }
 
   function bind() {
@@ -1040,7 +1351,7 @@
     $all("[data-auth]").forEach((btn) => {
       btn.addEventListener("click", () => enterApp(btn.getAttribute("data-auth")));
     });
-    els.logoutBtn.addEventListener("click", leaveApp);
+    els.logoutBtn.addEventListener("click", requestLeave);
     els.clearBtn.addEventListener("click", confirmClear);
     els.composer.addEventListener("submit", onSubmit);
     els.addBtn.addEventListener("click", (ev) => {
@@ -1069,7 +1380,13 @@
       if (!els.addMenu.hidden && !ev.target.closest(".add-wrap")) closeMenu();
     });
     document.addEventListener("keydown", (ev) => {
-      if (ev.key === "Escape") closeMenu();
+      if (ev.key === "Escape") {
+        if (els.lightbox && !els.lightbox.hidden) {
+          closeLightbox();
+          return;
+        }
+        closeMenu();
+      }
       if (!els.addMenu.hidden && (ev.key === "ArrowDown" || ev.key === "ArrowUp")) {
         ev.preventDefault();
         const items = visibleMenuItems();
@@ -1080,7 +1397,10 @@
         items[menuIndex].focus();
       }
     });
-    els.input.addEventListener("input", updateStick);
+    els.input.addEventListener("input", () => {
+      updateStick();
+      growComposer();
+    });
     els.input.addEventListener("keydown", (ev) => {
       if (ev.key === "Enter" && !ev.shiftKey) {
         ev.preventDefault();
@@ -1108,6 +1428,20 @@
       });
     });
     $("[data-action='samples']").addEventListener("click", loadSamples);
+    if (els.search) {
+      els.search.addEventListener("input", () => {
+        searchQuery = els.search.value;
+        renderList();
+      });
+    }
+    const clearFiltersBtn = $("[data-action='clear-filters']");
+    if (clearFiltersBtn) clearFiltersBtn.addEventListener("click", clearFilters);
+    if (els.lightbox) {
+      els.lightbox.addEventListener("click", (ev) => {
+        if (ev.target === els.lightbox) closeLightbox();
+      });
+    }
+    if (els.lightboxClose) els.lightboxClose.addEventListener("click", closeLightbox);
     els.toTop.addEventListener("click", () => window.scrollTo({ top: 0, behavior: reducedMotion ? "auto" : "smooth" }));
     window.addEventListener("scroll", updateFab, { passive: true });
     const onViewportChange = () => {
@@ -1143,6 +1477,7 @@
     applyTheme();
     applyI18n();
     updateStick();
+    growComposer();
     updateCameraItem();
     if (storage.getSession()) enterApp(storage.getSession().method);
     else {
