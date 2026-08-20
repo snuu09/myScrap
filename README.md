@@ -2,6 +2,8 @@
 
 Personal capture box for things you saw on the web, photos, and files. Static HTML, CSS, and JS. No build step.
 
+Shipped vs next: [ROADMAP.md](ROADMAP.md). Product and design: [PRODUCT.md](PRODUCT.md), [DESIGN.md](DESIGN.md).
+
 ## Open
 
 Fastest:
@@ -27,14 +29,14 @@ Then visit [http://localhost:8080](http://localhost:8080).
 
 ## What is demo vs real
 
-- **Auth:** demo only. Buttons enter the app and store a session in `localStorage`.
+- **Auth:** demo only. Buttons enter the app and store a session in `localStorage`. Real Apple / Google and sync are Phase 3 (Supabase). See [ROADMAP.md](ROADMAP.md).
 - **Tagging:** real, client-side (MIME, URL, file extension, Open Graph). No remote AI.
 - **Open Graph:** real fetch through public proxies (microlink, then corsproxy / allorigins). If they fail, hostname and path still show.
 - **Storage:** scraps persist in `localStorage` on this browser. Large video/audio may stay session-only if quota is tight.
 
 ## Limits
 
-- No accounts, sync, or real OAuth.
+- No accounts, sync, or real OAuth (planned last, via Supabase).
 - PDF first-page preview needs pdf.js from cdnjs and works best over `http://localhost`.
 - Office files (docx, pptx, hwp, …) get extension tags and a filename slip, not a full page render.
 - Some sites block OG images or proxy fetches (CORS).

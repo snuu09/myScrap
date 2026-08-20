@@ -223,3 +223,17 @@ States required: hover, focus-visible, disabled (Stick), loading (OG skeleton), 
 - Put camera on fine-pointer desktop as a dead control.
 - Invent team, workspace, or research-lab language.
 - Use em-dashes in product copy.
+
+## Open UX gaps
+
+North star above stays. These states and controls are specified or implied and not fully in the UI yet. Sequence and checkboxes: [ROADMAP.md](ROADMAP.md) Phase 2.
+
+- **Disabled Stick.** CSS has `.send-btn:disabled`; the button does not disable when the composer is empty (Phase 1 wires the behavior).
+- **Missing media.** Quota or ephemeral files can strip `dataUrl`. Show a filename slip, not a broken image or silent empty frame.
+- **Unsaved draft.** Leave and empty-the-door can drop a draft with no warning.
+- **Theme.** Light and dark magnets exist. After a pick, there is no way back to system.
+- **Edit clipping.** Saved scraps only peel. Type, tags, and memo should reopen.
+- **Composer grow.** Textarea stays `rows="1"` while paste can be longer.
+- **Ask otherwise.** Recency is shipped. Type chips, tag click-to-filter, and a light search field are not.
+- **Lightbox and file actions.** Photos have no enlarge. Links have no copy-URL control. Files have no save/open when media is stored.
+- **Peel confirm.** Empty the door is two-step; a single peel is immediate.

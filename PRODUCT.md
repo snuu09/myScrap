@@ -32,16 +32,21 @@ One capture surface that inspects what you pasted (text, image, video, audio, UR
 
 ## Capabilities and Constraints
 
-Confirmed from brief:
+Work order and checkboxes: [ROADMAP.md](ROADMAP.md). Phase 1 (tech debt) then Phase 2 (UI/UX) then Phase 3 (Supabase).
+
+### Shipped
+
+Confirmed from brief and implemented in this static client:
 
 - Responsive HTML/CSS/JS; header, main, footer.
 - i18n: Korean, English.
 - Auto-tag pasted/dropped content by type: text, image, video, audio, link, document extension.
+- Classify-then-save draft (type, tags, memo, preview) before the item hits the recency list.
 - Link: Open Graph preview and basic site info.
 - Image: show the image.
 - Video: thumbnail; play on hover.
 - Audio: thumbnail; play on hover.
-- Document: tag by extension; page preview.
+- Document: tag by extension; page preview (PDF first page; text excerpt; Office/HWP filename slip).
 - + menu: clipboard, camera (mobile), photo, file.
 - Placeholder: "붙여넣기 할 내용이나 파일을 첨부해주세요."
 - Drag-and-drop analyzes dropped files.
@@ -49,7 +54,25 @@ Confirmed from brief:
 
 [Inferred] This version runs tagging and previews in the browser (MIME, URL, Open Graph fetch, object URLs). No backend, auth provider, or paid AI API is specified; Apple/Google buttons are UI flows that enter the app (demo auth). Data persists in localStorage for the session device.
 
-[Undecided] Real OAuth, server-side AI tagging, accounts, and multi-device sync.
+### Next (Phase 2 UI/UX)
+
+Client-only. No folders, no team chrome. Details in [ROADMAP.md](ROADMAP.md) and open gaps in [DESIGN.md](DESIGN.md).
+
+- Missing-media slip when quota strips a file; no broken previews.
+- Unsaved draft warning; composer auto-grow; return theme to system.
+- Edit a saved scrap (type, tags, memo).
+- Type chips, tag click-to-filter, light search over the recency list.
+- Image lightbox; copy URL / save file when media is stored; peel confirm.
+
+### Deferred (Phase 3 Supabase)
+
+Frontend-external. Last, after Phase 1 and 2.
+
+- Real OAuth (Apple / Google), accounts, and multi-device sync.
+- Scraps table, media Storage, RLS; replace `localStorage` data URLs.
+- Open Graph via Edge Function or server fetch instead of public proxies.
+
+Server-side AI tagging stays optional and is not required to close Phase 3.
 
 ## Brand Commitments
 
