@@ -1,4 +1,6 @@
 (function (global) {
+  // Persist adapter. Call sites must use MyScrapStorage only; do not read these
+  // keys from app.js. Phase 3 (Supabase) replaces this implementation.
   const KEYS = {
     lang: "myscrap.lang",
     theme: "myscrap.theme",
@@ -6,6 +8,7 @@
     scraps: "myscrap.scraps",
   };
   const BUDGET = 4.2 * 1024 * 1024;
+  const MEDIA_TYPES = { image: 1, video: 1, audio: 1 };
 
   function safeParse(raw, fallback) {
     try {
@@ -52,9 +55,17 @@
     localStorage.removeItem(KEYS.session);
   }
 
+  function normalizeLoaded(item) {
+    const next = { ...item };
+    if (next.ephemeral) next.storedMedia = false;
+    if (MEDIA_TYPES[next.type] && !next.dataUrl) next.storedMedia = false;
+    return next;
+  }
+
   function loadScraps() {
     const list = safeParse(localStorage.getItem(KEYS.scraps), []);
-    return Array.isArray(list) ? list : [];
+    if (!Array.isArray(list)) return [];
+    return list.map(normalizeLoaded);
   }
 
   function stripForPersist(scrap) {
@@ -76,7 +87,7 @@
       payload = payload.map((item) => {
         if (item.dataUrl && item.dataUrl.length > 120000) {
           const next = { ...item };
-          delete next.dataUrl;
+          next.dataUrl = "";
           next.storedMedia = false;
           return next;
         }
@@ -85,27 +96,26 @@
     }
     try {
       localStorage.setItem(KEYS.scraps, JSON.stringify(payload));
-      return { ok: true, quota: estimate(payload) > BUDGET };
+      return { ok: true, quota: estimate(payload) > BUDGET, scraps: payload };
     } catch {
       try {
         const slim = payload.map((item) => {
           const next = { ...item };
-          delete next.dataUrl;
-          delete next.posterUrl;
-          delete next.og;
+          next.dataUrl = "";
+          next.posterUrl = "";
+          next.og = null;
           next.storedMedia = false;
           return next;
         });
         localStorage.setItem(KEYS.scraps, JSON.stringify(slim));
-        return { ok: true, quota: true };
+        return { ok: true, quota: true, scraps: slim };
       } catch {
-        return { ok: false, error: "quota" };
+        return { ok: false, error: "quota", scraps: null };
       }
     }
   }
 
   global.MyScrapStorage = {
-    KEYS,
     getLang,
     setLang,
     getTheme,

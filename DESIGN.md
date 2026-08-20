@@ -228,7 +228,7 @@ States required: hover, focus-visible, disabled (Stick), loading (OG skeleton), 
 
 North star above stays. These states and controls are specified or implied and not fully in the UI yet. Sequence and checkboxes: [ROADMAP.md](ROADMAP.md) Phase 2.
 
-- **Disabled Stick.** CSS has `.send-btn:disabled`; the button does not disable when the composer is empty (Phase 1 wires the behavior).
+- **Disabled Stick.** Shipped in Phase 1: the Stick button disables when the composer is empty.
 - **Missing media.** Quota or ephemeral files can strip `dataUrl`. Show a filename slip, not a broken image or silent empty frame.
 - **Unsaved draft.** Leave and empty-the-door can drop a draft with no warning.
 - **Theme.** Light and dark magnets exist. After a pick, there is no way back to system.
