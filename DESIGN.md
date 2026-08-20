@@ -3,57 +3,83 @@ name: myScrap
 description: Personal fridge-door capture box for web clippings, photos, and files.
 colors:
   magnet: "#e56f0a"
-  magnet-deep: "#c85c08"
-  magnet-ink: "#1a1208"
-  enamel: "#f3eee6"
-  enamel-deep: "#e7dfd2"
-  enamel-ink: "#d4cbbd"
-  gasket: "#2a2622"
-  gasket-soft: "#4a433c"
-  ink: "#1c1610"
-  ink-soft: "#3d342c"
-  muted: "#5c5349"
-  paper: "#fff8ef"
-  photo-mat: "#f7f3ec"
-  manila: "#e8c57a"
-  manila-ink: "#5a4318"
-  disc: "#2c2722"
-  danger: "#9b2c1a"
-  kitchen-wall: "#e4ddd3"
-  dark-magnet: "#f3993a"
-  dark-enamel: "#221e1a"
-  dark-ink: "#f6efe6"
+  magnet-deep: "#d06612"
+  magnet-ink: "#2a1a08"
+  enamel: "#f7f3ec"
+  enamel-deep: "#eee8de"
+  enamel-ink: "#ddd3c6"
+  gasket: "#5a524a"
+  gasket-soft: "#cbbfaf"
+  ink: "#322c26"
+  ink-soft: "#524940"
+  muted: "#6e665c"
+  paper: "#fffaf3"
+  photo-mat: "#faf6f0"
+  manila: "#ebc98a"
+  manila-ink: "#5c4520"
+  disc: "#3a342e"
+  danger: "#b44532"
+  kitchen-wall: "#f5f1ea"
+  kitchen-lo: "#ebe5d9"
+  hairline: "color-mix(ink 12%, transparent)"
+  dark-magnet: "#f4a24a"
+  dark-enamel: "#302b26"
+  dark-kitchen: "#2a2622"
+  dark-kitchen-lo: "#1f1c19"
+  dark-muted: "#c5b8a8"
+  dark-ink: "#f4eee6"
 typography:
   display:
     fontFamily: "SUIT, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif"
-    fontSize: "1.75rem"
+    fontSize: "clamp(1.5rem, 1.15rem + 1.5vw, 1.75rem)"
     fontWeight: 700
-    lineHeight: 1.2
+    lineHeight: 1.25
     letterSpacing: "-0.035em"
   headline:
     fontFamily: "SUIT, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif"
-    fontSize: "1.25rem"
+    fontSize: "1.125rem"
     fontWeight: 750
     lineHeight: 1.2
     letterSpacing: "-0.03em"
   title:
     fontFamily: "SUIT, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif"
-    fontSize: "1rem"
+    fontSize: "1.0625rem"
     fontWeight: 700
     lineHeight: 1.3
     letterSpacing: "-0.02em"
   body:
     fontFamily: "SUIT, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif"
-    fontSize: "15px"
+    fontSize: "1rem"
     fontWeight: 400
-    lineHeight: 1.45
+    lineHeight: 1.5
     letterSpacing: "-0.01em"
-  label:
+  ui:
     fontFamily: "SUIT, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif"
-    fontSize: "0.75rem"
+    fontSize: "0.9375rem"
+    fontWeight: 650
+    lineHeight: 1.4
+    letterSpacing: "-0.01em"
+  caption:
+    fontFamily: "SUIT, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif"
+    fontSize: "0.8125rem"
     fontWeight: 700
     lineHeight: 1.3
     letterSpacing: "0.01em"
+  micro:
+    fontFamily: "SUIT, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif"
+    fontSize: "0.75rem"
+    fontWeight: 400
+    lineHeight: 1.3
+    letterSpacing: "0.01em"
+icons:
+  sm: "18px"
+  md: "22px"
+  lg: "24px"
+controls:
+  tag: "26px"
+  chip: "34px"
+  sm: "40px"
+  md: "48px"
 rounded:
   xs: "10px"
   sm: "14px"
@@ -74,45 +100,57 @@ components:
     backgroundColor: "{colors.magnet}"
     textColor: "{colors.magnet-ink}"
     rounded: "{rounded.sm}"
-    padding: "10px 16px"
-    height: "48px"
+    padding: "10px 18px"
+    height: "{controls.md}"
+    fontSize: "{typography.ui.fontSize}"
   button-primary-hover:
     backgroundColor: "{colors.magnet-deep}"
     textColor: "{colors.magnet-ink}"
     rounded: "{rounded.sm}"
-    padding: "10px 16px"
-    height: "48px"
+    padding: "10px 18px"
+    height: "{controls.md}"
   button-apple:
-    backgroundColor: "#111417"
-    textColor: "{colors.magnet-ink}"
+    backgroundColor: "#3a342e"
+    textColor: "#faf6f0"
     rounded: "{rounded.md}"
     padding: "10px 16px"
-    height: "48px"
+    height: "{controls.md}"
   button-google:
     backgroundColor: "#ffffff"
     textColor: "{colors.ink}"
     rounded: "{rounded.md}"
     padding: "10px 16px"
-    height: "48px"
+    height: "{controls.md}"
   button-icon:
     backgroundColor: "{colors.enamel}"
     textColor: "{colors.ink}"
     rounded: "{rounded.sm}"
     padding: "0px"
-    size: "44px"
-    height: "44px"
-    width: "44px"
+    size: "{controls.md}"
+    height: "{controls.md}"
+    width: "{controls.md}"
+    icon: "{icons.md}"
   input-composer:
     backgroundColor: "{colors.paper}"
     textColor: "{colors.ink}"
     rounded: "{rounded.lg}"
-    padding: "10px 8px"
+    padding: "12px 10px"
+    height: "{controls.md}"
+    fontSize: "{typography.ui.fontSize}"
   chip-tag:
     backgroundColor: "{colors.magnet}"
     textColor: "{colors.magnet-ink}"
     rounded: "{rounded.pill}"
-    padding: "0 8px"
-    height: "22px"
+    padding: "0 10px"
+    height: "{controls.tag}"
+    fontSize: "{typography.caption.fontSize}"
+  chip-filter:
+    backgroundColor: "{colors.paper}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.pill}"
+    padding: "0 12px"
+    height: "{controls.chip}"
+    fontSize: "{typography.caption.fontSize}"
   scrap-clipping:
     backgroundColor: "{colors.paper}"
     textColor: "{colors.ink}"
@@ -139,23 +177,65 @@ The product is Operate-mode. Brand lives in material details (gasket, magnets, c
 
 ## Colors
 
-Restrained palette: warm kitchen neutrals plus one Jeju tangerine. Accent is for primary actions, selected language, theme switch, type tags, and magnet discs.
+Restrained palette: a light kitchen, not a muddy taupe wall. Warm neutrals plus one Jeju tangerine. Accent is for primary actions, selected language, theme switch, type tags, and magnet discs.
 
 ### Primary
-- **Jeju tangerine** (#e56f0a light, #f3993a dark): Stick button, Browse, KO/EN selected, tags, magnet discs, focus ring companion, FAB. Ink on tangerine is #1a1208 so small type stays readable.
+- **Jeju tangerine** (#e56f0a light, #f4a24a dark): Stick, Browse, KO/EN selected, tags, magnet discs, focus companion, FAB. Ink on tangerine is #2a1a08 so small type stays AA.
 
 ### Neutral
-- **Warm enamel** (#f3eee6 / dark #221e1a): Door field.
-- **Deep enamel** (#e7dfd2 / dark #181512): Freezer band behind the composer.
-- **Gasket charcoal** (#2a2622 / dark #0e0c0a): Door lip and menu borders.
-- **Graphite ink** (#1c1610 / dark #f6efe6): Body text and wordmark.
-- **Kitchen mute** (#5c5349 / dark #b7aa9c): Secondary copy, tinted toward the enamel.
-- **Note paper** (#fff8ef / dark #2b261f): Composer and default clipping stock.
-- **Manila** (#e8c57a): Document slips.
-- **Disc charcoal** (#2c2722): Audio clippings.
+- **Warm enamel** (#f7f3ec / dark #302b26): Door field and chrome fill. Lifted so light mode is cream, not cardboard.
+- **Deep enamel** (#eee8de / dark #27231f): Hover fills.
+- **Hairline** (`color-mix(ink 12%, transparent)`): Switches, + button, menus. Not gasket charcoal.
+- **Warm ink** (#322c26 / dark #f4eee6): Body and wordmark. Not near-black.
+- **Kitchen mute** (#6e665c / dark #c5b8a8): Secondary copy. AA on enamel (≥4.5:1).
+- **Note paper** (#fffaf3 / dark #3c362f): Composer and default clipping stock.
+- **Apple charcoal** (#3a342e): Auth Apple only. Warm, not #111.
+- **Manila** (#ebc98a): Document slips.
+- **Disc charcoal** (#3a342e): Audio clippings, one step up from void.
 
 ### Named Rules
 **The One Magnet Rule.** Tangerine is the only accent. It marks the thing you can press or the tag that names a type. It does not wash backgrounds or glow.
+
+**The Cave Check.** Light kitchen wall stays cream (#f5f1ea → #ebe5d9). Dark mode is a night kitchen (#2a2622 → #1f1c19), not #0c0b0a. If a fill looks like printer toner, lift it. Muted copy must stay AA on enamel (≥4.5:1): light #6e665c on #f7f3ec (~5.1:1); dark #c5b8a8 on #302b26 (~7.2:1).
+
+## Type, icon, and control pattern
+
+Closed scales. Do not invent a one-off size.
+
+### Type (`--text-*`)
+
+| Token | Size | Use |
+| --- | --- | --- |
+| display | clamp 1.5–1.75rem | Login lead |
+| headline | 1.125rem (18px) | Wordmark, empty title |
+| title | 1.0625rem (17px) | Link/doc titles, draft detect |
+| body | 1rem (16px) | Notes, page default |
+| ui | 0.9375rem (15px) | Buttons, composer, search, hints |
+| caption | 0.8125rem (13px) | Chips, tags, session, footer, labels |
+| micro | 0.75rem (12px) | Timestamps, file excerpts, play badge |
+
+Body is 16px / 1.5. UI copy on controls is 15px so Hangul still fits in 48px. 12px is timestamps only.
+
+### Icons (`--icon-*`)
+
+| Token | Size | Use |
+| --- | --- | --- |
+| sm | 18px | Theme glyphs, menu items, peel/edit, magnet disc, brand mark |
+| md | 22px | + button, auth marks, lightbox close |
+| lg | 24px | FAB |
+
+The glyph is smaller than the hit target. A 22px icon sits in a 48px control.
+
+### Controls (`--control-*`)
+
+| Token | Height | Use |
+| --- | --- | --- |
+| tag | 26px | Clipping type tags |
+| chip | 34px | Type chips, draft tags |
+| sm | 40px | KO/EN, theme, + menu rows, peel/edit |
+| md | 48px | Composer row, Stick, +, search, auth, FAB, draft save |
+
+Auth, Stick, and + share 48px so the door and the login sheet feel like one system.
 
 ## Typography
 
@@ -164,13 +244,6 @@ Restrained palette: warm kitchen neutrals plus one Jeju tangerine. Accent is for
 **Label/Mono Font:** ui-monospace for file excerpts only
 
 **Character:** A Korean-first grotesque that can hold both Hangul and Latin at UI sizes. One family for wordmark, buttons, tags, and body. Tight tracking on the login lead, not a display serif.
-
-### Hierarchy
-- **Display** (700, 1.75rem / 1.5rem mobile, 1.2): Login lead.
-- **Headline** (750, 1.25rem, 1.2): Wordmark.
-- **Title** (700, 1rem, 1.3): Link and document titles.
-- **Body** (400, 15px, 1.45): UI copy and notes.
-- **Label** (700, 0.75rem): Type tags and timestamps.
 
 ### Named Rules
 **The One Face Rule.** Do not pair a Latin display serif or Inter-like default with SUIT. Hangul and English share the same cuts.
@@ -186,8 +259,8 @@ Gutter is fluid (`clamp(12px, 3.2vw, 24px)`). Door padding is fluid so resize do
 Hybrid: the login sheet and clippings lift off the kitchen wall with a soft, diffuse shadow plus a physical magnet disc. No neon glow.
 
 ### Shadow Vocabulary
-- **Sheet** (`0 18px 40px rgba(28, 22, 16, 0.12)`): Login card and menus.
-- **Clipping** (`0 10px 28px rgba(28, 22, 16, 0.08)`): Paper on the door.
+- **Sheet** (`0 18px 40px rgba(50, 44, 38, 0.08)`): Login card and menus. Dark uses `rgba(0, 0, 0, 0.28)`.
+- **Clipping** (`0 10px 28px rgba(50, 44, 38, 0.06)`): Paper on the door.
 - **FAB** (`0 10px 22px` tangerine-tinted): Magnet floating off the wall.
 
 ### Named Rules
@@ -195,20 +268,20 @@ Hybrid: the login sheet and clippings lift off the kitchen wall with a soft, dif
 
 ## Shapes
 
-Soft squircles, not 90-degree stamps. Scale: 10 / 14 / 18 / 24 / 32, pills 999, discs 50%. Login sheet 32px. Composer 24px. Clippings and auth 18px. Fields and Stick 14px. Language and theme switches, search, and tags are pills. Magnets and FAB stay discs.
+Soft squircles, not 90-degree stamps. Scale: 10 / 14 / 18 / 24 / 32, pills 999, discs 50%. Login sheet 32px. Composer 24px. Clippings and auth 18px. Stick and + 14px. Language and theme switches, search, and tags are pills. Magnets and FAB stay discs.
 
 Slight clipping rotation (±0.45deg) on every third scrap. That is the fridge, not decoration for its own sake.
 
 ## Components
 
-- **Auth stack:** Apple, Google outlined, Browse tangerine. Vertical, on a 32px login sheet. Not a three-up marketing row.
-- **Theme switch:** Light, system, and dark magnets in a pill track in the header, next to KO/EN. Default follows the system until the user picks. System remains available after a pick.
-- **Composer:** Rounded paper field (24px), 44px + button, textarea, Stick. Drop overlay uses a dashed magnet outline.
-- **+ menu:** Rounded overlay so the door's overflow cannot clip it. Keyboard: Escape, arrows, Enter.
-- **Clipping:** Magnet disc, type pills, timestamp, peel control, type-specific preview in an 18px sheet.
-- **Search:** Capsule field above the list.
-- **FAB:** Disc, bottom-right, hidden at scroll top.
-- **Language magnets:** Pill switch in the header.
+- **Auth stack:** Apple warm charcoal (#3a342e), Google outlined, Browse tangerine. Vertical, on a 32px login sheet. 48px controls, 22px marks, 15px label.
+- **Theme switch:** Light, system, and dark magnets in a pill track, 40px cells, 18px glyphs.
+- **Composer:** 48px row; 22px +; 15px field; Stick 48px.
+- **+ menu:** 40px rows, 18px glyphs, hairline border.
+- **Clipping:** Magnet 18px, caption tags 13px / `--control-tag` 26px tall, peel/edit 40px hits with 18px glyphs.
+- **Search:** 48px capsule, 15px type. Type chips 34px / 13px.
+- **Language magnets:** Pill switch, 40px cells, 13px KO/EN.
+- **FAB:** 48px disc, 24px glyph.
 
 States required: hover, focus-visible, disabled (Stick), loading (OG skeleton), error (OG fallback copy), empty ("항목이 없습니다." / English equivalent), pressed (`:active` scale), enter/exit for views.
 
@@ -256,6 +329,8 @@ These rules are binding for login, capture, draft, list, menu, and lightbox. Dur
 - Show the media itself (image, hover-play, OG, PDF first page).
 - Label synthetic scraps as Sample / 견본.
 - Keep KO and EN on one layout.
+- Use the type / icon / control scale. Do not invent a one-off size.
+- Keep fills inside the Cave Check. Cream kitchen, night kitchen, not toner.
 - Honor `prefers-reduced-motion`.
 - Keep two-step confirms for peel, Leave-with-draft, and Empty.
 

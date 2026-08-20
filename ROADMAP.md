@@ -40,7 +40,7 @@ Static client. With empty [`js/config.js`](js/config.js), Apple / Google / Brows
 ### List and chrome
 
 - [x] Recency list, newest first. Peel (delete) one item with a two-step confirm. Empty the door with a two-step confirm.
-- [x] KO / EN in one layout. Light / system / dark. Follows the system until the user picks light or dark. Can return to system. Remembered on this device.
+- [x] KO / EN in one layout. Light / system / dark. Follows the system until the user picks light or dark. Can return to system. Remembered on this device. Type / icon / control scale and a lifted kitchen palette: [DESIGN.md](DESIGN.md).
 - [x] Empty state ("항목이 없습니다." / English equivalent). Scroll-to-top FAB when not at the top.
 - [x] Skip link, visible focus, `prefers-reduced-motion`.
 - [x] Persist scraps in `localStorage` (~4.2MB budget) when keys are empty. Large files may stay session-only. Over quota, media data URLs are stripped. With keys and a signed-in user, scraps go to Postgres and media to a private Storage bucket.
