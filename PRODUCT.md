@@ -24,15 +24,19 @@ One capture surface that inspects what you pasted (text, image, video, audio, UR
 
 ## Operating Context
 
-- First visit: sign-in (Apple / Google) or browse without account.
+Today (shipped):
+
+- First visit: sign-in (Apple / Google) or browse without account. Full-page login on a white doorstep.
 - After entry: chat-like composer with + menu (clipboard, camera on mobile, photo pick, file attach), drag-and-drop on the input, tagged list below.
 - Empty list copy: "항목이 없습니다."
 - List order: newest first.
 - Scroll-to-top FAB when not at the top.
 
+Phase 4 (next, not shipped): first visit is an **intro** page that visualizes capture. Login moves to the header. Recency list gains a **일자별** calendar filter. Footer gains Korean web-service identity and policy links. Details: [ROADMAP.md](ROADMAP.md) Phase 4 and [DESIGN.md](DESIGN.md).
+
 ## Capabilities and Constraints
 
-Work order and checkboxes: [ROADMAP.md](ROADMAP.md). Phase 1 (tech debt), Phase 2 (UI/UX), and Phase 3 (Supabase wiring) are in the client. API keys are filled later in [`js/config.js`](js/config.js); empty config keeps the on-device path.
+Work order and checkboxes: [ROADMAP.md](ROADMAP.md). Phase 1 (tech debt), Phase 2 (UI/UX), and Phase 3 (Supabase wiring) are in the client. Phase 4 (intro, header login, date filter, Korean footer) is next. API keys are filled later in [`js/config.js`](js/config.js); empty config keeps the on-device path.
 
 ### Shipped
 
@@ -55,20 +59,30 @@ Confirmed from brief and implemented in this static client:
 - Recency-sorted tagged list; empty state; scroll-to-top FAB.
 - Missing-media slip when quota or session-only files lose bytes.
 - Unsaved draft warning; composer auto-grow; light / system / dark.
+- Header color theme: 기본 (tangerine magnet) and 현무암 (basalt magnet). Accent only; kitchen wall stays porcelain peach.
 - Edit a saved scrap (type, tags, memo).
 - Type chips, tag click-to-filter, light search.
 - Image lightbox; copy URL / save file when media is stored; two-step peel.
 - Supabase adapter (`MyScrapBackend`): OAuth / anonymous auth, `scraps` + private media bucket, last-write-wins sync, one-time local migrate, OG Edge Function. Inactive until `js/config.js` has a real URL and anon key.
 
-[Inferred] Tagging and previews still run in the browser (MIME, URL, Open Graph fetch, object URLs). No paid AI API. With empty config, Apple/Google buttons are UI flows that enter the app (demo auth) and data persists in localStorage on this device. After keys, the same UI talks to Supabase; language and theme stay local.
+[Inferred] Tagging and previews still run in the browser (MIME, URL, Open Graph fetch, object URLs). No paid AI API. With empty config, Apple/Google buttons are UI flows that enter the app (demo auth) and data persists in localStorage on this device. After keys, the same UI talks to Supabase; language, theme, and palette stay local.
 
-Phase 1 tech debt, Phase 2 UI/UX, and Phase 3 wiring are implemented. See [ROADMAP.md](ROADMAP.md) and [supabase/README.md](supabase/README.md).
+Phase 1 tech debt, Phase 2 UI/UX, and Phase 3 wiring are implemented. Phase 4 is next. See [ROADMAP.md](ROADMAP.md) and [supabase/README.md](supabase/README.md).
 
 ### Operator follow-up (keys, not code)
 
 Create a Supabase project, enable Google / Apple / Anonymous, apply `supabase/migrations`, deploy `og-preview`, paste URL + anon key into `js/config.js`. Never put `service_role` in the browser.
 
 Server-side AI tagging stays optional.
+
+### Next (Phase 4)
+
+Not in the client yet. Implement in this order: [ROADMAP.md](ROADMAP.md) Phase 4.
+
+- Replace the full-page login with an intro that visualizes stick / classify / find. Modern layout, fridge-door materials, real interaction. No fake metrics.
+- Move Apple / Google / Browse into a header 들어가기 control. A saved session still skips intro and opens the door.
+- Add 일자별 to the scrap search filters: a month calendar with per-day counts from `createdAt`, click a day to filter. Not a calendar product.
+- Footer on intro and app: Korean web-service identity + 이용약관 + 개인정보처리방침 (privacy visually distinct). Placeholders until real operator data. Do not invent a 사업자등록번호.
 
 ## Brand Commitments
 
@@ -84,10 +98,10 @@ No real user content, brand assets, or Open Graph corpus. Demonstration scraps m
 
 1. Capture first: the composer is the product, not a settings-heavy library.
 2. Show the thing: every type gets a real preview, not a generic file icon if media can render.
-3. Recency over folders: newest tagged items lead until the user asks otherwise.
+3. Recency over folders: newest tagged items lead until the user asks otherwise (type, tag, search, and in Phase 4 a day on the calendar).
 4. Same job on phone and desktop: camera appears only where it exists; everything else stays reachable.
 5. Language is a switch, not a fork: KO/EN share one layout.
 
 ## Accessibility & Inclusion
 
-[Inferred] Keyboard access to composer, + menu, list, and language switch. Visible focus. WCAG AA contrast. Honor `prefers-reduced-motion` for hover-play and view motion. Camera control is mobile-only and must not appear as a dead desktop action. Motion and pointer rules: [DESIGN.md](DESIGN.md).
+[Inferred] Keyboard access to composer, + menu, list, and language switch. Visible focus. WCAG AA contrast. Honor `prefers-reduced-motion` for hover-play, view motion, and Phase 4 intro motion. Camera control is mobile-only and must not appear as a dead desktop action. Motion and pointer rules: [DESIGN.md](DESIGN.md).

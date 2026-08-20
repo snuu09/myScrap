@@ -42,6 +42,12 @@ typography:
     fontWeight: 700
     lineHeight: 1.25
     letterSpacing: "-0.035em"
+  display-hero:
+    fontFamily: "SUIT, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif"
+    fontSize: "clamp(2rem, 1.4rem + 3vw, 3rem)"
+    fontWeight: 700
+    lineHeight: 1.15
+    letterSpacing: "-0.04em"
   headline:
     fontFamily: "SUIT, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif"
     fontSize: "1.125rem"
@@ -176,7 +182,8 @@ myScrap is a personal capture box, not a knowledge base. The surface is a warm e
 The product is Operate-mode. Brand lives in material details (gasket, magnets, clipping rotation) while controls stay familiar. Korean and English share one layout. Login is a white doorstep. After you open the door, light is a peach porcelain kitchen; dark is a night kitchen. The pressable magnet is Jeju tangerine by default, or Jeju basalt when that palette is on.
 
 **Key Characteristics:**
-- White login ground; peach porcelain door after sign-in; one magnet accent (tangerine by default, basalt as the test swap)
+- Today: white login ground; peach porcelain door after sign-in; one magnet accent (tangerine by default, basalt as the test swap)
+- Phase 4: intro is the first public surface; auth lives in the header; peach kitchen can show before the door opens
 - Centered capture column on every breakpoint
 - Soft rounded clippings (18px), not razor-square paper and not identical SaaS cards
 - Capture composer first; recency list second
@@ -215,7 +222,7 @@ Header switch: **기본** (tangerine magnet) and **현무암** (basalt magnet). 
 
 **The Two Magnets Rule.** Default magnet is hallabong tangerine. 현무암 swaps that accent to Jeju basalt charcoal. Do not retint enamel, paper, or the kitchen wall when testing basalt. Sample photo SVGs must read `--magnet` (or the matching hex) at paint time; do not bake `#e56f0a`. The 견본 tag is hairline ink, not danger orange.
 
-**The White Doorstep.** Light login is white. The peach kitchen starts after the door opens. Dark login stays a night kitchen, not a white flash.
+**The White Doorstep.** Until Phase 4, light login is a full-page white wall and the peach kitchen starts after the door opens. In Phase 4 the doorstep shrinks to a **header auth sheet** (light: white; dark: night enamel). The intro may sit on porcelain peach / night kitchen. Dark intro is not a white flash.
 
 **The Cave Check.** Light kitchen wall stays porcelain peach (#fff7f2 → #f3e7de). Dark mode is a night kitchen (#2a2622 → #1f1c19), not #0c0b0a. If a fill looks like printer toner, lift it. Muted copy must stay AA on enamel (≥4.5:1): light #6e665c on #fff7f2 (~5.4:1); dark #c5b8a8 on #302b26 (~7.2:1).
 
@@ -227,7 +234,8 @@ Closed scales. Do not invent a one-off size.
 
 | Token | Size | Use |
 | --- | --- | --- |
-| display | clamp 1.5–1.75rem | Login lead |
+| display | clamp 1.5–1.75rem | Login lead (today); intro kicker |
+| display-hero | clamp 2–3rem | Phase 4 intro hero only. Do not reuse in the app door. |
 | headline | 1.125rem (18px) | Wordmark, empty title |
 | title | 1.0625rem (17px) | Link/doc titles, draft detect |
 | body | 1rem (16px) | Notes, page default |
@@ -273,6 +281,8 @@ Auth, Stick, and + share 48px so the door and the login sheet feel like one syst
 
 Header, door (main), footer. The door is the canvas, centered in a 48rem frame. Login, composer, empty state, and clippings share a centered 36rem column. Clippings no longer stagger left; magnets sit on the center of each slip.
 
+Phase 4 intro may use a centered 48–64rem reading column and full-bleed peach ground. The app capture column stays 36rem. Legal pages reuse the header/footer chrome.
+
 Gutter is fluid (`clamp(12px, 3.2vw, 24px)`). Door padding is fluid so resize does not jump. Composer becomes two-row when the door is under 560px (container query). Fridge handle hides under 640px door width. Camera control appears under 721px or coarse pointer, including DevTools width resize.
 
 ## Elevation & Depth
@@ -297,23 +307,24 @@ Slight clipping rotation (±0.45deg) on every third scrap. That is the fridge, n
 
 ## Components
 
-- **Auth stack:** Apple charcoal, Google outlined, Browse tangerine. Vertical, on a 32px login sheet. 48px controls, 18px marks, 15px label. Light login wall is white.
+- **Auth stack (today):** Apple charcoal, Google outlined, Browse tangerine. Vertical, on a 32px login sheet. 48px controls, 18px marks, 15px label. Light login wall is white. Phase 4 moves this stack into the header sheet.
 - **Palette switch:** Pill track, 40px cells. 기본 (tangerine swatch) and 현무암 (basalt swatch). Swaps the magnet, not the wall. Default is tangerine.
 - **Theme switch:** Light, system, and dark magnets in a pill track, 40px cells, 18px glyphs.
 - **Composer:** 24px shell; 22px +; 15px field; Stick 48px / 14px. Focus ring follows the 24px shell (`:has(.composer-field:focus)`), not a square on the textarea and not a pill.
 - **Classify draft:** A new Stick, paste, or drop replaces the open classify card in place. Editing a saved scrap still asks to save or cancel first.
 - **+ menu:** 40px rows, 18px glyphs, hairline border.
 - **Clipping:** Magnet 18px, caption tags 13px / `--control-tag` 26px tall, peel/edit 40px hits with 18px glyphs.
-- **Search:** 48px capsule, 15px type. Type chips 34px / 13px.
+- **Search:** 48px capsule, 15px type. Type chips 34px / 13px. Phase 4: 일자별 chip in this row.
 - **Language magnets:** Pill switch, 40px cells, 13px KO/EN.
 - **FAB:** 48px disc, 24px glyph.
 - **Phish meter:** When Stick detects a web link, the draft shows an on-device URL-shape risk (낮음 / 주의 / 높음). Not a live blocklist and not a guarantee. Compact line on saved link scraps. Mid uses ink, not tangerine. High uses `--danger`.
+- **Footer (today):** one product note plus app-only 비우기. Phase 4 replaces this with the Korean footer below.
 
 States required: hover, focus-visible, disabled (Stick), loading (OG skeleton), error (OG fallback copy), empty ("항목이 없습니다." / English equivalent), pressed (`:active` scale), enter/exit for views.
 
 ## Motion & interaction
 
-These rules are binding for login, capture, draft, list, menu, and lightbox. Duration and easing live as CSS variables in [`css/styles.css`](css/styles.css): `--dur-fast` 140ms, `--dur-mid` 220ms, `--dur-slow` 320ms, `--ease-out` (`cubic-bezier(0.16, 1, 0.3, 1)`), `--ease-in` (`cubic-bezier(0.4, 0, 1, 1)`).
+These rules are binding for login, capture, draft, list, menu, and lightbox. Phase 4 extends them to intro, header auth, calendar, and legal pages. Duration and easing live as CSS variables in [`css/styles.css`](css/styles.css): `--dur-fast` 140ms, `--dur-mid` 220ms, `--dur-slow` 320ms, `--ease-out` (`cubic-bezier(0.16, 1, 0.3, 1)`), `--ease-in` (`cubic-bezier(0.4, 0, 1, 1)`).
 
 ### Named rules
 
@@ -325,8 +336,8 @@ These rules are binding for login, capture, draft, list, menu, and lightbox. Dur
 
 ### View changes
 
-- **Open the door (login → app):** login sheet exits down and fades (140ms in-ease). Capture view enters from 14px below (220ms out-ease). Header Leave / Empty appear with the app. A returning session skips this and swaps instantly.
-- **Leave (app → login):** reverse. Draft, lightbox, and + menu dismiss first. Scraps clear after the app view has exited.
+- **Open the door (login → app today; intro → app in Phase 4):** current sheet exits down and fades (140ms in-ease). Capture view enters from 14px below (220ms out-ease). Header Leave / Empty appear with the app. A returning session skips this and swaps instantly.
+- **Leave (app → login today; app → intro in Phase 4):** reverse. Draft, lightbox, and + menu dismiss first. Scraps clear after the app view has exited.
 - **Draft:** classify-then-save panel uses the same sheet motion. Editing a saved scrap reuses the open panel (no second enter). Cancel and save wait for the exit before removing DOM.
 - **+ menu:** pop from the plus control (140ms). Click outside, Escape, or picking an item closes it.
 - **Lightbox:** dim fade plus a slight zoom on the photo. Backdrop, close control, and Escape share the same exit.
@@ -345,8 +356,51 @@ These rules are binding for login, capture, draft, list, menu, and lightbox. Dur
 ### Do not
 
 - Animate width/height of the composer or list (use the existing auto-grow without a layout tween).
-- Crossfade login and app on top of each other (sequential handoff only).
+- Crossfade login (or intro) and app on top of each other (sequential handoff only).
 - Persist `hidden` off during an exit; after the motion ends, `hidden` must go back on so the node leaves the accessibility tree.
+- Loop intro demos while `prefers-reduced-motion: reduce` is on.
+
+## Phase 4 — next surfaces (not shipped)
+
+Implement against [ROADMAP.md](ROADMAP.md) Phase 4. These named rules are binding when that work starts.
+
+### Named rules
+
+**The Open Kitchen Rule.** First visit is an intro that shows the fridge job. Auth does not own the first viewport. Apple / Google / Browse live in the header. Browse and sign-in both open the door. A saved session still skips intro.
+
+**The Demo Is The Product Rule.** Intro interactions replay stick, classify, and find with fridge materials (composer, tags, magnet snap). Demo scraps are labeled 견본 / Sample. Do not invent customers, download counts, testimonials, or AI claims. Do not build a purple SaaS landing or a phone farm of fake UI.
+
+**The Day Magnet Rule.** 일자별 is a filter on the recency list, not a calendar product and not a second home. Counts are scraps stuck that local calendar day (`createdAt`). One selected day at a time. Combine with type, tag, and search. Inside a day, newest first.
+
+**The Korean Footer Rule.** Intro and app show operator identity plus 이용약관 plus 개인정보처리방침. Privacy is easier to spot than the other links (bold or magnet). Placeholders until real operator data. Do not invent a 사업자등록번호 or 통신판매업 신고번호. 비우기 stays an app-only footer action.
+
+### Intro
+
+- Sticky compact header: brand, KO/EN, palette, theme, 들어가기.
+- Hero uses `--text-display-hero` (clamp 2–3rem) once. App door keeps the existing display scale.
+- Three scenes after the hero: paste/drop, classify-then-save (type + tags + preview), recency magnets. Pointer or short scroll reveal (`--dur-mid` / `--dur-slow`). One job at a time.
+- Primary CTA copy stays personal. Secondary is 둘러보기 if it is not already the primary.
+- Ground: porcelain peach / night kitchen, kitchen glow allowed. Not a white marketing slab and not toner.
+
+### Header auth
+
+- 들어가기 is a 40–48px header control. Open state: paper sheet, `--radius-xl` 32px, Apple / Google / Browse stacked as today (48px, 18px marks).
+- Light sheet: `--login-wall` white. Dark sheet: night enamel.
+- Escape and click-outside close it. One Job: close the sheet before intro hands off to the app.
+- After session: chip + 나가기. Leave from the app returns to intro.
+
+### 일자별 calendar
+
+- Chip in `#list-tools` next to type chips. Open calendar is a paper panel under the tools, 18px radius, not a modal that covers the composer.
+- Month grid. Days with scraps show a count in caption/micro. Empty days are muted. Selected day is magnet fill + magnet-ink. Today is a hairline ring, not magnet, unless it is also selected.
+- Counts use local date of `createdAt`. Do not use UTC day if the user is in Korea (Asia/Seoul local).
+- Coarse pointer: 40px day hits (`--control-sm`). Fine pointer may stay compact but not under 32px.
+
+### Korean footer
+
+- Two bands: policy links (caption) then identity (micro). Privacy link is distinct.
+- Legal pages (`legal/terms.html`, `legal/privacy.html`) reuse header/footer chrome and SUIT. No new typeface.
+- Identity values come from placeholders; empty looks like "표시 예정", never a made-up number.
 
 ## Do's and Don'ts
 
@@ -356,9 +410,10 @@ These rules are binding for login, capture, draft, list, menu, and lightbox. Dur
 - Label synthetic scraps as Sample / 견본.
 - Keep KO and EN on one layout.
 - Use the type / icon / control scale. Do not invent a one-off size.
-- Keep fills inside the Cave Check. Porcelain peach kitchen, night kitchen, not toner. Login is white.
+- Keep fills inside the Cave Check. Porcelain peach kitchen, night kitchen, not toner. Until Phase 4, full-page login is white. After Phase 4, the header auth sheet is white.
 - Honor `prefers-reduced-motion`.
 - Keep two-step confirms for peel, Leave-with-draft, and Empty.
+- In Phase 4, put auth in the header and counts on the day grid, not in a new information architecture.
 
 **Don't**
 - Build a Notion sidebar of equal cards, or a purple AI chat on cream.
@@ -366,9 +421,13 @@ These rules are binding for login, capture, draft, list, menu, and lightbox. Dur
 - Put camera on fine-pointer desktop as a dead control.
 - Invent team, workspace, or research-lab language.
 - Use em-dashes in product copy.
+- Turn 일자별 into a scheduling calendar, heatmap product, or folders-by-month.
+- Ship a login wall as the first page once Phase 4 intro exists.
 
 ## Open UX gaps
 
-Phase 1, 2, and 3 of [ROADMAP.md](ROADMAP.md) are in the client. Phase 3 stays dormant until [`js/config.js`](js/config.js) has a project URL and anon key. Do not reopen a Notion sidebar, folder tree, or AI chat on cream.
+Phase 1, 2, and 3 of [ROADMAP.md](ROADMAP.md) are in the client. Phase 3 stays dormant until [`js/config.js`](js/config.js) has a project URL and anon key.
+
+**Next: Phase 4.** Intro page, header login, 일자별 calendar filter, Korean legal footer. Spec: [ROADMAP.md](ROADMAP.md) Phase 4 and the Phase 4 rules in this file. Do not reopen a Notion sidebar, folder tree, or AI chat on cream.
 
 Code folders and layers: [ARCHITECTURE.md](ARCHITECTURE.md). Visual tokens, motion, and interaction rules stay in this file.
