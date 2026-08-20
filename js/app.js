@@ -104,7 +104,7 @@
     document.documentElement.setAttribute("data-theme", resolved);
     document.documentElement.style.colorScheme = resolved;
     const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute("content", resolved === "dark" ? "#221e1a" : "#f3eee6");
+    if (meta) meta.setAttribute("content", resolved === "dark" ? "#302b26" : "#f7f3ec");
     syncThemeButtons();
   }
 
@@ -165,7 +165,8 @@
     if (!els.input) return;
     els.input.style.height = "auto";
     const max = 160;
-    const next = Math.min(Math.max(els.input.scrollHeight, 44), max);
+    const minH = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--control-md")) || 48;
+    const next = Math.min(Math.max(els.input.scrollHeight, minH), max);
     els.input.style.height = next + "px";
     els.input.style.overflowY = els.input.scrollHeight > max ? "auto" : "hidden";
   }

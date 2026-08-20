@@ -1,40 +1,41 @@
 :root {
-  --enamel: #f3eee6;
-  --enamel-deep: #e7dfd2;
-  --enamel-ink: #d4cbbd;
-  --gasket: #2a2622;
-  --gasket-soft: #4a433c;
-  --ink: #1c1610;
-  --ink-soft: #3d342c;
-  --muted: #5c5349;
+  --enamel: #f7f3ec;
+  --enamel-deep: #eee8de;
+  --enamel-ink: #ddd3c6;
+  --gasket: #5a524a;
+  --gasket-soft: #cbbfaf;
+  --ink: #322c26;
+  --ink-soft: #524940;
+  --muted: #6e665c;
   --magnet: #e56f0a;
-  --magnet-ink: #1a1208;
-  --magnet-deep: #c85c08;
-  --handle-hi: #f4efe8;
-  --handle-mid: #b8aea2;
-  --handle-lo: #7a7168;
-  --paper: #fff8ef;
-  --paper-line: #e3d5c0;
-  --photo-mat: #f7f3ec;
-  --manila: #e8c57a;
-  --manila-ink: #5a4318;
-  --disc: #2c2722;
-  --disc-ink: #f3ece4;
-  --danger: #9b2c1a;
-  --ok: #2c6a45;
-  --kitchen-hi: #e4ddd3;
-  --kitchen-lo: #c9c0b4;
-  --kitchen-glow: rgba(229, 111, 10, 0.22);
-  --drop-veil: rgba(243, 238, 230, 0.9);
-  --shadow: 0 18px 40px rgba(28, 22, 16, 0.12);
-  --shadow-scrap: 0 10px 28px rgba(28, 22, 16, 0.08);
-  --shadow-scrap-hover: 0 14px 32px rgba(28, 22, 16, 0.12);
-  --shadow-fab: 0 10px 22px rgba(200, 92, 8, 0.32);
+  --magnet-ink: #2a1a08;
+  --magnet-deep: #d06612;
+  --handle-hi: #f7f3ec;
+  --handle-mid: #cbbfaf;
+  --handle-lo: #8a8076;
+  --paper: #fffaf3;
+  --paper-line: #eadfce;
+  --photo-mat: #faf6f0;
+  --manila: #ebc98a;
+  --manila-ink: #5c4520;
+  --disc: #3a342e;
+  --disc-ink: #f7f1ea;
+  --danger: #b44532;
+  --ok: #3d7a54;
+  --kitchen-hi: #f5f1ea;
+  --kitchen-lo: #ebe5d9;
+  --kitchen-glow: rgba(229, 111, 10, 0.12);
+  --drop-veil: rgba(247, 243, 236, 0.92);
+  --shadow: 0 18px 40px rgba(50, 44, 38, 0.08);
+  --shadow-scrap: 0 10px 28px rgba(50, 44, 38, 0.06);
+  --shadow-scrap-hover: 0 14px 32px rgba(50, 44, 38, 0.09);
+  --shadow-fab: 0 10px 22px rgba(208, 102, 18, 0.26);
   --google-bg: #fff;
-  --google-border: #c9bfb2;
-  --apple-bg: #171411;
-  --apple-ink: #f7f1ea;
-  --composer-border: #e3d5c0;
+  --google-border: #ddd3c6;
+  --apple-bg: #3a342e;
+  --apple-ink: #faf6f0;
+  --composer-border: #eadfce;
+  --hairline: color-mix(in srgb, var(--ink) 12%, transparent);
   --radius-xs: 10px;
   --radius-sm: 14px;
   --radius-md: 18px;
@@ -42,9 +43,23 @@
   --radius-xl: 32px;
   --radius-pill: 999px;
   --radius-scrap: 18px;
+  --text-display: clamp(1.5rem, 1.15rem + 1.5vw, 1.75rem);
+  --text-headline: 1.125rem;
+  --text-title: 1.0625rem;
+  --text-body: 1rem;
+  --text-ui: 0.9375rem;
+  --text-caption: 0.8125rem;
+  --text-micro: 0.75rem;
+  --icon-sm: 18px;
+  --icon-md: 22px;
+  --icon-lg: 24px;
+  --control-tag: 26px;
+  --control-chip: 34px;
+  --control-sm: 40px;
+  --control-md: 48px;
   --gutter: clamp(16px, 4vw, 40px);
-  --header-h: 56px;
-  --footer-h: 48px;
+  --header-h: 60px;
+  --footer-h: 52px;
   --door-pad-x: 0px;
   --door-pad-y: clamp(12px, 2.4vw, 24px);
   --content-w: 40rem;
@@ -61,42 +76,43 @@
 }
 
 [data-theme="dark"] {
-  --enamel: #221e1a;
-  --enamel-deep: #181512;
-  --enamel-ink: #3a342e;
-  --gasket: #0e0c0a;
-  --gasket-soft: #6b6258;
-  --ink: #f6efe6;
-  --ink-soft: #d9cfc3;
-  --muted: #b7aa9c;
-  --magnet: #f3993a;
-  --magnet-ink: #1a1208;
-  --magnet-deep: #ffb05a;
-  --handle-hi: #3a342e;
-  --handle-mid: #6b6258;
-  --handle-lo: #1c1814;
-  --paper: #2b261f;
-  --paper-line: #4a433c;
-  --photo-mat: #2a2520;
-  --manila: #c9a056;
+  --enamel: #302b26;
+  --enamel-deep: #27231f;
+  --enamel-ink: #4a433c;
+  --gasket: #1c1916;
+  --gasket-soft: #6b635a;
+  --ink: #f4eee6;
+  --ink-soft: #ddd4c8;
+  --muted: #c5b8a8;
+  --magnet: #f4a24a;
+  --magnet-ink: #2a1a08;
+  --magnet-deep: #ffb86a;
+  --handle-hi: #4a433c;
+  --handle-mid: #6b635a;
+  --handle-lo: #1c1916;
+  --paper: #3c362f;
+  --paper-line: #5a534a;
+  --photo-mat: #38322c;
+  --manila: #d4ae6a;
   --manila-ink: #1c1408;
-  --disc: #14110e;
-  --disc-ink: #f3ece4;
+  --disc: #241f1b;
+  --disc-ink: #f4eee6;
   --danger: #f0a090;
-  --ok: #7dba93;
-  --kitchen-hi: #14110e;
-  --kitchen-lo: #0c0b0a;
-  --kitchen-glow: rgba(243, 153, 58, 0.18);
-  --drop-veil: rgba(34, 30, 26, 0.92);
-  --shadow: 0 22px 48px rgba(0, 0, 0, 0.42);
-  --shadow-scrap: 0 12px 32px rgba(0, 0, 0, 0.32);
-  --shadow-scrap-hover: 0 16px 36px rgba(0, 0, 0, 0.45);
-  --shadow-fab: 0 10px 24px rgba(243, 153, 58, 0.28);
-  --google-bg: #2b261f;
-  --google-border: #5a534a;
-  --apple-bg: #f6efe6;
-  --apple-ink: #171411;
-  --composer-border: #4a433c;
+  --ok: #8fc9a4;
+  --kitchen-hi: #2a2622;
+  --kitchen-lo: #1f1c19;
+  --kitchen-glow: rgba(244, 162, 74, 0.14);
+  --drop-veil: rgba(48, 43, 38, 0.92);
+  --shadow: 0 22px 48px rgba(0, 0, 0, 0.28);
+  --shadow-scrap: 0 12px 32px rgba(0, 0, 0, 0.22);
+  --shadow-scrap-hover: 0 16px 36px rgba(0, 0, 0, 0.32);
+  --shadow-fab: 0 10px 24px rgba(244, 162, 74, 0.24);
+  --google-bg: #3c362f;
+  --google-border: #6b635a;
+  --apple-bg: #f4eee6;
+  --apple-ink: #322c26;
+  --composer-border: #5a534a;
+  --hairline: color-mix(in srgb, var(--ink) 18%, transparent);
   color-scheme: dark;
 }
 
@@ -115,8 +131,8 @@ body {
   margin: 0;
   min-height: 100dvh;
   font-family: var(--font);
-  font-size: 15px;
-  line-height: 1.45;
+  font-size: var(--text-body);
+  line-height: 1.5;
   color: var(--ink);
   background:
     radial-gradient(1000px 420px at 50% -12%, var(--kitchen-glow), transparent 62%),
@@ -214,8 +230,8 @@ a:hover {
 }
 
 .brand-mark {
-  width: 18px;
-  height: 18px;
+  width: var(--icon-sm);
+  height: var(--icon-sm);
   border-radius: 50%;
   background: var(--magnet);
   box-shadow: 1px 2px 0 color-mix(in srgb, var(--magnet-deep) 70%, #000 30%);
@@ -223,7 +239,7 @@ a:hover {
 }
 
 .brand-name {
-  font-size: 1.25rem;
+  font-size: var(--text-headline);
   font-weight: 750;
   letter-spacing: -0.03em;
 }
@@ -240,8 +256,8 @@ a:hover {
 .lang-switch,
 .theme-switch {
   display: flex;
-  border: 1px solid var(--gasket-soft);
-  background: var(--enamel);
+  border: 1px solid var(--hairline);
+  background: var(--paper);
   padding: 3px;
   gap: 2px;
   border-radius: var(--radius-pill);
@@ -251,24 +267,26 @@ a:hover {
 .theme-switch button {
   border: 0;
   background: transparent;
-  padding: 5px 10px;
-  min-width: 44px;
-  min-height: 36px;
+  padding: 5px 12px;
+  min-width: var(--control-sm);
+  min-height: var(--control-sm);
   color: var(--muted);
   border-radius: var(--radius-pill);
+  font-size: var(--text-caption);
+  font-weight: 700;
   transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 }
 
 .theme-switch button {
   display: grid;
   place-items: center;
-  padding: 5px 7px;
-  min-width: 40px;
+  padding: 5px 8px;
+  min-width: var(--control-sm);
 }
 
 .theme-switch svg {
-  width: 16px;
-  height: 16px;
+  width: var(--icon-sm);
+  height: var(--icon-sm);
 }
 
 .lang-switch button[aria-pressed="true"],
@@ -283,6 +301,7 @@ a:hover {
   background: transparent;
   color: var(--ink-soft);
   padding: 6px 10px;
+  font-size: var(--text-caption);
   text-decoration: underline;
   text-underline-offset: 3px;
   border-radius: var(--radius-pill);
@@ -294,11 +313,11 @@ a:hover {
 }
 
 .session-chip {
-  font-size: 0.8125rem;
+  font-size: var(--text-caption);
   color: var(--muted);
   padding: 6px 12px;
-  background: var(--enamel);
-  border: 1px solid var(--gasket-soft);
+  background: var(--paper);
+  border: 1px solid var(--hairline);
   border-radius: var(--radius-pill);
 }
 
@@ -350,10 +369,10 @@ a:hover {
 
 .login-lead {
   margin: 0;
-  font-size: clamp(1.4rem, 2.6vw + 0.7rem, 1.85rem);
+  font-size: var(--text-display);
   font-weight: 700;
   letter-spacing: -0.035em;
-  line-height: 1.2;
+  line-height: 1.25;
 }
 
 .login-hint,
@@ -362,7 +381,7 @@ a:hover {
 .footer-note {
   margin: 0;
   color: var(--muted);
-  font-size: 0.9375rem;
+  font-size: var(--text-ui);
 }
 
 .auth-stack {
@@ -379,18 +398,20 @@ a:hover {
   justify-content: center;
   gap: 10px;
   width: 100%;
-  min-height: 48px;
+  min-height: var(--control-md);
   border-radius: var(--radius-md);
   border: 1px solid transparent;
   padding: 10px 16px;
+  font-size: var(--text-ui);
   font-weight: 650;
+}
   transition: background-color var(--dur-fast) var(--ease-out), filter var(--dur-fast) var(--ease-out),
     border-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 }
 
 .auth-btn svg {
-  width: 18px;
-  height: 18px;
+  width: var(--icon-md);
+  height: var(--icon-md);
   flex-shrink: 0;
 }
 
@@ -450,7 +471,7 @@ a:hover {
   border: 1px solid var(--composer-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-scrap);
-  padding: 10px;
+  padding: 8px;
   transition: background-color var(--dur-fast) var(--ease-out), outline-color var(--dur-fast) var(--ease-out);
 }
 
@@ -484,9 +505,9 @@ a:hover {
 }
 
 .icon-btn {
-  width: 44px;
-  height: 44px;
-  border: 1px solid var(--gasket-soft);
+  width: var(--control-md);
+  height: var(--control-md);
+  border: 1px solid var(--hairline);
   background: var(--enamel);
   display: grid;
   place-items: center;
@@ -497,8 +518,8 @@ a:hover {
 }
 
 .icon-btn svg {
-  width: 20px;
-  height: 20px;
+  width: var(--icon-md);
+  height: var(--icon-md);
 }
 
 .icon-btn:hover {
@@ -513,13 +534,14 @@ a:hover {
 
 .composer-field {
   width: 100%;
-  min-height: 44px;
+  min-height: var(--control-md);
   max-height: 160px;
   resize: none;
   overflow: hidden;
   border: 0;
   background: transparent;
-  padding: 10px 8px;
+  padding: 12px 10px;
+  font-size: var(--text-ui);
 }
 
 .composer-field::placeholder {
@@ -528,11 +550,12 @@ a:hover {
 }
 
 .send-btn {
-  min-height: 44px;
+  min-height: var(--control-md);
   border: 0;
   background: var(--magnet);
   color: var(--magnet-ink);
-  padding: 0 16px;
+  padding: 0 18px;
+  font-size: var(--text-ui);
   font-weight: 700;
   white-space: nowrap;
   border-radius: var(--radius-sm);
@@ -558,8 +581,8 @@ a:hover {
   left: 0;
   bottom: calc(100% + 8px);
   min-width: min(220px, calc(100vw - 32px));
-  background: var(--enamel);
-  border: 1px solid var(--gasket);
+  background: var(--paper);
+  border: 1px solid var(--hairline);
   box-shadow: var(--shadow);
   padding: 8px;
   z-index: 8;
@@ -572,12 +595,13 @@ a:hover {
   align-items: center;
   gap: 10px;
   width: 100%;
-  min-height: 40px;
+  min-height: var(--control-sm);
   border: 0;
   background: transparent;
   padding: 6px 10px;
   text-align: left;
   border-radius: var(--radius-xs);
+  font-size: var(--text-ui);
 }
 
 .add-menu button:hover,
@@ -586,8 +610,8 @@ a:hover {
 }
 
 .add-menu button svg {
-  width: 18px;
-  height: 18px;
+  width: var(--icon-sm);
+  height: var(--icon-sm);
 }
 
 .sr-only {
@@ -606,7 +630,7 @@ a:hover {
   max-width: var(--content-w);
   margin: 8px auto 0;
   min-height: 1.3em;
-  font-size: 0.8125rem;
+  font-size: var(--text-caption);
   color: var(--danger);
   text-align: center;
 }
@@ -641,14 +665,14 @@ a:hover {
 
 .draft-kicker {
   margin: 0 0 4px;
-  font-size: 0.8125rem;
+  font-size: var(--text-caption);
   font-weight: 700;
   color: var(--muted);
 }
 
 .draft-detect {
   margin: 0;
-  font-size: 1.0625rem;
+  font-size: var(--text-title);
   font-weight: 700;
   letter-spacing: -0.02em;
 }
@@ -656,12 +680,12 @@ a:hover {
 .draft-badge {
   display: inline-flex;
   align-items: center;
-  min-height: 28px;
+  min-height: var(--control-chip);
   padding: 0 10px;
   border-radius: var(--radius-pill);
   background: var(--magnet);
   color: var(--magnet-ink);
-  font-size: 0.8125rem;
+  font-size: var(--text-caption);
   font-weight: 700;
   white-space: nowrap;
 }
@@ -674,7 +698,7 @@ a:hover {
 }
 
 .draft-field label {
-  font-size: 0.8125rem;
+  font-size: var(--text-caption);
   font-weight: 700;
   color: var(--ink-soft);
 }
@@ -691,7 +715,7 @@ a:hover {
 }
 
 .draft-select {
-  min-height: 44px;
+  min-height: var(--control-md);
   appearance: none;
   background-image: linear-gradient(45deg, transparent 50%, var(--ink-soft) 50%),
     linear-gradient(135deg, var(--ink-soft) 50%, transparent 50%);
@@ -702,7 +726,7 @@ a:hover {
 }
 
 .draft-input {
-  min-height: 44px;
+  min-height: var(--control-md);
   word-break: break-all;
 }
 
@@ -721,12 +745,12 @@ a:hover {
   gap: 8px;
   margin: 0 0 10px;
   color: var(--muted);
-  font-size: 0.875rem;
+  font-size: var(--text-ui);
 }
 
 .draft-preview-note svg {
-  width: 18px;
-  height: 18px;
+  width: var(--icon-sm);
+  height: var(--icon-sm);
   flex-shrink: 0;
   margin-top: 1px;
 }
@@ -742,19 +766,19 @@ a:hover {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  min-height: 32px;
+  min-height: var(--control-chip);
   padding: 0 6px 0 10px;
   border-radius: var(--radius-pill);
   border: 1px solid var(--composer-border);
   background: var(--enamel);
   color: var(--ink);
-  font-size: 0.8125rem;
+  font-size: var(--text-caption);
   font-weight: 650;
 }
 
 .draft-tag button {
-  width: 22px;
-  height: 22px;
+  width: var(--icon-sm);
+  height: var(--icon-sm);
   border: 0;
   background: transparent;
   color: var(--muted);
@@ -765,11 +789,12 @@ a:hover {
 
 .draft-tag-add {
   min-width: 7rem;
-  min-height: 32px;
+  min-height: var(--control-chip);
   border: 1px dashed var(--composer-border);
   background: transparent;
   border-radius: var(--radius-pill);
   padding: 0 12px;
+  font-size: var(--text-caption);
 }
 
 .draft-actions {
@@ -780,22 +805,24 @@ a:hover {
 }
 
 .draft-cancel {
-  min-height: 44px;
+  min-height: var(--control-md);
   padding: 0 16px;
   border: 1px solid var(--composer-border);
   background: var(--enamel);
   color: var(--ink);
+  font-size: var(--text-ui);
   font-weight: 650;
   border-radius: var(--radius-sm);
   transition: background-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 }
 
 .draft-save {
-  min-height: 44px;
+  min-height: var(--control-md);
   padding: 0 16px;
   border: 0;
   background: var(--magnet);
   color: var(--magnet-ink);
+  font-size: var(--text-ui);
   font-weight: 700;
   border-radius: var(--radius-sm);
   transition: background-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
@@ -808,7 +835,7 @@ a:hover {
 .scrap-memo {
   margin: 8px 0 0;
   color: var(--ink-soft);
-  font-size: 0.875rem;
+  font-size: var(--text-ui);
 }
 
 #list-wrap {
@@ -828,13 +855,14 @@ a:hover {
 
 .scrap-search {
   width: 100%;
-  min-height: 44px;
+  min-height: var(--control-md);
   border: 1px solid var(--composer-border);
   background: var(--paper);
   color: var(--ink);
   padding: 10px 16px;
   box-shadow: var(--shadow-scrap);
   border-radius: var(--radius-pill);
+  font-size: var(--text-ui);
 }
 
 .type-chips {
@@ -845,13 +873,13 @@ a:hover {
 
 .type-chips button,
 .tag-filter-bar button {
-  border: 1px solid var(--gasket-soft);
-  background: var(--enamel);
+  border: 1px solid var(--hairline);
+  background: var(--paper);
   color: var(--ink-soft);
-  min-height: 32px;
-  padding: 0 10px;
+  min-height: var(--control-chip);
+  padding: 0 12px;
   border-radius: var(--radius-pill);
-  font-size: 0.75rem;
+  font-size: var(--text-caption);
   font-weight: 700;
   font-family: inherit;
   transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out),
@@ -875,7 +903,7 @@ a:hover {
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  font-size: 0.8125rem;
+  font-size: var(--text-caption);
   color: var(--muted);
 }
 
@@ -888,7 +916,7 @@ a:hover {
 
 .scrap-actions .text-btn {
   padding: 4px 0;
-  font-size: 0.8125rem;
+  font-size: var(--text-caption);
 }
 
 .media-missing {
@@ -944,8 +972,8 @@ a:hover {
   position: absolute;
   top: 12px;
   right: max(12px, var(--gutter));
-  width: 44px;
-  height: 44px;
+  width: var(--control-md);
+  height: var(--control-md);
   border: 0;
   border-radius: 50%;
   background: var(--magnet);
@@ -956,8 +984,8 @@ a:hover {
 }
 
 .lightbox-close svg {
-  width: 20px;
-  height: 20px;
+  width: var(--icon-md);
+  height: var(--icon-md);
 }
 
 .scrap-list {
@@ -976,7 +1004,7 @@ a:hover {
 
 .empty-state p:first-child {
   margin: 0 0 8px;
-  font-size: 1.125rem;
+  font-size: var(--text-headline);
   font-weight: 700;
 }
 
@@ -1034,8 +1062,8 @@ a:hover {
   position: absolute;
   top: -8px;
   left: 22px;
-  width: 18px;
-  height: 18px;
+  width: var(--icon-sm);
+  height: var(--icon-sm);
   border-radius: 50%;
   background: var(--magnet);
   box-shadow: 1px 2px 0 var(--magnet-deep), 2px 3px 6px rgba(28, 22, 16, 0.25);
@@ -1064,13 +1092,13 @@ a:hover {
 .tag {
   display: inline-flex;
   align-items: center;
-  min-height: 22px;
-  padding: 0 8px;
+  min-height: var(--control-tag);
+  padding: 0 10px;
   border: 0;
   border-radius: var(--radius-pill);
   background: var(--magnet);
   color: var(--magnet-ink);
-  font-size: 0.75rem;
+  font-size: var(--text-caption);
   font-weight: 700;
   letter-spacing: 0.01em;
   font-family: inherit;
@@ -1095,13 +1123,13 @@ a:hover {
 
 .time {
   margin-left: auto;
-  font-size: 0.75rem;
+  font-size: var(--text-micro);
   color: var(--muted);
 }
 
 .icon-tiny {
-  width: 32px;
-  height: 32px;
+  width: var(--control-sm);
+  height: var(--control-sm);
   border: 0;
   background: transparent;
   color: inherit;
@@ -1110,6 +1138,11 @@ a:hover {
   padding: 0;
   opacity: 0.7;
   border-radius: var(--radius-pill);
+}
+
+.icon-tiny svg {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
 }
 
 .icon-tiny:hover {
@@ -1125,7 +1158,7 @@ a:hover {
 .media-frame {
   position: relative;
   overflow: hidden;
-  background: #171411;
+  background: var(--disc);
   border-radius: var(--radius-sm);
 }
 
@@ -1164,7 +1197,7 @@ a:hover {
 .og-meta h3,
 .doc-title {
   margin: 0 0 4px;
-  font-size: 1rem;
+  font-size: var(--text-title);
   letter-spacing: -0.02em;
 }
 
@@ -1172,7 +1205,7 @@ a:hover {
 .doc-excerpt {
   margin: 0;
   color: var(--muted);
-  font-size: 0.875rem;
+  font-size: var(--text-ui);
 }
 
 .skeleton {
@@ -1215,7 +1248,7 @@ a:hover {
 
 .doc-excerpt {
   font-family: var(--mono);
-  font-size: 0.75rem;
+  font-size: var(--text-micro);
   white-space: pre-wrap;
   max-height: 12rem;
   overflow: auto;
@@ -1230,7 +1263,7 @@ a:hover {
   bottom: 8px;
   background: rgba(28, 22, 16, 0.78);
   color: #fff;
-  font-size: 0.75rem;
+  font-size: var(--text-micro);
   padding: 4px 10px;
   pointer-events: none;
   border-radius: var(--radius-pill);
@@ -1240,8 +1273,8 @@ a:hover {
   position: fixed;
   right: max(16px, var(--gutter));
   bottom: 22px;
-  width: 48px;
-  height: 48px;
+  width: var(--control-md);
+  height: var(--control-md);
   border: 0;
   border-radius: 50%;
   background: var(--magnet);
@@ -1271,14 +1304,14 @@ a:hover {
 }
 
 .to-top svg {
-  width: 22px;
-  height: 22px;
+  width: var(--icon-lg);
+  height: var(--icon-lg);
 }
 
 .site-footer {
   min-height: var(--footer-h);
   color: var(--muted);
-  font-size: 0.8125rem;
+  font-size: var(--text-caption);
 }
 
 .footer-note {
@@ -1519,7 +1552,7 @@ a:hover {
   }
 
   .login-lead {
-    font-size: clamp(1.35rem, 5vw, 1.5rem);
+    font-size: var(--text-display);
   }
 
   .footer-note {
@@ -1533,13 +1566,13 @@ a:hover {
   }
 
   .brand-name {
-    font-size: 1.1rem;
+    font-size: var(--text-headline);
   }
 
   .lang-switch button,
   .theme-switch button {
-    min-width: 40px;
-    padding: 5px 7px;
+    min-width: var(--control-sm);
+    padding: 5px 8px;
   }
 }
 
