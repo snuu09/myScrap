@@ -2,12 +2,14 @@
   const i18n = window.MyScrapI18n;
   const storage = window.MyScrapStorage;
   const tagger = window.MyScrapTagger;
+  const phish = window.MyScrapPhish;
   const og = window.MyScrapOg;
   const preview = window.MyScrapPreview;
 
   const els = {};
   let lang = "ko";
   let themePref = "system";
+  let palettePref = "kitchen";
   let scraps = [];
   let draft = null;
   let fileQueue = [];
@@ -101,15 +103,21 @@
 
   function applyTheme() {
     const resolved = resolvedTheme();
+    const palette = palettePref === "basalt" ? "basalt" : "kitchen";
     document.documentElement.setAttribute("data-theme", resolved);
+    document.documentElement.setAttribute("data-palette", palette);
     document.documentElement.style.colorScheme = resolved;
     const meta = document.querySelector('meta[name="theme-color"]');
     const surface = document.documentElement.getAttribute("data-surface") || "login";
     if (meta) {
-      const light = surface === "login" ? "#ffffff" : "#fff7f2";
-      meta.setAttribute("content", resolved === "dark" ? "#302b26" : light);
+      let color = "#ffffff";
+      if (resolved === "dark") color = "#302b26";
+      else if (surface !== "login") color = "#fff7f2";
+      meta.setAttribute("content", color);
     }
     syncThemeButtons();
+    syncPaletteButtons();
+    if (restyleSamplePhotos()) renderList();
   }
 
   function setSurface(name) {
@@ -123,10 +131,22 @@
     });
   }
 
+  function syncPaletteButtons() {
+    $all("[data-palette-choice]").forEach((btn) => {
+      btn.setAttribute("aria-pressed", btn.getAttribute("data-palette-choice") === palettePref ? "true" : "false");
+    });
+  }
+
   function setTheme(next) {
     if (next === "system") themePref = "system";
     else themePref = next === "dark" ? "dark" : "light";
     storage.setTheme(themePref);
+    applyTheme();
+  }
+
+  function setPalette(next) {
+    palettePref = next === "basalt" ? "basalt" : "kitchen";
+    storage.setPalette(palettePref);
     applyTheme();
   }
 
@@ -286,6 +306,7 @@
     } else {
       scraps = await storage.loadScraps();
     }
+    restyleSamplePhotos();
     applyI18n();
     els.input.focus();
     updateCameraItem();
@@ -321,6 +342,7 @@
     if (!storage.isRemote() || !isAppOpen() || draft) return;
     try {
       scraps = await storage.loadScraps();
+      restyleSamplePhotos();
       renderList();
     } catch {
       showStatus(t("syncError"));
@@ -636,6 +658,7 @@
       previewKids.push(renderMedia(draft, { preview: true }));
     }
     const previewBlock = el("div", { class: "draft-preview" }, previewKids);
+    const phishMeter = isLink && draft.url ? renderPhishMeter(draft.url, false) : null;
     const tags = el("div", { class: "draft-tags" });
     draft.tags.forEach((tag, index) => {
       const label = t("types." + tag) !== "types." + tag ? t("types." + tag) : tag;
@@ -700,7 +723,10 @@
       el("button", { type: "button", class: "draft-cancel", text: t("cancel"), onclick: () => cancelDraft() }),
       el("button", { type: "button", class: "draft-save", text: t("save"), onclick: saveDraft }),
     ]);
-    els.draftPanel.replaceChildren(head, labelField, contentField, previewBlock, tagField, memoField, actions);
+    const nodes = [head, labelField, contentField, previewBlock, phishMeter, tagField, memoField, actions].filter(
+      Boolean
+    );
+    els.draftPanel.replaceChildren(...nodes);
   }
 
   async function addScrap(scrap) {
@@ -902,6 +928,75 @@
     showStatus(t("clipboardUnsupported"), "info");
   }
 
+  function magnetHex() {
+    const dark = resolvedTheme() === "dark";
+    if (palettePref === "basalt") return dark ? "#c8c6c1" : "#3a3936";
+    return dark ? "#f4a24a" : "#e56f0a";
+  }
+
+  function restyleSamplePhotos() {
+    const fill = magnetHex();
+    const prefix = "data:image/svg+xml;utf8,";
+    let changed = false;
+    scraps.forEach((item) => {
+      if (!item.sample || item.type !== "image" || !item.dataUrl) return;
+      if (item.dataUrl.indexOf(prefix) !== 0) return;
+      let svg;
+      try {
+        svg = decodeURIComponent(item.dataUrl.slice(prefix.length));
+      } catch {
+        return;
+      }
+      const nextSvg = svg.replace(/fill="(?:#[0-9a-fA-F]{3,8}|rgb\([^)]+\))"/, 'fill="' + fill + '"');
+      const next = prefix + encodeURIComponent(nextSvg);
+      if (next !== item.dataUrl) {
+        item.dataUrl = next;
+        changed = true;
+      }
+    });
+    if (changed) persist();
+    return changed;
+  }
+
+  function renderPhishMeter(url, compact) {
+    if (!phish || !url) return null;
+    const result = phish.assess(url);
+    if (!result) return null;
+    const label =
+      result.level === "high" ? t("phishHigh") : result.level === "mid" ? t("phishMid") : t("phishLow");
+    const hint =
+      result.level === "high"
+        ? t("phishHintHigh")
+        : result.level === "mid"
+          ? t("phishHintMid")
+          : t("phishHintLow");
+    const kids = [
+      el("div", { class: "phish-meter-head" }, [
+        el("span", { text: t("phishLabel") }),
+        el("span", { class: "phish-level", text: label }),
+      ]),
+    ];
+    if (!compact) {
+      kids.push(el("p", { class: "phish-meter-hint", text: hint }));
+      if (result.reasons.length) {
+        kids.push(
+          el("p", {
+            class: "phish-meter-why",
+            text: result.reasons.map((key) => t("phishWhy." + key)).join(" "),
+          })
+        );
+      }
+    }
+    return el(
+      "div",
+      {
+        class: "phish-meter" + (compact ? " is-compact" : "") + " is-" + result.level,
+        role: "status",
+      },
+      kids
+    );
+  }
+
   function sampleSvg(label, fill) {
     const svg =
       '<svg xmlns="http://www.w3.org/2000/svg" width="640" height="400">' +
@@ -943,7 +1038,7 @@
       type: "image",
       tags: ["image"],
       filename: "window.svg",
-      dataUrl: sampleSvg(lang === "en" ? "window light" : "창가 빛", "#e56f0a"),
+      dataUrl: sampleSvg(lang === "en" ? "window light" : "창가 빛", magnetHex()),
       sample: true,
     });
     scraps.unshift(photo, link, note);
@@ -1396,6 +1491,7 @@
             ]),
           ]),
           renderMedia(item),
+          item.type === "link" && item.url ? renderPhishMeter(item.url, true) : null,
           item.memo ? el("p", { class: "scrap-memo", text: item.memo }) : null,
           scrapActions(item),
         ]),
@@ -1520,6 +1616,9 @@
     });
     $all("[data-theme-choice]").forEach((btn) => {
       btn.addEventListener("click", () => setTheme(btn.getAttribute("data-theme-choice")));
+    });
+    $all("[data-palette-choice]").forEach((btn) => {
+      btn.addEventListener("click", () => setPalette(btn.getAttribute("data-palette-choice")));
     });
     $all("[data-auth]").forEach((btn) => {
       btn.addEventListener("click", () => requestAuth(btn.getAttribute("data-auth")));
@@ -1647,6 +1746,7 @@
     reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     lang = storage.getLang();
     themePref = storage.getTheme();
+    palettePref = storage.getPalette();
     bind();
     applyTheme();
     updateStick();
@@ -1662,6 +1762,7 @@
     } else {
       try {
         scraps = await storage.loadScraps();
+        restyleSamplePhotos();
       } catch {
         scraps = [];
       }

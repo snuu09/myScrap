@@ -29,6 +29,12 @@ colors:
   dark-kitchen-lo: "#1f1c19"
   dark-muted: "#c5b8a8"
   dark-ink: "#f4eee6"
+  basalt: "#3a3936"
+  basalt-deep: "#2a2a28"
+  basalt-ink: "#f4f3f0"
+  dark-basalt: "#c8c6c1"
+  dark-basalt-deep: "#dddcd8"
+  dark-basalt-ink: "#1c1c1a"
 typography:
   display:
     fontFamily: "SUIT, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif"
@@ -167,10 +173,10 @@ components:
 
 myScrap is a personal capture box, not a knowledge base. The surface is a warm enamel fridge door: rubber gasket, stainless handle, Jeju tangerine (hallabong) disc magnets, and paper clippings of uneven size. You open the door (sign in or browse), stick something in the freezer-band composer, and it snaps onto the door already tagged.
 
-The product is Operate-mode. Brand lives in material details (gasket, magnets, clipping rotation) while controls stay familiar. Korean and English share one layout. Login is a white doorstep. After you open the door, light is a peach porcelain kitchen in the same hue as the tangerine magnet; dark is a night kitchen.
+The product is Operate-mode. Brand lives in material details (gasket, magnets, clipping rotation) while controls stay familiar. Korean and English share one layout. Login is a white doorstep. After you open the door, light is a peach porcelain kitchen; dark is a night kitchen. The pressable magnet is Jeju tangerine by default, or Jeju basalt when that palette is on.
 
 **Key Characteristics:**
-- White login ground; peach porcelain door after sign-in; one Jeju tangerine magnet accent
+- White login ground; peach porcelain door after sign-in; one magnet accent (tangerine by default, basalt as the test swap)
 - Centered capture column on every breakpoint
 - Soft rounded clippings (18px), not razor-square paper and not identical SaaS cards
 - Capture composer first; recency list second
@@ -181,7 +187,8 @@ The product is Operate-mode. Brand lives in material details (gasket, magnets, c
 Restrained palette: one Jeju tangerine plus neutrals in the same hue family. Yellow-gray 미색 made the magnet look dirty. Complementary blue would pop the orange but would not be a kitchen.
 
 ### Primary
-- **Jeju tangerine** (#e56f0a light, #f4a24a dark): Stick, Browse, KO/EN selected, tags, magnet discs, focus companion, FAB. Ink on tangerine is #2a1a08 so small type stays AA.
+- **Jeju tangerine** (#e56f0a light, #f4a24a dark): Default magnet. Stick, Browse, KO/EN selected, tags, magnet discs, focus companion, FAB. Ink on tangerine is #2a1a08 so small type stays AA.
+- **Jeju basalt** (#3a3936 light, #c8c6c1 dark): Test swap for that magnet. Same slots. Ink on dark stone is #f4f3f0; ink on light stone in dark mode is #1c1c1a. Does not retint the kitchen wall.
 
 ### Neutral
 - **Login white** (#ffffff): Light-mode login wall and login sheet. No kitchen glow on the doorstep.
@@ -196,8 +203,17 @@ Restrained palette: one Jeju tangerine plus neutrals in the same hue family. Yel
 - **Manila** (#ebc98a): Document slips.
 - **Disc charcoal** (#3a342e): Audio clippings, one step up from void.
 
+### Palettes
+
+Header switch: **기본** (tangerine magnet) and **현무암** (basalt magnet). Remembered on this device. Light / system / dark still apply. The peach kitchen wall does not change.
+
+- **Kitchen (default):** Magnet `#e56f0a` / dark `#f4a24a`. Current style.
+- **Jeju basalt:** Magnet `#3a3936` / dark `#c8c6c1`. Replaces the orange only: Stick, Browse, selected chips, tags, FAB, brand disc, focus ring. Ground stays porcelain peach / night kitchen.
+
 ### Named Rules
-**The One Magnet Rule.** Tangerine is the only accent. It marks the thing you can press or the tag that names a type. It does not wash backgrounds or glow.
+**The One Magnet Rule.** One accent at a time. It marks the thing you can press or the tag that names a type. It does not wash backgrounds.
+
+**The Two Magnets Rule.** Default magnet is hallabong tangerine. 현무암 swaps that accent to Jeju basalt charcoal. Do not retint enamel, paper, or the kitchen wall when testing basalt. Sample photo SVGs must read `--magnet` (or the matching hex) at paint time; do not bake `#e56f0a`. The 견본 tag is hairline ink, not danger orange.
 
 **The White Doorstep.** Light login is white. The peach kitchen starts after the door opens. Dark login stays a night kitchen, not a white flash.
 
@@ -266,7 +282,7 @@ Hybrid: the login sheet and clippings lift off the kitchen wall with a soft, dif
 ### Shadow Vocabulary
 - **Sheet** (`0 18px 40px rgba(50, 44, 38, 0.08)`): Login card and menus. Dark uses `rgba(0, 0, 0, 0.28)`.
 - **Clipping** (`0 10px 28px rgba(50, 44, 38, 0.06)`): Paper on the door.
-- **FAB** (`0 10px 22px` tangerine-tinted): Magnet floating off the wall.
+- **FAB** (`0 10px 22px` magnet-tinted): Magnet floating off the wall.
 
 ### Named Rules
 **The Offset Rule.** Shadows carry offset and blur. A colored halo is not depth.
@@ -275,13 +291,14 @@ Hybrid: the login sheet and clippings lift off the kitchen wall with a soft, dif
 
 ## Shapes
 
-Soft squircles, not 90-degree stamps. Scale: 10 / 14 / 18 / 24 / 32, pills 999, discs 50%. Login sheet 32px. Composer 24px. Clippings and auth 18px. Stick and + 14px. Language and theme switches, search, and tags are pills. Magnets and FAB stay discs.
+Soft squircles, not 90-degree stamps. Scale: 10 / 14 / 18 / 24 / 32, pills 999, discs 50%. Login sheet 32px. Composer 24px. Clippings and auth 18px. Stick and + 14px. Language, palette, and theme switches, search, and tags are pills. Magnets and FAB stay discs.
 
 Slight clipping rotation (±0.45deg) on every third scrap. That is the fridge, not decoration for its own sake.
 
 ## Components
 
-- **Auth stack:** Apple warm charcoal (#3a342e), Google outlined, Browse tangerine. Vertical, on a 32px login sheet. 48px controls, 18px marks, 15px label. Light login wall is white.
+- **Auth stack:** Apple charcoal, Google outlined, Browse tangerine. Vertical, on a 32px login sheet. 48px controls, 18px marks, 15px label. Light login wall is white.
+- **Palette switch:** Pill track, 40px cells. 기본 (tangerine swatch) and 현무암 (basalt swatch). Swaps the magnet, not the wall. Default is tangerine.
 - **Theme switch:** Light, system, and dark magnets in a pill track, 40px cells, 18px glyphs.
 - **Composer:** 24px shell; 22px +; 15px field; Stick 48px / 14px. Focus ring follows the 24px shell (`:has(.composer-field:focus)`), not a square on the textarea and not a pill.
 - **+ menu:** 40px rows, 18px glyphs, hairline border.
@@ -289,6 +306,7 @@ Slight clipping rotation (±0.45deg) on every third scrap. That is the fridge, n
 - **Search:** 48px capsule, 15px type. Type chips 34px / 13px.
 - **Language magnets:** Pill switch, 40px cells, 13px KO/EN.
 - **FAB:** 48px disc, 24px glyph.
+- **Phish meter:** When Stick detects a web link, the draft shows an on-device URL-shape risk (낮음 / 주의 / 높음). Not a live blocklist and not a guarantee. Compact line on saved link scraps. Mid uses ink, not tangerine. High uses `--danger`.
 
 States required: hover, focus-visible, disabled (Stick), loading (OG skeleton), error (OG fallback copy), empty ("항목이 없습니다." / English equivalent), pressed (`:active` scale), enter/exit for views.
 
