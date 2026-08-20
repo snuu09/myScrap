@@ -32,7 +32,7 @@ One capture surface that inspects what you pasted (text, image, video, audio, UR
 
 ## Capabilities and Constraints
 
-Work order and checkboxes: [ROADMAP.md](ROADMAP.md). Phase 1 (tech debt) then Phase 2 (UI/UX) then Phase 3 (Supabase).
+Work order and checkboxes: [ROADMAP.md](ROADMAP.md). Phase 1 (tech debt) and Phase 2 (UI/UX) are done. Phase 3 (Supabase) is last.
 
 ### Shipped
 
@@ -51,18 +51,15 @@ Confirmed from brief and implemented in this static client:
 - Placeholder: "붙여넣기 할 내용이나 파일을 첨부해주세요."
 - Drag-and-drop analyzes dropped files.
 - Recency-sorted tagged list; empty state; scroll-to-top FAB.
+- Missing-media slip when quota or session-only files lose bytes.
+- Unsaved draft warning; composer auto-grow; light / system / dark.
+- Edit a saved scrap (type, tags, memo).
+- Type chips, tag click-to-filter, light search.
+- Image lightbox; copy URL / save file when media is stored; two-step peel.
 
 [Inferred] This version runs tagging and previews in the browser (MIME, URL, Open Graph fetch, object URLs). No backend, auth provider, or paid AI API is specified; Apple/Google buttons are UI flows that enter the app (demo auth). Data persists in localStorage for the session device.
 
-### Next (Phase 2 UI/UX)
-
-Client-only. No folders, no team chrome. Details in [ROADMAP.md](ROADMAP.md) and open gaps in [DESIGN.md](DESIGN.md).
-
-- Missing-media slip when quota strips a file; no broken previews.
-- Unsaved draft warning; composer auto-grow; return theme to system.
-- Edit a saved scrap (type, tags, memo).
-- Type chips, tag click-to-filter, light search over the recency list.
-- Image lightbox; copy URL / save file when media is stored; peel confirm.
+Phase 1 tech debt and Phase 2 UI/UX are implemented. See [ROADMAP.md](ROADMAP.md).
 
 ### Deferred (Phase 3 Supabase)
 
