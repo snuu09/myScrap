@@ -47,6 +47,7 @@ Static client. With empty [`js/config.js`](js/config.js), Apple / Google / Brows
 - [x] Missing-media slip (filename, extension, size) instead of a broken preview.
 - [x] Unsaved draft warning on Leave and Empty the door. Composer auto-grows. Edit a saved scrap.
 - [x] Type chips, tag click-to-filter, light search. Image lightbox. Copy URL / save file when media is stored.
+- [x] View motion: login ↔ app, draft, + menu, lightbox, clipping snap, FAB. Hover lift and press scale. Honors `prefers-reduced-motion`. See [DESIGN.md](DESIGN.md).
 
 ---
 

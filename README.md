@@ -2,7 +2,7 @@
 
 Personal capture box for things you saw on the web, photos, and files. Static HTML, CSS, and JS. No build step.
 
-Shipped vs next: [ROADMAP.md](ROADMAP.md). Product and design: [PRODUCT.md](PRODUCT.md), [DESIGN.md](DESIGN.md). Folders and layers: [ARCHITECTURE.md](ARCHITECTURE.md).
+Shipped vs next: [ROADMAP.md](ROADMAP.md). Product and design: [PRODUCT.md](PRODUCT.md), [DESIGN.md](DESIGN.md) (includes motion and interaction rules). Folders and layers: [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Open
 

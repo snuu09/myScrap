@@ -28,6 +28,7 @@
   --drop-veil: rgba(243, 238, 230, 0.9);
   --shadow: 0 18px 40px rgba(28, 22, 16, 0.12);
   --shadow-scrap: 0 10px 28px rgba(28, 22, 16, 0.08);
+  --shadow-scrap-hover: 0 14px 32px rgba(28, 22, 16, 0.12);
   --shadow-fab: 0 10px 22px rgba(200, 92, 8, 0.32);
   --google-bg: #fff;
   --google-border: #c9bfb2;
@@ -51,6 +52,11 @@
   --font: "SUIT", "SUIT Variable", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
   --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   --focus: 0 0 0 3px var(--enamel), 0 0 0 5px var(--magnet);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --dur-fast: 140ms;
+  --dur-mid: 220ms;
+  --dur-slow: 320ms;
   color-scheme: light;
 }
 
@@ -84,6 +90,7 @@
   --drop-veil: rgba(34, 30, 26, 0.92);
   --shadow: 0 22px 48px rgba(0, 0, 0, 0.42);
   --shadow-scrap: 0 12px 32px rgba(0, 0, 0, 0.32);
+  --shadow-scrap-hover: 0 16px 36px rgba(0, 0, 0, 0.45);
   --shadow-fab: 0 10px 24px rgba(243, 153, 58, 0.28);
   --google-bg: #2b261f;
   --google-border: #5a534a;
@@ -249,6 +256,7 @@ a:hover {
   min-height: 36px;
   color: var(--muted);
   border-radius: var(--radius-pill);
+  transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 }
 
 .theme-switch button {
@@ -376,7 +384,8 @@ a:hover {
   border: 1px solid transparent;
   padding: 10px 16px;
   font-weight: 650;
-  transition: background-color 160ms ease, filter 160ms ease, border-color 160ms ease;
+  transition: background-color var(--dur-fast) var(--ease-out), filter var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 }
 
 .auth-btn svg {
@@ -414,6 +423,14 @@ a:hover {
   background: var(--magnet-deep);
 }
 
+.auth-btn:active,
+.send-btn:active,
+.icon-btn:active,
+.draft-save:active,
+.draft-cancel:active {
+  transform: scale(0.98);
+}
+
 .freezer-band {
   background: transparent;
   margin: 0 0 20px;
@@ -434,6 +451,7 @@ a:hover {
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-scrap);
   padding: 10px;
+  transition: background-color var(--dur-fast) var(--ease-out), outline-color var(--dur-fast) var(--ease-out);
 }
 
 .composer.is-drop {
@@ -474,11 +492,17 @@ a:hover {
   place-items: center;
   padding: 0;
   border-radius: var(--radius-sm);
+  transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 }
 
 .icon-btn svg {
   width: 20px;
   height: 20px;
+}
+
+.icon-btn:hover {
+  background: var(--enamel-deep);
 }
 
 .icon-btn[aria-expanded="true"] {
@@ -512,6 +536,8 @@ a:hover {
   font-weight: 700;
   white-space: nowrap;
   border-radius: var(--radius-sm);
+  transition: background-color var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out);
 }
 
 .send-btn:hover {
@@ -521,6 +547,10 @@ a:hover {
 .send-btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+.send-btn:disabled:active {
+  transform: none;
 }
 
 .add-menu {
@@ -534,6 +564,7 @@ a:hover {
   padding: 8px;
   z-index: 8;
   border-radius: var(--radius-md);
+  transform-origin: 16px 100%;
 }
 
 .add-menu button {
@@ -756,6 +787,7 @@ a:hover {
   color: var(--ink);
   font-weight: 650;
   border-radius: var(--radius-sm);
+  transition: background-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 }
 
 .draft-save {
@@ -766,6 +798,7 @@ a:hover {
   color: var(--magnet-ink);
   font-weight: 700;
   border-radius: var(--radius-sm);
+  transition: background-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 }
 
 .draft-save:hover {
@@ -821,6 +854,13 @@ a:hover {
   font-size: 0.75rem;
   font-weight: 700;
   font-family: inherit;
+  transition: background-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
+}
+
+.type-chips button:active,
+.tag-filter-bar button:active {
+  transform: scale(0.96);
 }
 
 .type-chips button[aria-pressed="true"],
@@ -943,7 +983,7 @@ a:hover {
 .scrap {
   position: relative;
   width: 100%;
-  animation: magnet-snap 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  animation: magnet-snap var(--dur-mid) var(--ease-out);
 }
 
 .scrap-body {
@@ -953,6 +993,7 @@ a:hover {
   box-shadow: var(--shadow-scrap);
   padding: 16px 16px 14px;
   overflow: hidden;
+  transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
 }
 
 .scrap:nth-child(3n) .scrap-body {
@@ -1209,6 +1250,24 @@ a:hover {
   z-index: 12;
   display: grid;
   place-items: center;
+  opacity: 0;
+  transform: translateY(10px) scale(0.92);
+  pointer-events: none;
+  visibility: hidden;
+  transition: opacity var(--dur-mid) var(--ease-out), transform var(--dur-mid) var(--ease-out),
+    visibility var(--dur-mid) var(--ease-out), background-color var(--dur-fast) var(--ease-out);
+}
+
+.to-top.is-shown {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+  visibility: visible;
+}
+
+.lightbox-close:active,
+.to-top.is-shown:active {
+  transform: scale(0.96);
 }
 
 .to-top svg {
@@ -1246,6 +1305,131 @@ a:hover {
     transform: none;
     filter: none;
     opacity: 1;
+  }
+}
+
+@keyframes sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes sheet-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(10px) scale(0.99);
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes pop-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(6px) scale(0.97);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes zoom-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+#view-login.is-enter,
+#view-app.is-enter,
+.draft-panel.is-enter {
+  animation: sheet-in var(--dur-mid) var(--ease-out) both;
+}
+
+#view-login.is-exit,
+#view-app.is-exit,
+.draft-panel.is-exit {
+  animation: sheet-out var(--dur-fast) var(--ease-in) both;
+}
+
+.add-menu.is-enter {
+  animation: pop-in var(--dur-fast) var(--ease-out) both;
+}
+
+.add-menu.is-exit {
+  animation: pop-out var(--dur-fast) var(--ease-in) both;
+}
+
+.lightbox.is-enter {
+  animation: fade-in var(--dur-mid) var(--ease-out) both;
+}
+
+.lightbox.is-exit {
+  animation: fade-out var(--dur-fast) var(--ease-in) both;
+}
+
+.lightbox.is-enter img {
+  animation: zoom-in var(--dur-mid) var(--ease-out) both;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .scrap:hover .scrap-body {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-scrap-hover);
+  }
+
+  .scrap:nth-child(3n):hover .scrap-body {
+    transform: translateY(-3px) rotate(-0.45deg);
+  }
+
+  .scrap:nth-child(3n + 1):hover .scrap-body {
+    transform: translateY(-3px) rotate(0.35deg);
+  }
+
+  .type-chips button:hover,
+  .tag-filter-bar button:hover {
+    border-color: var(--magnet);
   }
 }
 
@@ -1390,7 +1574,19 @@ a:hover {
   }
 
   .scrap:nth-child(3n) .scrap-body,
-  .scrap:nth-child(3n + 1) .scrap-body {
+  .scrap:nth-child(3n + 1) .scrap-body,
+  .scrap:hover .scrap-body,
+  .scrap:nth-child(3n):hover .scrap-body,
+  .scrap:nth-child(3n + 1):hover .scrap-body {
     transform: none;
+  }
+
+  .to-top {
+    transform: none;
+  }
+
+  .to-top:not(.is-shown) {
+    opacity: 0;
+    visibility: hidden;
   }
 }

@@ -88,4 +88,4 @@ No real user content, brand assets, or Open Graph corpus. Demonstration scraps m
 
 ## Accessibility & Inclusion
 
-[Inferred] Keyboard access to composer, + menu, list, and language switch. Visible focus. WCAG AA contrast. Honor `prefers-reduced-motion` for hover-play and motion. Camera control is mobile-only and must not appear as a dead desktop action.
+[Inferred] Keyboard access to composer, + menu, list, and language switch. Visible focus. WCAG AA contrast. Honor `prefers-reduced-motion` for hover-play and view motion. Camera control is mobile-only and must not appear as a dead desktop action. Motion and pointer rules: [DESIGN.md](DESIGN.md).
