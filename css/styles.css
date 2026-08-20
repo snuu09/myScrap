@@ -51,7 +51,6 @@
   --text-ui: 0.9375rem;
   --text-caption: 0.8125rem;
   --text-micro: 0.75rem;
-  --icon-xs: 16px;
   --icon-sm: 18px;
   --icon-md: 22px;
   --icon-lg: 24px;
@@ -429,8 +428,8 @@ html[data-theme="light"] .login-panel {
 }
 
 .auth-btn svg {
-  width: var(--icon-xs);
-  height: var(--icon-xs);
+  width: var(--icon-sm);
+  height: var(--icon-sm);
   flex-shrink: 0;
 }
 

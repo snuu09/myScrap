@@ -73,7 +73,6 @@ typography:
     lineHeight: 1.3
     letterSpacing: "0.01em"
 icons:
-  xs: "16px"
   sm: "18px"
   md: "22px"
   lg: "24px"
@@ -226,12 +225,11 @@ Body is 16px / 1.5. UI copy on controls is 15px so Hangul still fits in 48px. 12
 
 | Token | Size | Use |
 | --- | --- | --- |
-| xs | 16px | Apple/Google auth marks |
-| sm | 18px | Theme glyphs, menu items, peel/edit, magnet disc, brand mark |
+| sm | 18px | Theme glyphs, menu items, peel/edit, magnet disc, brand mark, Apple/Google auth |
 | md | 22px | + button, lightbox close |
 | lg | 24px | FAB |
 
-The glyph is smaller than the hit target. Auth marks are 16px in a 48px control so they sit with 15px labels. Do not size brand logos at `--icon-md`.
+The glyph is smaller than the hit target. Auth marks stay at the original 18px (`--icon-sm`) in a 48px control.
 
 ### Controls (`--control-*`)
 
@@ -283,7 +281,7 @@ Slight clipping rotation (±0.45deg) on every third scrap. That is the fridge, n
 
 ## Components
 
-- **Auth stack:** Apple warm charcoal (#3a342e), Google outlined, Browse tangerine. Vertical, on a 32px login sheet. 48px controls, 16px marks, 15px label. Light login wall is white.
+- **Auth stack:** Apple warm charcoal (#3a342e), Google outlined, Browse tangerine. Vertical, on a 32px login sheet. 48px controls, 18px marks, 15px label. Light login wall is white.
 - **Theme switch:** Light, system, and dark magnets in a pill track, 40px cells, 18px glyphs.
 - **Composer:** Pill bar; 22px +; 15px field; Stick 48px. Focus ring follows the capsule (`:has(.composer-field:focus)`), not a square around the textarea.
 - **+ menu:** 40px rows, 18px glyphs, hairline border.
