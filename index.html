@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" data-surface="login">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#f7f3ec" />
+    <meta name="theme-color" content="#ffffff" />
     <title>myScrap</title>
     <meta
       name="description"
@@ -19,6 +19,9 @@
             (stored !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
           document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
           document.documentElement.style.colorScheme = dark ? "dark" : "light";
+          if (localStorage.getItem("myscrap.session")) {
+            document.documentElement.setAttribute("data-surface", "app");
+          }
         } catch (e) {}
       })();
     </script>
@@ -31,7 +34,7 @@
   <body>
     <!--
       THESIS: A kitchen fridge door that holds whatever you just grabbed from the web or camera, not a notes sidebar of equal cards and not an AI chat on cream.
-      OWN-WORLD: Warm enamel field, rubber gasket, stainless handle, Jeju tangerine disc magnets as tags, mixed clipping sizes. SUIT grotesque. Graphite ink. One hallabong accent. Light kitchen and night kitchen.
+      OWN-WORLD: White login doorstep, peach porcelain fridge field, rubber gasket, stainless handle, Jeju tangerine disc magnets as tags, mixed clipping sizes. SUIT grotesque. Graphite ink. One hallabong accent. Night kitchen after dark.
       STORY: Open the door (sign in or browse), stick something in the freezer-band composer, and it snaps onto the door already tagged.
       FIRST VIEWPORT: Centered enamel door; vinyl myScrap top-left; personal capture line; Apple, Google, then Browse as the gasket pull. Language and light/dark magnets top-right.
       FORM: Fridge-door collage (grounded list #4). Seed 6b82be51. Centered column, tangerine magnets.
