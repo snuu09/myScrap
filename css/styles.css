@@ -118,6 +118,72 @@
   color-scheme: dark;
 }
 
+[data-palette="basalt"] {
+  --enamel: #f1f0ed;
+  --enamel-deep: #e4e3df;
+  --enamel-ink: #cccbc7;
+  --gasket: #4a4946;
+  --gasket-soft: #b8b6b1;
+  --ink: #2c2c2a;
+  --ink-soft: #4e4d4a;
+  --muted: #6c6b67;
+  --handle-hi: #f1f0ed;
+  --handle-mid: #b8b6b1;
+  --handle-lo: #7a7974;
+  --paper: #ffffff;
+  --paper-line: #d8d6d1;
+  --photo-mat: #f6f5f2;
+  --manila: #cfcbc3;
+  --manila-ink: #3f3e3a;
+  --disc: #2c2c2a;
+  --disc-ink: #f1f0ed;
+  --kitchen-hi: #eceae6;
+  --kitchen-lo: #dddbd6;
+  --kitchen-glow: rgba(44, 44, 42, 0.08);
+  --drop-veil: rgba(241, 240, 237, 0.92);
+  --shadow: 0 18px 40px rgba(44, 44, 42, 0.1);
+  --shadow-scrap: 0 10px 28px rgba(44, 44, 42, 0.07);
+  --shadow-scrap-hover: 0 14px 32px rgba(44, 44, 42, 0.11);
+  --google-border: #cccbc7;
+  --apple-bg: #2c2c2a;
+  --apple-ink: #f1f0ed;
+  --composer-border: #d8d6d1;
+}
+
+[data-palette="basalt"][data-theme="dark"] {
+  --enamel: #2a2a28;
+  --enamel-deep: #222220;
+  --enamel-ink: #4a4946;
+  --gasket: #121211;
+  --gasket-soft: #6c6b67;
+  --ink: #ecebe8;
+  --ink-soft: #c8c6c1;
+  --muted: #b4b2ad;
+  --handle-hi: #4a4946;
+  --handle-mid: #6c6b67;
+  --handle-lo: #121211;
+  --paper: #323230;
+  --paper-line: #4a4946;
+  --photo-mat: #2e2e2c;
+  --manila: #8a857c;
+  --manila-ink: #1a1917;
+  --disc: #1c1c1a;
+  --disc-ink: #ecebe8;
+  --kitchen-hi: #1c1c1a;
+  --kitchen-lo: #141413;
+  --kitchen-glow: rgba(236, 235, 232, 0.06);
+  --drop-veil: rgba(42, 42, 40, 0.92);
+  --shadow: 0 22px 48px rgba(0, 0, 0, 0.32);
+  --shadow-scrap: 0 12px 32px rgba(0, 0, 0, 0.24);
+  --shadow-scrap-hover: 0 16px 36px rgba(0, 0, 0, 0.34);
+  --google-bg: #323230;
+  --google-border: #6c6b67;
+  --apple-bg: #ecebe8;
+  --apple-ink: #2c2c2a;
+  --composer-border: #4a4946;
+  --login-wall: #1c1c1a;
+}
+
 *,
 *::before,
 *::after {
@@ -268,7 +334,8 @@ a:hover {
 }
 
 .lang-switch,
-.theme-switch {
+.theme-switch,
+.palette-switch {
   display: flex;
   border: 1px solid var(--hairline);
   background: var(--paper);
@@ -278,7 +345,8 @@ a:hover {
 }
 
 .lang-switch button,
-.theme-switch button {
+.theme-switch button,
+.palette-switch button {
   border: 0;
   background: transparent;
   padding: 5px 12px;
@@ -303,8 +371,33 @@ a:hover {
   height: var(--icon-sm);
 }
 
+.palette-switch button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+}
+
+.palette-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.palette-dot-kitchen {
+  background: #fff7f2;
+  box-shadow: 0 0 0 1px #ead8cc, inset 0 0 0 2px #e56f0a;
+}
+
+.palette-dot-basalt {
+  background: #2c2c2a;
+  box-shadow: 0 0 0 1px #b8b6b1;
+}
+
 .lang-switch button[aria-pressed="true"],
-.theme-switch button[aria-pressed="true"] {
+.theme-switch button[aria-pressed="true"],
+.palette-switch button[aria-pressed="true"] {
   background: var(--magnet);
   color: var(--magnet-ink);
 }
@@ -1601,7 +1694,8 @@ html[data-theme="light"] .login-panel {
   }
 
   .lang-switch button,
-  .theme-switch button {
+  .theme-switch button,
+  .palette-switch button {
     min-width: var(--control-sm);
     padding: 5px 8px;
   }

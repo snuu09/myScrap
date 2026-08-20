@@ -1,10 +1,11 @@
 (function (global) {
   // Persist adapter. Call sites must use MyScrapStorage only.
   // When js/config.js has a real URL and anon key, scraps go through MyScrapBackend (Supabase).
-  // Language and theme always stay on this device.
+  // Language, theme, and color palette always stay on this device.
   const KEYS = {
     lang: "myscrap.lang",
     theme: "myscrap.theme",
+    palette: "myscrap.palette",
     session: "myscrap.session",
     scraps: "myscrap.scraps",
   };
@@ -51,6 +52,16 @@
       return;
     }
     localStorage.removeItem(KEYS.theme);
+  }
+
+  function getPalette() {
+    const stored = localStorage.getItem(KEYS.palette);
+    return stored === "basalt" ? "basalt" : "kitchen";
+  }
+
+  function setPalette(palette) {
+    if (palette === "basalt") localStorage.setItem(KEYS.palette, "basalt");
+    else localStorage.removeItem(KEYS.palette);
   }
 
   function getSession() {
@@ -166,6 +177,8 @@
     setLang,
     getTheme,
     setTheme,
+    getPalette,
+    setPalette,
     getSession,
     setSession,
     clearSession,

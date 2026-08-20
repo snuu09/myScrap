@@ -40,7 +40,7 @@ Static client. With empty [`js/config.js`](js/config.js), Apple / Google / Brows
 ### List and chrome
 
 - [x] Recency list, newest first. Peel (delete) one item with a two-step confirm. Empty the door with a two-step confirm.
-- [x] KO / EN in one layout. Light / system / dark. Follows the system until the user picks light or dark. Can return to system. Remembered on this device. Type / icon / control scale, white login, peach kitchen: [DESIGN.md](DESIGN.md).
+- [x] KO / EN in one layout. Light / system / dark. Color ground: kitchen (default) or Jeju basalt. Follows the system until the user picks light or dark. Can return to system. Remembered on this device. Type / icon / control scale, white login, peach kitchen: [DESIGN.md](DESIGN.md).
 - [x] Empty state ("항목이 없습니다." / English equivalent). Scroll-to-top FAB when not at the top.
 - [x] Skip link, visible focus, `prefers-reduced-motion`.
 - [x] Persist scraps in `localStorage` (~4.2MB budget) when keys are empty. Large files may stay session-only. Over quota, media data URLs are stripped. With keys and a signed-in user, scraps go to Postgres and media to a private Storage bucket.
@@ -82,16 +82,17 @@ Storage stays [`js/storage.js`](js/storage.js) + `localStorage`. Document the ke
 - [x] **`storedMedia` consistency.** When quota stripping sets `storedMedia: false` or deletes `dataUrl`, the in-memory scrap and the persisted copy must match. Do not leave a data URL in memory that will vanish on reload, or a list item that still points at a stripped URL. Empty-media UI is Phase 2.
 - [x] **Clipboard double ingest.** The clipboard loop can ingest both an image and `text/plain` from the same item. Prefer file/image; only ingest text when no file was used.
 - [x] **Stick disabled.** [`.send-btn:disabled`](css/styles.css) exists but the button never disables. Disable when the composer is empty; empty submit is a no-op.
-- [x] **Storage adapter boundary.** Keep `MyScrapStorage` as the only persist API (`getLang` / `setLang` / `getTheme` / `setTheme` / session / `loadScraps` / `saveScraps`). Do not leak `localStorage` keys into [`js/app.js`](js/app.js). Phase 3 replaces the implementation, not the call sites.
+- [x] **Storage adapter boundary.** Keep `MyScrapStorage` as the only persist API (`getLang` / `setLang` / `getTheme` / `setTheme` / `getPalette` / `setPalette` / session / `loadScraps` / `saveScraps`). Do not leak `localStorage` keys into [`js/app.js`](js/app.js). Phase 3 replaces the implementation, not the call sites.
 
 ### Storage key contract
 
-Language and theme always stay on this device. Session and scraps stay in `localStorage` until [`js/config.js`](js/config.js) has a real URL and anon key **and** the user is signed in. Then `MyScrapBackend` owns scraps; demo `myscrap.session` is ignored.
+Language, theme, and color palette always stay on this device. Session and scraps stay in `localStorage` until [`js/config.js`](js/config.js) has a real URL and anon key **and** the user is signed in. Then `MyScrapBackend` owns scraps; demo `myscrap.session` is ignored.
 
 | Key | Value |
 | --- | --- |
 | `myscrap.lang` | `"ko"` \| `"en"` |
 | `myscrap.theme` | `"light"` \| `"dark"` (missing = follow system) |
+| `myscrap.palette` | `"basalt"` (missing = kitchen / default) |
 | `myscrap.session` | `{ method, enteredAt }` demo session (local path only) |
 | `myscrap.scraps` | JSON array of scrap objects (local path; one-time migrate when remote is empty) |
 | `myscrap.migratedUser` | last Supabase user id that already received the local copy |

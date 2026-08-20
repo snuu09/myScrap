@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko" data-surface="login">
+<html lang="ko" data-surface="login" data-palette="kitchen">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -22,6 +22,9 @@
           if (localStorage.getItem("myscrap.session")) {
             document.documentElement.setAttribute("data-surface", "app");
           }
+          if (localStorage.getItem("myscrap.palette") === "basalt") {
+            document.documentElement.setAttribute("data-palette", "basalt");
+          }
         } catch (e) {}
       })();
     </script>
@@ -36,7 +39,7 @@
       THESIS: A kitchen fridge door that holds whatever you just grabbed from the web or camera, not a notes sidebar of equal cards and not an AI chat on cream.
       OWN-WORLD: White login doorstep, peach porcelain fridge field, rubber gasket, stainless handle, Jeju tangerine disc magnets as tags, mixed clipping sizes. SUIT grotesque. Graphite ink. One hallabong accent. Night kitchen after dark.
       STORY: Open the door (sign in or browse), stick something in the freezer-band composer, and it snaps onto the door already tagged.
-      FIRST VIEWPORT: Centered enamel door; vinyl myScrap top-left; personal capture line; Apple, Google, then Browse as the gasket pull. Language and light/dark magnets top-right.
+      FIRST VIEWPORT: Centered enamel door; vinyl myScrap top-left; personal capture line; Apple, Google, then Browse as the gasket pull. Language, color ground (kitchen / basalt), and light/dark magnets top-right.
       FORM: Fridge-door collage (grounded list #4). Seed 6b82be51. Centered column, tangerine magnets.
       FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
     -->
@@ -51,6 +54,16 @@
           <div class="lang-switch" role="group" data-i18n-aria="langSwitch" aria-label="언어">
             <button type="button" data-lang="ko" aria-pressed="true">KO</button>
             <button type="button" data-lang="en" aria-pressed="false">EN</button>
+          </div>
+          <div class="palette-switch" role="group" data-i18n-aria="paletteSwitch" aria-label="컬러 테마">
+            <button type="button" data-palette-choice="kitchen" aria-pressed="true" data-i18n-aria="paletteKitchen" aria-label="기본">
+              <span class="palette-dot palette-dot-kitchen" aria-hidden="true"></span>
+              <span data-i18n="paletteKitchen">기본</span>
+            </button>
+            <button type="button" data-palette-choice="basalt" aria-pressed="false" data-i18n-aria="paletteBasalt" aria-label="현무암">
+              <span class="palette-dot palette-dot-basalt" aria-hidden="true"></span>
+              <span data-i18n="paletteBasalt">현무암</span>
+            </button>
           </div>
           <div class="theme-switch" role="group" data-i18n-aria="themeSwitch" aria-label="화면 모드">
             <button type="button" data-theme-choice="light" aria-pressed="false" data-i18n-aria="themeLight" aria-label="라이트">

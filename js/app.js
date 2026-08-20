@@ -8,6 +8,7 @@
   const els = {};
   let lang = "ko";
   let themePref = "system";
+  let palettePref = "kitchen";
   let scraps = [];
   let draft = null;
   let fileQueue = [];
@@ -101,15 +102,20 @@
 
   function applyTheme() {
     const resolved = resolvedTheme();
+    const palette = palettePref === "basalt" ? "basalt" : "kitchen";
     document.documentElement.setAttribute("data-theme", resolved);
+    document.documentElement.setAttribute("data-palette", palette);
     document.documentElement.style.colorScheme = resolved;
     const meta = document.querySelector('meta[name="theme-color"]');
     const surface = document.documentElement.getAttribute("data-surface") || "login";
     if (meta) {
-      const light = surface === "login" ? "#ffffff" : "#fff7f2";
-      meta.setAttribute("content", resolved === "dark" ? "#302b26" : light);
+      let color = "#ffffff";
+      if (resolved === "dark") color = palette === "basalt" ? "#1c1c1a" : "#302b26";
+      else if (surface !== "login") color = palette === "basalt" ? "#eceae6" : "#fff7f2";
+      meta.setAttribute("content", color);
     }
     syncThemeButtons();
+    syncPaletteButtons();
   }
 
   function setSurface(name) {
@@ -123,10 +129,22 @@
     });
   }
 
+  function syncPaletteButtons() {
+    $all("[data-palette-choice]").forEach((btn) => {
+      btn.setAttribute("aria-pressed", btn.getAttribute("data-palette-choice") === palettePref ? "true" : "false");
+    });
+  }
+
   function setTheme(next) {
     if (next === "system") themePref = "system";
     else themePref = next === "dark" ? "dark" : "light";
     storage.setTheme(themePref);
+    applyTheme();
+  }
+
+  function setPalette(next) {
+    palettePref = next === "basalt" ? "basalt" : "kitchen";
+    storage.setPalette(palettePref);
     applyTheme();
   }
 
@@ -1521,6 +1539,9 @@
     $all("[data-theme-choice]").forEach((btn) => {
       btn.addEventListener("click", () => setTheme(btn.getAttribute("data-theme-choice")));
     });
+    $all("[data-palette-choice]").forEach((btn) => {
+      btn.addEventListener("click", () => setPalette(btn.getAttribute("data-palette-choice")));
+    });
     $all("[data-auth]").forEach((btn) => {
       btn.addEventListener("click", () => requestAuth(btn.getAttribute("data-auth")));
     });
@@ -1647,6 +1668,7 @@
     reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     lang = storage.getLang();
     themePref = storage.getTheme();
+    palettePref = storage.getPalette();
     bind();
     applyTheme();
     updateStick();

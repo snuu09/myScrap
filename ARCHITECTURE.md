@@ -60,7 +60,7 @@ Scripts are IIFE modules that hang a `MyScrap*` object on `window`. Load order i
 4. **Save.** `MyScrapStorage.saveScraps`. Local path: JSON in `myscrap.scraps` with a ~4.2MB budget. Remote path: row in `public.scraps`, bytes in `scrap-media/{userId}/{scrapId}/`.
 5. **List.** Newest first in the client. Filters and search are view-only. Remote tabs reload on visibility and on realtime.
 
-Language and theme stay on this device in both paths. The inline theme boot script in `index.html` reads `myscrap.theme` before CSS so the first paint does not flash. That is the one intentional bypass of `MyScrapStorage`.
+Language, theme, and color palette stay on this device in both paths. The inline boot script in `index.html` reads `myscrap.theme` and `myscrap.palette` before CSS so the first paint does not flash. That is the one intentional bypass of `MyScrapStorage`.
 
 ## What this is not
 
