@@ -92,7 +92,7 @@
     }
     if (["mp4", "webm", "mov", "m4v", "ogv"].includes(ext)) return "video";
     if (["mp3", "wav", "m4a", "ogg", "aac", "flac", "opus"].includes(ext)) return "audio";
-    return ext ? "document" : "document";
+    return "unknown";
   }
 
   function tagsFor(type, extra) {
@@ -145,9 +145,12 @@
     const filename = file.name || "file";
     const mime = file.type || "";
     const extension = extOf(filename);
-    const type = typeFromMime(mime, filename);
+    const rawType = typeFromMime(mime, filename);
+    const unknown = rawType === "unknown";
+    const type = unknown ? "document" : rawType;
     let domain = "";
     const tags = tagsFor(type, { extension });
+    if (unknown) tags.push("unknown");
     return {
       type,
       filename,
@@ -156,6 +159,7 @@
       size: file.size || 0,
       tags,
       domain,
+      unknown,
     };
   }
 

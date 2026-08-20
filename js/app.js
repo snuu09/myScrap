@@ -108,9 +108,34 @@
 
   function persist() {
     const result = storage.saveScraps(scraps);
+    if (result.ok && result.scraps) {
+      scraps = mergePersisted(scraps, result.scraps);
+    }
     if (!result.ok) showStatus(t("errorQuota"));
     else if (result.quota) showStatus(t("errorQuota"), "info");
     return result.ok;
+  }
+
+  function mergePersisted(live, saved) {
+    const byId = new Map(saved.map((item) => [item.id, item]));
+    return live.map((item) => {
+      const next = byId.get(item.id);
+      if (!next) return item;
+      if (item.ephemeral) {
+        return Object.assign({}, item, { storedMedia: false });
+      }
+      return Object.assign({}, item, {
+        storedMedia: next.storedMedia !== false,
+        dataUrl: next.dataUrl || "",
+        posterUrl: next.posterUrl || "",
+        og: next.og || null,
+      });
+    });
+  }
+
+  function updateStick() {
+    if (!els.sendBtn || !els.input) return;
+    els.sendBtn.disabled = !els.input.value.trim();
   }
 
   function isAppOpen() {
@@ -542,7 +567,7 @@
       showStatus(fileQueue.length ? t("queued", { n: fileQueue.length }) : "");
     } catch (err) {
       patchWorking(scrap.id, { analyzing: false, error: "file" });
-      showStatus(t("errorQuota"));
+      showStatus(t("errorFile"));
     }
   }
 
@@ -603,19 +628,21 @@
         const items = await navigator.clipboard.read();
         let used = false;
         for (const item of items) {
-          for (const type of item.types) {
-            if (type.startsWith("image/")) {
-              const blob = await item.getType(type);
-              const file = new File([blob], "clipboard.png", { type: blob.type || "image/png" });
-              ingestFile(file);
+          const types = item.types || [];
+          const imageType = types.find((type) => type.startsWith("image/"));
+          if (imageType) {
+            const blob = await item.getType(imageType);
+            const file = new File([blob], "clipboard.png", { type: blob.type || "image/png" });
+            ingestFile(file);
+            used = true;
+            continue;
+          }
+          if (types.includes("text/plain")) {
+            const blob = await item.getType("text/plain");
+            const text = await blob.text();
+            if (text.trim()) {
+              ingestText(text);
               used = true;
-            } else if (type === "text/plain") {
-              const blob = await item.getType(type);
-              const text = await blob.text();
-              if (text.trim()) {
-                ingestText(text);
-                used = true;
-              }
             }
           }
         }
@@ -702,7 +729,6 @@
         if (value == null || value === false) return;
         if (key === "class") node.setAttribute("class", value);
         else if (key === "text") node.textContent = value;
-        else if (key === "html") node.innerHTML = value;
         else if (key.slice(0, 2) === "on") node.addEventListener(key.slice(2), value);
         else if (key === "dataset") {
           Object.keys(value).forEach((d) => {
@@ -732,7 +758,7 @@
     };
     wrap.addEventListener("pointerenter", () => {
       if (reducedMotion) return;
-      if (wrap.matches(":hover") || true) play();
+      play();
     });
     wrap.addEventListener("pointerleave", stop);
     wrap.addEventListener("click", (ev) => {
@@ -917,8 +943,13 @@
 
   function onSubmit(ev) {
     ev.preventDefault();
-    const value = els.input.value;
+    const value = (els.input.value || "").trim();
+    if (!value) {
+      updateStick();
+      return;
+    }
     els.input.value = "";
+    updateStick();
     ingestText(value);
   }
 
@@ -996,6 +1027,7 @@
     els.filePhoto = $("#file-photo");
     els.fileCamera = $("#file-camera");
     els.fileAny = $("#file-any");
+    els.sendBtn = $("#send-btn");
   }
 
   function bind() {
@@ -1048,6 +1080,7 @@
         items[menuIndex].focus();
       }
     });
+    els.input.addEventListener("input", updateStick);
     els.input.addEventListener("keydown", (ev) => {
       if (ev.key === "Enter" && !ev.shiftKey) {
         ev.preventDefault();
@@ -1109,6 +1142,7 @@
     bind();
     applyTheme();
     applyI18n();
+    updateStick();
     updateCameraItem();
     if (storage.getSession()) enterApp(storage.getSession().method);
     else {
