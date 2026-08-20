@@ -45,17 +45,17 @@ flowchart TB
 | View | [`index.html`](index.html), [`css/styles.css`](css/styles.css), [`assets/`](assets/) | Markup, chrome, fridge-door CSS. Semantic `header` / `main` / `footer`. |
 | Config | [`js/config.js`](js/config.js) | Project URL and anon key. Empty or `YOUR_*` keeps the local path. Never `service_role`. |
 | App | [`js/app.js`](js/app.js) | Controller: events, draft, list, auth UI. Talks to storage and services only. |
-| Services | [`js/i18n.js`](js/i18n.js), [`js/tagger.js`](js/tagger.js), [`js/og.js`](js/og.js), [`js/preview.js`](js/preview.js) | Copy, classify, Open Graph, media/document preview. |
+| Services | [`js/i18n.js`](js/i18n.js), [`js/tagger.js`](js/tagger.js), [`js/phish.js`](js/phish.js), [`js/og.js`](js/og.js), [`js/preview.js`](js/preview.js) | Copy, classify, on-device URL-shape phishing check, Open Graph, media/document preview. |
 | Persist adapter | [`js/storage.js`](js/storage.js) | The only persist API for the app. Lang/theme always local. Scraps local or remote. |
 | Remote client | [`js/backend.js`](js/backend.js) | Supabase auth, upsert, signed URLs, migrate, realtime. Inactive until config is filled **and** a user is signed in. |
 | Backend | [`supabase/`](supabase/) | `public.scraps` + RLS, private `scrap-media` bucket, `og-preview` function. |
 
-Scripts are IIFE modules that hang a `MyScrap*` object on `window`. Load order in `index.html` is the dependency order: config → supabase-js CDN → backend → i18n → storage → tagger → og → preview → app.
+Scripts are IIFE modules that hang a `MyScrap*` object on `window`. Load order in `index.html` is the dependency order: config → supabase-js CDN → backend → i18n → storage → tagger → phish → og → preview → app.
 
 ## Data flow
 
 1. **Entry.** Login view. Empty config: demo session in `myscrap.session`. Filled config: OAuth or anonymous auth via `MyScrapBackend`.
-2. **Capture.** Composer paste/drop/`+` menu. `MyScrapTagger` sets type and tags. Draft stays in memory until save.
+2. **Capture.** Composer paste/drop/`+` menu. `MyScrapTagger` sets type and tags. If the scrap is a web link, `MyScrapPhish.assess` scores the URL shape in the draft (not persisted). Draft stays in memory until save.
 3. **Preview.** Images/video/audio/docs through `MyScrapPreview`. Links through `MyScrapOg` (Edge Function when signed in, else public proxies).
 4. **Save.** `MyScrapStorage.saveScraps`. Local path: JSON in `myscrap.scraps` with a ~4.2MB budget. Remote path: row in `public.scraps`, bytes in `scrap-media/{userId}/{scrapId}/`.
 5. **List.** Newest first in the client. Filters and search are view-only. Remote tabs reload on visibility and on realtime.

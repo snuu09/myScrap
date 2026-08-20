@@ -43,6 +43,7 @@ Confirmed from brief and implemented in this static client:
 - Auto-tag pasted/dropped content by type: text, image, video, audio, link, document extension.
 - Classify-then-save draft (type, tags, memo, preview) before the item hits the recency list.
 - Link: Open Graph preview and basic site info.
+- Link drafts show an on-device phishing-risk meter (URL shape only). Compact mark on saved link scraps.
 - Image: show the image.
 - Video: thumbnail; play on hover.
 - Audio: thumbnail; play on hover.
@@ -72,7 +73,7 @@ Server-side AI tagging stays optional.
 
 - Product name: myScrap (repository).
 - Voice: personal capture box, not a team knowledge base or research lab. Functional Korean/English UI copy; user-supplied placeholder and empty-state strings are binding.
-- Main color: Jeju tangerine (hallabong). Light and dark modes are required.
+- Main color: Jeju tangerine (hallabong) magnet by default. 현무암 swaps that accent to Jeju basalt. Light and dark modes are required.
 
 ## Evidence on Hand
 

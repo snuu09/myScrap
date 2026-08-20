@@ -26,6 +26,7 @@ Static client. With empty [`js/config.js`](js/config.js), Apple / Google / Brows
 - [x] Composer: paste text or a URL, Enter to stick, drag-and-drop on the input.
 - [x] `+` menu: clipboard, photo pick, file attach. Camera only on coarse pointers or viewports under 721px.
 - [x] Classify-then-save draft: detected type, editable label, add/remove tags, memo, preview, save or cancel.
+- [x] Link drafts show an on-device phishing-risk meter (URL shape only). Compact mark on saved link scraps.
 - [x] Multi-file queue while a draft is open.
 - [x] Sample scraps labeled Sample / 견본. Toggle to show or clear them.
 

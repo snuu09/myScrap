@@ -68,6 +68,8 @@
   --font: "SUIT", "SUIT Variable", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
   --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   --focus: 0 0 0 3px var(--enamel), 0 0 0 5px var(--magnet);
+  --kitchen-magnet: #e56f0a;
+  --basalt-magnet: #3a3936;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in: cubic-bezier(0.4, 0, 1, 1);
   --dur-fast: 140ms;
@@ -336,13 +338,13 @@ a:hover {
 }
 
 .palette-dot-kitchen {
-  background: #e56f0a;
-  box-shadow: 0 0 0 1px #ead8cc;
+  background: var(--kitchen-magnet);
+  box-shadow: 0 0 0 1px var(--hairline);
 }
 
 .palette-dot-basalt {
-  background: #3a3936;
-  box-shadow: 0 0 0 1px #b8b6b1;
+  background: var(--basalt-magnet);
+  box-shadow: 0 0 0 1px var(--hairline);
 }
 
 .lang-switch button[aria-pressed="true"],
@@ -829,6 +831,75 @@ html[data-theme="light"] .login-panel {
   margin-top: 1px;
 }
 
+.phish-meter {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--hairline);
+  background: var(--enamel);
+  border-radius: var(--radius-sm);
+}
+
+.phish-meter-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: var(--text-caption);
+  font-weight: 700;
+}
+
+.phish-level {
+  letter-spacing: 0.01em;
+}
+
+.phish-meter.is-low .phish-level {
+  color: var(--ok);
+}
+
+.phish-meter.is-mid .phish-level {
+  color: var(--ink);
+}
+
+.phish-meter.is-high {
+  border-color: var(--danger);
+}
+
+.phish-meter.is-high .phish-level {
+  color: var(--danger);
+}
+
+.phish-meter-hint,
+.phish-meter-why {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-caption);
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.phish-meter.is-compact {
+  flex-direction: row;
+  align-items: center;
+  margin: 8px 0 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  gap: 8px;
+}
+
+.phish-meter.is-compact .phish-meter-head {
+  gap: 6px;
+  font-weight: 600;
+}
+
+.phish-meter.is-compact .phish-meter-hint,
+.phish-meter.is-compact .phish-meter-why {
+  display: none;
+}
+
 .draft-tags {
   display: flex;
   flex-wrap: wrap;
@@ -1191,8 +1262,8 @@ html[data-theme="light"] .login-panel {
 
 .sample-tag {
   background: transparent;
-  color: var(--danger);
-  border: 1px solid var(--danger);
+  color: var(--ink-soft);
+  border: 1px solid var(--hairline);
 }
 
 .time {

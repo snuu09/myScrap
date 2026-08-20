@@ -213,7 +213,7 @@ Header switch: **기본** (tangerine magnet) and **현무암** (basalt magnet). 
 ### Named Rules
 **The One Magnet Rule.** One accent at a time. It marks the thing you can press or the tag that names a type. It does not wash backgrounds.
 
-**The Two Magnets Rule.** Default magnet is hallabong tangerine. 현무암 swaps that accent to Jeju basalt charcoal. Do not retint enamel, paper, or the kitchen wall when testing basalt.
+**The Two Magnets Rule.** Default magnet is hallabong tangerine. 현무암 swaps that accent to Jeju basalt charcoal. Do not retint enamel, paper, or the kitchen wall when testing basalt. Sample photo SVGs must read `--magnet` (or the matching hex) at paint time; do not bake `#e56f0a`. The 견본 tag is hairline ink, not danger orange.
 
 **The White Doorstep.** Light login is white. The peach kitchen starts after the door opens. Dark login stays a night kitchen, not a white flash.
 
@@ -282,7 +282,7 @@ Hybrid: the login sheet and clippings lift off the kitchen wall with a soft, dif
 ### Shadow Vocabulary
 - **Sheet** (`0 18px 40px rgba(50, 44, 38, 0.08)`): Login card and menus. Dark uses `rgba(0, 0, 0, 0.28)`.
 - **Clipping** (`0 10px 28px rgba(50, 44, 38, 0.06)`): Paper on the door.
-- **FAB** (`0 10px 22px` tangerine-tinted): Magnet floating off the wall.
+- **FAB** (`0 10px 22px` magnet-tinted): Magnet floating off the wall.
 
 ### Named Rules
 **The Offset Rule.** Shadows carry offset and blur. A colored halo is not depth.
@@ -306,6 +306,7 @@ Slight clipping rotation (±0.45deg) on every third scrap. That is the fridge, n
 - **Search:** 48px capsule, 15px type. Type chips 34px / 13px.
 - **Language magnets:** Pill switch, 40px cells, 13px KO/EN.
 - **FAB:** 48px disc, 24px glyph.
+- **Phish meter:** When Stick detects a web link, the draft shows an on-device URL-shape risk (낮음 / 주의 / 높음). Not a live blocklist and not a guarantee. Compact line on saved link scraps. Mid uses ink, not tangerine. High uses `--danger`.
 
 States required: hover, focus-visible, disabled (Stick), loading (OG skeleton), error (OG fallback copy), empty ("항목이 없습니다." / English equivalent), pressed (`:active` scale), enter/exit for views.
 
