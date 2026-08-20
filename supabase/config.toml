@@ -1,0 +1,4 @@
+# Minimal function settings. Project ref and API keys live in js/config.js, not here.
+
+[functions.og-preview]
+verify_jwt = true

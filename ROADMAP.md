@@ -4,7 +4,7 @@ Personal capture box: paste or drop once, see type tags and a preview, find it a
 
 Related: [README.md](README.md) · [PRODUCT.md](PRODUCT.md) · [DESIGN.md](DESIGN.md)
 
-**Order of work:** Phase 1 (tech debt) and Phase 2 (UI/UX) are done in this client. Phase 3 (Supabase) is last. Phase 1 and 2 stay static HTML / CSS / JS with no build step.
+**Order of work:** Phase 1 (tech debt), Phase 2 (UI/UX), and Phase 3 (Supabase wiring) are in this client. The app stays static HTML / CSS / JS with no build step. API keys are not in the repo; fill [`js/config.js`](js/config.js) later. Empty or placeholder keys keep the on-device `localStorage` path.
 
 ```mermaid
 flowchart TB
@@ -18,11 +18,11 @@ flowchart TB
 
 ## Shipped
 
-Client-only. No accounts, no sync, no real OAuth.
+Static client. With empty [`js/config.js`](js/config.js), Apple / Google / Browse stay on this device. With a real URL and anon key, those buttons talk to Supabase (OAuth or anonymous), and scraps sync per user.
 
 ### Capture and classify
 
-- [x] Demo entry: Apple ID, Google, or Browse. Session flag in `localStorage` only. Nothing talks to Apple or Google.
+- [x] Entry: Apple ID, Google, or Browse. Demo session in `localStorage` until keys are set. After keys, Apple/Google are OAuth and Browse is anonymous auth.
 - [x] Composer: paste text or a URL, Enter to stick, drag-and-drop on the input.
 - [x] `+` menu: clipboard, photo pick, file attach. Camera only on coarse pointers or viewports under 721px.
 - [x] Classify-then-save draft: detected type, editable label, add/remove tags, memo, preview, save or cancel.
@@ -31,7 +31,7 @@ Client-only. No accounts, no sync, no real OAuth.
 
 ### Type previews
 
-- [x] Link: Open Graph via microlink, then corsproxy / allorigins. Fallback is hostname and path.
+- [x] Link: Open Graph via the `og-preview` Edge Function when signed in to Supabase, then microlink, then corsproxy / allorigins. Fallback is hostname and path.
 - [x] Image: show the image. Compress long edge to 1600px before persist.
 - [x] Video: poster frame; hover or tap to play. Honors `prefers-reduced-motion` for hover-play.
 - [x] Audio: disc art; hover or tap to play.
@@ -43,7 +43,7 @@ Client-only. No accounts, no sync, no real OAuth.
 - [x] KO / EN in one layout. Light / system / dark. Follows the system until the user picks light or dark. Can return to system. Remembered on this device.
 - [x] Empty state ("항목이 없습니다." / English equivalent). Scroll-to-top FAB when not at the top.
 - [x] Skip link, visible focus, `prefers-reduced-motion`.
-- [x] Persist scraps in `localStorage` (~4.2MB budget). Large files may stay session-only. Over quota, media data URLs are stripped.
+- [x] Persist scraps in `localStorage` (~4.2MB budget) when keys are empty. Large files may stay session-only. Over quota, media data URLs are stripped. With keys and a signed-in user, scraps go to Postgres and media to a private Storage bucket.
 - [x] Missing-media slip (filename, extension, size) instead of a broken preview.
 - [x] Unsaved draft warning on Leave and Empty the door. Composer auto-grows. Edit a saved scrap.
 - [x] Type chips, tag click-to-filter, light search. Image lightbox. Copy URL / save file when media is stored.
@@ -52,16 +52,18 @@ Client-only. No accounts, no sync, no real OAuth.
 
 ## Not shipped
 
-Grouped by when they will be built. Checkboxes below are the work queue.
-
-### Intentionally out of Phase 1 and 2
+### Intentionally out of this product
 
 - Team / workspace language, Notion-style sidebar, folder tree.
 - Live camera viewfinder (file `capture` input is enough).
 - Server-side or paid AI tagging.
 - Share, export, account settings screens.
-- Bundler, test runner, or framework. Stay static HTML / CSS / JS through Phase 2.
-- IndexedDB as a new client database. Frontend-external storage is Phase 3 Supabase.
+- Bundler, test runner, or framework. Stay static HTML / CSS / JS.
+- IndexedDB as a new client database. Frontend-external storage is Supabase (Phase 3, wired; keys filled later).
+
+### Operator follow-up (not code)
+
+Create a Supabase project and paste the URL plus anon key into [`js/config.js`](js/config.js). Until then the local demo path is unchanged. See [`supabase/README.md`](supabase/README.md).
 
 ---
 
@@ -80,18 +82,21 @@ Storage stays [`js/storage.js`](js/storage.js) + `localStorage`. Document the ke
 - [x] **Stick disabled.** [`.send-btn:disabled`](css/styles.css) exists but the button never disables. Disable when the composer is empty; empty submit is a no-op.
 - [x] **Storage adapter boundary.** Keep `MyScrapStorage` as the only persist API (`getLang` / `setLang` / `getTheme` / `setTheme` / session / `loadScraps` / `saveScraps`). Do not leak `localStorage` keys into [`js/app.js`](js/app.js). Phase 3 replaces the implementation, not the call sites.
 
-### Storage key contract (Phase 3 swap point)
+### Storage key contract
+
+Language and theme always stay on this device. Session and scraps stay in `localStorage` until [`js/config.js`](js/config.js) has a real URL and anon key **and** the user is signed in. Then `MyScrapBackend` owns scraps; demo `myscrap.session` is ignored.
 
 | Key | Value |
 | --- | --- |
 | `myscrap.lang` | `"ko"` \| `"en"` |
 | `myscrap.theme` | `"light"` \| `"dark"` (missing = follow system) |
-| `myscrap.session` | `{ method, enteredAt }` demo session |
-| `myscrap.scraps` | JSON array of scrap objects |
+| `myscrap.session` | `{ method, enteredAt }` demo session (local path only) |
+| `myscrap.scraps` | JSON array of scrap objects (local path; one-time migrate when remote is empty) |
+| `myscrap.migratedUser` | last Supabase user id that already received the local copy |
 
-Scrap shape used today (fields may be empty): `id`, `createdAt`, `type`, `tags`, `title`, `text`, `url`, `filename`, `mime`, `extension`, `size`, `dataUrl`, `posterUrl`, `previewText`, `pages`, `og`, `ogStatus`, `analyzing`, `sample`, `ephemeral`, `storedMedia`, `domain`, `error`, `memo`.
+Scrap shape (fields may be empty): `id`, `createdAt`, `updatedAt`, `type`, `tags`, `title`, `text`, `url`, `filename`, `mime`, `extension`, `size`, `dataUrl`, `posterUrl`, `previewText`, `pages`, `og`, `ogStatus`, `analyzing`, `sample`, `ephemeral`, `storedMedia`, `domain`, `error`, `memo`, `mediaPath`, `posterPath`.
 
-Quota: persist budget about 4.2MB string length. `ephemeral` scraps drop `dataUrl` on save. If still over budget, strip long `dataUrl`s, then drop `dataUrl` / `posterUrl` / `og` and set `storedMedia: false`.
+Quota (local path): persist budget about 4.2MB string length. `ephemeral` scraps drop `dataUrl` on save. If still over budget, strip long `dataUrl`s, then drop `dataUrl` / `posterUrl` / `og` and set `storedMedia: false`. Remote path stores media in the private `scrap-media` bucket and rows in `public.scraps` (body column maps to `text`).
 
 ---
 
@@ -129,14 +134,16 @@ Live camera viewfinder, AI tagging, share/export, account settings.
 
 ## Phase 3 — Supabase (last)
 
-Frontend-external auth, database, and file storage. Design only until Phase 1 and 2 are done. Replace the `MyScrapStorage` implementation; keep classify-then-save and the fridge-door UI.
+Frontend-external auth, database, and file storage. Implemented in the client behind `MyScrapStorage` / `MyScrapBackend`. Keep classify-then-save and the fridge-door UI. **Do not commit real keys.** Paste them later into [`js/config.js`](js/config.js) (see [`js/config.example.js`](js/config.example.js) and [`supabase/README.md`](supabase/README.md)). Placeholder `YOUR_*` values and empty strings keep the local demo path.
 
-- [ ] **Auth.** Real Apple / Google. Browse becomes anonymous or device-only with a clear remaining local path. Demo `myscrap.session` goes away.
-- [ ] **Database.** `scraps` table matching the scrap contract above (no giant data URLs in a row). Recency index. RLS so a user reads and writes only their scraps.
-- [ ] **Storage.** Images, video, audio, documents in Supabase Storage. List and draft previews use public or signed URLs, not `localStorage` data URLs.
-- [ ] **Sync.** Same account, more than one device. Conflict rule: last write wins unless a simpler append-only model is enough.
-- [ ] **Open Graph.** Move off public proxies (microlink / corsproxy / allorigins) to an Edge Function or server fetch. Client keeps hostname/path fallback.
-- [ ] **Migration.** One-time copy from `myscrap.scraps` into the signed-in account, then stop writing media blobs to `localStorage`.
+- [x] **Auth.** When configured: Apple / Google via `signInWithOAuth`. Browse via `signInAnonymously`. When not configured: demo `myscrap.session` on this device, unchanged.
+- [x] **Database.** `public.scraps` matching the scrap contract (no giant data URLs in a row). Recency index. RLS so a user reads and writes only their scraps.
+- [x] **Storage.** Images, video, audio, documents in private bucket `scrap-media` under `{userId}/{scrapId}/`. List and draft previews use signed URLs after upload.
+- [x] **Sync.** Same account, more than one device. Last write wins (upsert by scrap `id`). Realtime plus reload when the tab becomes visible. Language and theme stay local.
+- [x] **Open Graph.** Prefer Edge Function `og-preview` (JWT) when signed in. Fall back to microlink / corsproxy / allorigins, then hostname/path.
+- [x] **Migration.** One-time copy from `myscrap.scraps` into the signed-in account if the remote list is empty, then stop writing media blobs to `localStorage` for that user.
+
+Operator work (not in this repo): create the Supabase project, enable providers, run the SQL, deploy the function, paste URL + anon key. Never put `service_role` in the browser.
 
 Server-side AI tagging stays optional and is not required to close Phase 3.
 
@@ -148,4 +155,4 @@ Phase 1: `typeFromMime` → `el()` innerHTML → hover-play → clipboard ingest
 
 Phase 2: missing-media slip → Stick/draft safety (unsaved warning, auto-grow) → theme system reset → edit saved scrap → type chips → tag filter → search → lightbox → copy/save → peel confirm.
 
-Phase 3: storage adapter behind `MyScrapStorage` → Auth → tables + RLS → Storage buckets → OG function → localStorage migration.
+Phase 3: storage adapter behind `MyScrapStorage` → Auth → tables + RLS → Storage buckets → OG function → localStorage migration. Keys stay out of git until you paste them into `js/config.js`.

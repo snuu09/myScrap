@@ -32,7 +32,7 @@ One capture surface that inspects what you pasted (text, image, video, audio, UR
 
 ## Capabilities and Constraints
 
-Work order and checkboxes: [ROADMAP.md](ROADMAP.md). Phase 1 (tech debt) and Phase 2 (UI/UX) are done. Phase 3 (Supabase) is last.
+Work order and checkboxes: [ROADMAP.md](ROADMAP.md). Phase 1 (tech debt), Phase 2 (UI/UX), and Phase 3 (Supabase wiring) are in the client. API keys are filled later in [`js/config.js`](js/config.js); empty config keeps the on-device path.
 
 ### Shipped
 
@@ -56,20 +56,17 @@ Confirmed from brief and implemented in this static client:
 - Edit a saved scrap (type, tags, memo).
 - Type chips, tag click-to-filter, light search.
 - Image lightbox; copy URL / save file when media is stored; two-step peel.
+- Supabase adapter (`MyScrapBackend`): OAuth / anonymous auth, `scraps` + private media bucket, last-write-wins sync, one-time local migrate, OG Edge Function. Inactive until `js/config.js` has a real URL and anon key.
 
-[Inferred] This version runs tagging and previews in the browser (MIME, URL, Open Graph fetch, object URLs). No backend, auth provider, or paid AI API is specified; Apple/Google buttons are UI flows that enter the app (demo auth). Data persists in localStorage for the session device.
+[Inferred] Tagging and previews still run in the browser (MIME, URL, Open Graph fetch, object URLs). No paid AI API. With empty config, Apple/Google buttons are UI flows that enter the app (demo auth) and data persists in localStorage on this device. After keys, the same UI talks to Supabase; language and theme stay local.
 
-Phase 1 tech debt and Phase 2 UI/UX are implemented. See [ROADMAP.md](ROADMAP.md).
+Phase 1 tech debt, Phase 2 UI/UX, and Phase 3 wiring are implemented. See [ROADMAP.md](ROADMAP.md) and [supabase/README.md](supabase/README.md).
 
-### Deferred (Phase 3 Supabase)
+### Operator follow-up (keys, not code)
 
-Frontend-external. Last, after Phase 1 and 2.
+Create a Supabase project, enable Google / Apple / Anonymous, apply `supabase/migrations`, deploy `og-preview`, paste URL + anon key into `js/config.js`. Never put `service_role` in the browser.
 
-- Real OAuth (Apple / Google), accounts, and multi-device sync.
-- Scraps table, media Storage, RLS; replace `localStorage` data URLs.
-- Open Graph via Edge Function or server fetch instead of public proxies.
-
-Server-side AI tagging stays optional and is not required to close Phase 3.
+Server-side AI tagging stays optional.
 
 ## Brand Commitments
 
