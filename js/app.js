@@ -104,8 +104,17 @@
     document.documentElement.setAttribute("data-theme", resolved);
     document.documentElement.style.colorScheme = resolved;
     const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute("content", resolved === "dark" ? "#302b26" : "#f7f3ec");
+    const surface = document.documentElement.getAttribute("data-surface") || "login";
+    if (meta) {
+      const light = surface === "login" ? "#ffffff" : "#fff7f2";
+      meta.setAttribute("content", resolved === "dark" ? "#302b26" : light);
+    }
     syncThemeButtons();
+  }
+
+  function setSurface(name) {
+    document.documentElement.setAttribute("data-surface", name === "app" ? "app" : "login");
+    applyTheme();
   }
 
   function syncThemeButtons() {
@@ -250,8 +259,10 @@
     els.clearBtn.hidden = false;
     if (instant || prefersReducedMotion()) {
       swapInstant(els.viewLogin, els.viewApp);
+      setSurface("app");
     } else {
       await conceal(els.viewLogin);
+      setSurface("app");
       await reveal(els.viewApp);
     }
     if (storage.isRemote()) {
@@ -351,8 +362,10 @@
     }
     if (prefersReducedMotion()) {
       swapInstant(els.viewApp, els.viewLogin);
+      setSurface("login");
     } else {
       await conceal(els.viewApp);
+      setSurface("login");
       await reveal(els.viewLogin);
     }
     typeFilter = "";
@@ -1654,6 +1667,7 @@
       }
       els.viewLogin.hidden = false;
       els.viewApp.hidden = true;
+      setSurface("login");
       applyI18n();
     }
     updateFab();

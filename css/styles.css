@@ -1,7 +1,7 @@
 :root {
-  --enamel: #f7f3ec;
-  --enamel-deep: #eee8de;
-  --enamel-ink: #ddd3c6;
+  --enamel: #fff6f0;
+  --enamel-deep: #f3e6dc;
+  --enamel-ink: #e4d2c6;
   --gasket: #5a524a;
   --gasket-soft: #cbbfaf;
   --ink: #322c26;
@@ -10,31 +10,32 @@
   --magnet: #e56f0a;
   --magnet-ink: #2a1a08;
   --magnet-deep: #d06612;
-  --handle-hi: #f7f3ec;
+  --handle-hi: #fff6f0;
   --handle-mid: #cbbfaf;
   --handle-lo: #8a8076;
-  --paper: #fffaf3;
-  --paper-line: #eadfce;
-  --photo-mat: #faf6f0;
+  --paper: #ffffff;
+  --paper-line: #ead8cc;
+  --photo-mat: #fffaf6;
   --manila: #ebc98a;
   --manila-ink: #5c4520;
   --disc: #3a342e;
   --disc-ink: #f7f1ea;
   --danger: #b44532;
   --ok: #3d7a54;
-  --kitchen-hi: #f5f1ea;
-  --kitchen-lo: #ebe5d9;
+  --login-wall: #ffffff;
+  --kitchen-hi: #fff7f2;
+  --kitchen-lo: #f3e7de;
   --kitchen-glow: rgba(229, 111, 10, 0.12);
-  --drop-veil: rgba(247, 243, 236, 0.92);
+  --drop-veil: rgba(255, 247, 242, 0.92);
   --shadow: 0 18px 40px rgba(50, 44, 38, 0.08);
   --shadow-scrap: 0 10px 28px rgba(50, 44, 38, 0.06);
   --shadow-scrap-hover: 0 14px 32px rgba(50, 44, 38, 0.09);
   --shadow-fab: 0 10px 22px rgba(208, 102, 18, 0.26);
   --google-bg: #fff;
-  --google-border: #ddd3c6;
+  --google-border: #e4d2c6;
   --apple-bg: #3a342e;
   --apple-ink: #faf6f0;
-  --composer-border: #eadfce;
+  --composer-border: #ead8cc;
   --hairline: color-mix(in srgb, var(--ink) 12%, transparent);
   --radius-xs: 10px;
   --radius-sm: 14px;
@@ -50,6 +51,7 @@
   --text-ui: 0.9375rem;
   --text-caption: 0.8125rem;
   --text-micro: 0.75rem;
+  --icon-xs: 16px;
   --icon-sm: 18px;
   --icon-md: 22px;
   --icon-lg: 24px;
@@ -112,6 +114,7 @@
   --apple-bg: #f4eee6;
   --apple-ink: #322c26;
   --composer-border: #5a534a;
+  --login-wall: #2a2622;
   --hairline: color-mix(in srgb, var(--ink) 18%, transparent);
   color-scheme: dark;
 }
@@ -138,6 +141,18 @@ body {
     radial-gradient(1000px 420px at 50% -12%, var(--kitchen-glow), transparent 62%),
     linear-gradient(180deg, var(--kitchen-hi) 0%, var(--kitchen-lo) 100%);
   letter-spacing: -0.01em;
+}
+
+html[data-surface="login"][data-theme="light"] {
+  --focus: 0 0 0 3px var(--login-wall), 0 0 0 5px var(--magnet);
+}
+
+html[data-surface="login"][data-theme="light"] body {
+  background: var(--login-wall);
+}
+
+html[data-surface="login"][data-theme="dark"] body {
+  background: linear-gradient(180deg, var(--kitchen-hi) 0%, var(--kitchen-lo) 100%);
 }
 
 img,
@@ -360,11 +375,16 @@ a:hover {
   align-items: center;
   text-align: center;
   gap: 14px;
-  background: color-mix(in srgb, var(--paper) 82%, var(--enamel));
+  background: var(--paper);
   border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow);
   padding: 28px 24px 24px;
+}
+
+html[data-theme="light"] .login-panel {
+  background: #fff;
+  box-shadow: 0 18px 48px rgba(50, 44, 38, 0.1);
 }
 
 .login-lead {
@@ -404,14 +424,13 @@ a:hover {
   padding: 10px 16px;
   font-size: var(--text-ui);
   font-weight: 650;
-}
   transition: background-color var(--dur-fast) var(--ease-out), filter var(--dur-fast) var(--ease-out),
     border-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 }
 
 .auth-btn svg {
-  width: var(--icon-md);
-  height: var(--icon-md);
+  width: var(--icon-xs);
+  height: var(--icon-xs);
   flex-shrink: 0;
 }
 
@@ -469,16 +488,41 @@ a:hover {
   align-items: end;
   background: var(--paper);
   border: 1px solid var(--composer-border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-pill);
   box-shadow: var(--shadow-scrap);
   padding: 8px;
-  transition: background-color var(--dur-fast) var(--ease-out), outline-color var(--dur-fast) var(--ease-out);
+  transition: background-color var(--dur-fast) var(--ease-out), outline-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
 }
 
 .composer.is-drop {
   outline: 2px dashed var(--magnet);
   outline-offset: 4px;
   background: color-mix(in srgb, var(--paper) 82%, var(--magnet) 18%);
+}
+
+.composer:has(.composer-field:focus),
+.composer:has(.composer-field:focus-visible) {
+  box-shadow: var(--shadow-scrap), var(--focus);
+}
+
+.composer-field {
+  width: 100%;
+  min-height: var(--control-md);
+  max-height: 160px;
+  resize: none;
+  overflow: hidden;
+  border: 0;
+  background: transparent;
+  padding: 12px 10px;
+  font-size: var(--text-ui);
+  border-radius: var(--radius-sm);
+}
+
+.composer-field:focus,
+.composer-field:focus-visible {
+  outline: none;
+  box-shadow: none;
 }
 
 .drop-overlay {
@@ -530,18 +574,6 @@ a:hover {
   background: var(--ink);
   color: var(--enamel);
   border-color: var(--ink);
-}
-
-.composer-field {
-  width: 100%;
-  min-height: var(--control-md);
-  max-height: 160px;
-  resize: none;
-  overflow: hidden;
-  border: 0;
-  background: transparent;
-  padding: 12px 10px;
-  font-size: var(--text-ui);
 }
 
 .composer-field::placeholder {
