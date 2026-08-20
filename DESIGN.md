@@ -55,9 +55,11 @@ typography:
     lineHeight: 1.3
     letterSpacing: "0.01em"
 rounded:
-  none: "0px"
-  sm: "4px"
-  door: "22px"
+  xs: "10px"
+  sm: "14px"
+  md: "18px"
+  lg: "24px"
+  xl: "32px"
   pill: "999px"
   full: "50%"
 spacing:
@@ -83,19 +85,19 @@ components:
   button-apple:
     backgroundColor: "#111417"
     textColor: "{colors.magnet-ink}"
-    rounded: "{rounded.sm}"
+    rounded: "{rounded.md}"
     padding: "10px 16px"
     height: "48px"
   button-google:
     backgroundColor: "#ffffff"
     textColor: "{colors.ink}"
-    rounded: "{rounded.sm}"
+    rounded: "{rounded.md}"
     padding: "10px 16px"
     height: "48px"
   button-icon:
     backgroundColor: "{colors.enamel}"
     textColor: "{colors.ink}"
-    rounded: "{rounded.none}"
+    rounded: "{rounded.sm}"
     padding: "0px"
     size: "44px"
     height: "44px"
@@ -103,7 +105,7 @@ components:
   input-composer:
     backgroundColor: "{colors.paper}"
     textColor: "{colors.ink}"
-    rounded: "{rounded.none}"
+    rounded: "{rounded.lg}"
     padding: "10px 8px"
   chip-tag:
     backgroundColor: "{colors.magnet}"
@@ -114,8 +116,8 @@ components:
   scrap-clipping:
     backgroundColor: "{colors.paper}"
     textColor: "{colors.ink}"
-    rounded: "{rounded.none}"
-    padding: "14px"
+    rounded: "{rounded.md}"
+    padding: "16px"
 ---
 
 # Design System: myScrap
@@ -131,7 +133,7 @@ The product is Operate-mode. Brand lives in material details (gasket, magnets, c
 **Key Characteristics:**
 - Warm enamel ground, one Jeju tangerine magnet accent
 - Centered capture column on every breakpoint
-- Square clippings, not equal rounded cards
+- Soft rounded clippings (18px), not razor-square paper and not identical SaaS cards
 - Capture composer first; recency list second
 - Personal voice: stick, peel, empty the door
 
@@ -181,31 +183,32 @@ Gutter is fluid (`clamp(12px, 3.2vw, 24px)`). Door padding is fluid so resize do
 
 ## Elevation & Depth
 
-Hybrid: the door lifts off the kitchen wall with an offset shadow; clippings sit with a smaller offset shadow plus a physical magnet disc. No zero-offset glow.
+Hybrid: the login sheet and clippings lift off the kitchen wall with a soft, diffuse shadow plus a physical magnet disc. No neon glow.
 
 ### Shadow Vocabulary
-- **Door** (`6px 10px 22px rgba(28, 35, 41, 0.18)`): The enamel slab.
-- **Clipping** (`3px 5px 12px rgba(28, 35, 41, 0.16)`): Paper on the door.
-- **FAB** (`3px 6px 14px` tangerine-tinted): Magnet floating off the wall.
+- **Sheet** (`0 18px 40px rgba(28, 22, 16, 0.12)`): Login card and menus.
+- **Clipping** (`0 10px 28px rgba(28, 22, 16, 0.08)`): Paper on the door.
+- **FAB** (`0 10px 22px` tangerine-tinted): Magnet floating off the wall.
 
 ### Named Rules
 **The Offset Rule.** Shadows carry offset and blur. A colored halo is not depth.
 
 ## Shapes
 
-Door radius 22px (16px mobile). Clippings and composer are square (0). Tags are pills. Magnets and FAB are discs. Auth buttons 4px, just enough to feel pressable without becoming cards.
+Soft squircles, not 90-degree stamps. Scale: 10 / 14 / 18 / 24 / 32, pills 999, discs 50%. Login sheet 32px. Composer 24px. Clippings and auth 18px. Fields and Stick 14px. Language and theme switches, search, and tags are pills. Magnets and FAB stay discs.
 
 Slight clipping rotation (±0.45deg) on every third scrap. That is the fridge, not decoration for its own sake.
 
 ## Components
 
-- **Auth stack:** Apple, Google outlined, Browse tangerine. Vertical, not a three-up marketing row.
-- **Theme switch:** Light, system, and dark magnets in the header, next to KO/EN. Default follows the system until the user picks. System remains available after a pick.
-- **Composer:** Paper field, 44px + button, textarea, Stick. Drop overlay uses a dashed magnet outline.
-- **+ menu:** Fixed overlay so the door's overflow cannot clip it. Keyboard: Escape, arrows, Enter.
-- **Clipping:** Magnet disc, type pills, timestamp, peel control, type-specific preview.
+- **Auth stack:** Apple, Google outlined, Browse tangerine. Vertical, on a 32px login sheet. Not a three-up marketing row.
+- **Theme switch:** Light, system, and dark magnets in a pill track in the header, next to KO/EN. Default follows the system until the user picks. System remains available after a pick.
+- **Composer:** Rounded paper field (24px), 44px + button, textarea, Stick. Drop overlay uses a dashed magnet outline.
+- **+ menu:** Rounded overlay so the door's overflow cannot clip it. Keyboard: Escape, arrows, Enter.
+- **Clipping:** Magnet disc, type pills, timestamp, peel control, type-specific preview in an 18px sheet.
+- **Search:** Capsule field above the list.
 - **FAB:** Disc, bottom-right, hidden at scroll top.
-- **Language magnets:** Two-cell switch in the header.
+- **Language magnets:** Pill switch in the header.
 
 States required: hover, focus-visible, disabled (Stick), loading (OG skeleton), error (OG fallback copy), empty ("항목이 없습니다." / English equivalent).
 

@@ -26,16 +26,21 @@
   --kitchen-lo: #c9c0b4;
   --kitchen-glow: rgba(229, 111, 10, 0.22);
   --drop-veil: rgba(243, 238, 230, 0.9);
-  --shadow: 6px 10px 22px rgba(28, 22, 16, 0.18);
-  --shadow-scrap: 3px 5px 12px rgba(28, 22, 16, 0.16);
-  --shadow-fab: 3px 6px 14px rgba(200, 92, 8, 0.38);
+  --shadow: 0 18px 40px rgba(28, 22, 16, 0.12);
+  --shadow-scrap: 0 10px 28px rgba(28, 22, 16, 0.08);
+  --shadow-fab: 0 10px 22px rgba(200, 92, 8, 0.32);
   --google-bg: #fff;
   --google-border: #c9bfb2;
   --apple-bg: #171411;
   --apple-ink: #f7f1ea;
   --composer-border: #e3d5c0;
-  --radius-door: 22px;
-  --radius-scrap: 2px;
+  --radius-xs: 10px;
+  --radius-sm: 14px;
+  --radius-md: 18px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+  --radius-pill: 999px;
+  --radius-scrap: 18px;
   --gutter: clamp(16px, 4vw, 40px);
   --header-h: 56px;
   --footer-h: 48px;
@@ -77,9 +82,9 @@
   --kitchen-lo: #0c0b0a;
   --kitchen-glow: rgba(243, 153, 58, 0.18);
   --drop-veil: rgba(34, 30, 26, 0.92);
-  --shadow: 6px 14px 28px rgba(0, 0, 0, 0.45);
-  --shadow-scrap: 3px 6px 14px rgba(0, 0, 0, 0.35);
-  --shadow-fab: 3px 6px 16px rgba(243, 153, 58, 0.28);
+  --shadow: 0 22px 48px rgba(0, 0, 0, 0.42);
+  --shadow-scrap: 0 12px 32px rgba(0, 0, 0, 0.32);
+  --shadow-fab: 0 10px 24px rgba(243, 153, 58, 0.28);
   --google-bg: #2b261f;
   --google-border: #5a534a;
   --apple-bg: #f6efe6;
@@ -121,7 +126,8 @@ canvas {
 
 button,
 input,
-textarea {
+textarea,
+select {
   font: inherit;
   color: inherit;
 }
@@ -155,7 +161,7 @@ a:hover {
   background: var(--ink);
   color: var(--enamel);
   padding: 8px 12px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
 }
 
 .skip-link:focus {
@@ -229,8 +235,9 @@ a:hover {
   display: flex;
   border: 1px solid var(--gasket-soft);
   background: var(--enamel);
-  padding: 2px;
+  padding: 3px;
   gap: 2px;
+  border-radius: var(--radius-pill);
 }
 
 .lang-switch button,
@@ -241,6 +248,7 @@ a:hover {
   min-width: 44px;
   min-height: 36px;
   color: var(--muted);
+  border-radius: var(--radius-pill);
 }
 
 .theme-switch button {
@@ -266,9 +274,10 @@ a:hover {
   border: 0;
   background: transparent;
   color: var(--ink-soft);
-  padding: 6px 8px;
+  padding: 6px 10px;
   text-decoration: underline;
   text-underline-offset: 3px;
+  border-radius: var(--radius-pill);
 }
 
 .ghost-btn:hover,
@@ -279,7 +288,10 @@ a:hover {
 .session-chip {
   font-size: 0.8125rem;
   color: var(--muted);
-  padding: 4px 0;
+  padding: 6px 12px;
+  background: var(--enamel);
+  border: 1px solid var(--gasket-soft);
+  border-radius: var(--radius-pill);
 }
 
 .site-main {
@@ -301,20 +313,31 @@ a:hover {
   padding: var(--door-pad-y) 0;
 }
 
+.door-inner:has(#view-login:not([hidden])) {
+  min-height: calc(100dvh - var(--header-h) - var(--footer-h) - 48px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 [hidden] {
   display: none !important;
 }
 
 .login-panel {
-  width: min(100%, 24rem);
-  min-height: min(52dvh, 28rem);
+  width: min(100%, 26rem);
   margin-inline: auto;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   text-align: center;
-  gap: 18px;
+  gap: 14px;
+  background: color-mix(in srgb, var(--paper) 82%, var(--enamel));
+  border: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow);
+  padding: 28px 24px 24px;
 }
 
 .login-lead {
@@ -349,10 +372,11 @@ a:hover {
   gap: 10px;
   width: 100%;
   min-height: 48px;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   border: 1px solid transparent;
   padding: 10px 16px;
   font-weight: 650;
+  transition: background-color 160ms ease, filter 160ms ease, border-color 160ms ease;
 }
 
 .auth-btn svg {
@@ -407,14 +431,14 @@ a:hover {
   align-items: end;
   background: var(--paper);
   border: 1px solid var(--composer-border);
-  border-radius: 0;
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-scrap);
-  padding: 8px;
+  padding: 10px;
 }
 
 .composer.is-drop {
   outline: 2px dashed var(--magnet);
-  outline-offset: 3px;
+  outline-offset: 4px;
   background: color-mix(in srgb, var(--paper) 82%, var(--magnet) 18%);
 }
 
@@ -430,6 +454,7 @@ a:hover {
   pointer-events: none;
   text-align: center;
   padding: 8px;
+  border-radius: inherit;
 }
 
 .composer.is-drop .drop-overlay {
@@ -448,6 +473,7 @@ a:hover {
   display: grid;
   place-items: center;
   padding: 0;
+  border-radius: var(--radius-sm);
 }
 
 .icon-btn svg {
@@ -482,9 +508,10 @@ a:hover {
   border: 0;
   background: var(--magnet);
   color: var(--magnet-ink);
-  padding: 0 14px;
+  padding: 0 16px;
   font-weight: 700;
   white-space: nowrap;
+  border-radius: var(--radius-sm);
 }
 
 .send-btn:hover {
@@ -504,8 +531,9 @@ a:hover {
   background: var(--enamel);
   border: 1px solid var(--gasket);
   box-shadow: var(--shadow);
-  padding: 6px;
+  padding: 8px;
   z-index: 8;
+  border-radius: var(--radius-md);
 }
 
 .add-menu button {
@@ -518,6 +546,7 @@ a:hover {
   background: transparent;
   padding: 6px 10px;
   text-align: left;
+  border-radius: var(--radius-xs);
 }
 
 .add-menu button:hover,
@@ -562,8 +591,9 @@ a:hover {
   background: var(--paper);
   border: 1px solid var(--composer-border);
   box-shadow: var(--shadow-scrap);
-  padding: 18px 16px 16px;
+  padding: 20px 18px 18px;
   text-align: left;
+  border-radius: var(--radius-lg);
 }
 
 .draft-panel[hidden] {
@@ -597,7 +627,7 @@ a:hover {
   align-items: center;
   min-height: 28px;
   padding: 0 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--magnet);
   color: var(--magnet-ink);
   font-size: 0.8125rem;
@@ -625,7 +655,7 @@ a:hover {
   border: 1px solid var(--composer-border);
   background: color-mix(in srgb, var(--enamel) 70%, var(--paper));
   color: var(--ink);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   padding: 10px 12px;
 }
 
@@ -683,7 +713,7 @@ a:hover {
   gap: 4px;
   min-height: 32px;
   padding: 0 6px 0 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 1px solid var(--composer-border);
   background: var(--enamel);
   color: var(--ink);
@@ -707,7 +737,7 @@ a:hover {
   min-height: 32px;
   border: 1px dashed var(--composer-border);
   background: transparent;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding: 0 12px;
 }
 
@@ -725,7 +755,7 @@ a:hover {
   background: var(--enamel);
   color: var(--ink);
   font-weight: 650;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
 }
 
 .draft-save {
@@ -735,7 +765,7 @@ a:hover {
   background: var(--magnet);
   color: var(--magnet-ink);
   font-weight: 700;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
 }
 
 .draft-save:hover {
@@ -769,8 +799,9 @@ a:hover {
   border: 1px solid var(--composer-border);
   background: var(--paper);
   color: var(--ink);
-  padding: 10px 12px;
+  padding: 10px 16px;
   box-shadow: var(--shadow-scrap);
+  border-radius: var(--radius-pill);
 }
 
 .type-chips {
@@ -786,7 +817,7 @@ a:hover {
   color: var(--ink-soft);
   min-height: 32px;
   padding: 0 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   font-size: 0.75rem;
   font-weight: 700;
   font-family: inherit;
@@ -825,6 +856,7 @@ a:hover {
   padding: 12px;
   border: 1px dashed var(--gasket-soft);
   background: color-mix(in srgb, var(--paper) 88%, var(--enamel-deep));
+  border-radius: var(--radius-sm);
 }
 
 .media-missing strong {
@@ -865,6 +897,7 @@ a:hover {
   max-height: calc(100dvh - 72px);
   object-fit: contain;
   box-shadow: var(--shadow);
+  border-radius: var(--radius-md);
 }
 
 .lightbox-close {
@@ -897,7 +930,7 @@ a:hover {
 }
 
 .empty-state {
-  padding: 28px 8px 12px;
+  padding: 36px 16px 20px;
   text-align: center;
 }
 
@@ -915,10 +948,11 @@ a:hover {
 
 .scrap-body {
   background: var(--paper);
-  border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
-  border-radius: 0;
+  border: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
+  border-radius: var(--radius-scrap);
   box-shadow: var(--shadow-scrap);
-  padding: 14px 14px 12px;
+  padding: 16px 16px 14px;
+  overflow: hidden;
 }
 
 .scrap:nth-child(3n) .scrap-body {
@@ -958,7 +992,7 @@ a:hover {
 .magnet-dot {
   position: absolute;
   top: -8px;
-  left: 18px;
+  left: 22px;
   width: 18px;
   height: 18px;
   border-radius: 50%;
@@ -992,7 +1026,7 @@ a:hover {
   min-height: 22px;
   padding: 0 8px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--magnet);
   color: var(--magnet-ink);
   font-size: 0.75rem;
@@ -1034,6 +1068,7 @@ a:hover {
   place-items: center;
   padding: 0;
   opacity: 0.7;
+  border-radius: var(--radius-pill);
 }
 
 .icon-tiny:hover {
@@ -1050,6 +1085,7 @@ a:hover {
   position: relative;
   overflow: hidden;
   background: #171411;
+  border-radius: var(--radius-sm);
 }
 
 .media-frame img,
@@ -1081,6 +1117,7 @@ a:hover {
   height: 84px;
   object-fit: cover;
   background: var(--enamel-ink);
+  border-radius: var(--radius-sm);
 }
 
 .og-meta h3,
@@ -1126,6 +1163,8 @@ a:hover {
   background: #fff;
   border: 1px solid color-mix(in srgb, var(--ink) 16%, transparent);
   min-height: 160px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
 }
 
 .doc-page img,
@@ -1140,7 +1179,8 @@ a:hover {
   max-height: 12rem;
   overflow: auto;
   background: color-mix(in srgb, #fff 18%, transparent);
-  padding: 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
 }
 
 .play-badge {
@@ -1150,8 +1190,9 @@ a:hover {
   background: rgba(28, 22, 16, 0.78);
   color: #fff;
   font-size: 0.75rem;
-  padding: 4px 8px;
+  padding: 4px 10px;
   pointer-events: none;
+  border-radius: var(--radius-pill);
 }
 
 .to-top {
