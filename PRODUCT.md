@@ -8,7 +8,7 @@ web
 
 ## Stack
 
-static HTML / CSS / JS (user-specified; no framework)
+static HTML / CSS / JS (user-specified; no framework, no build step). Layout is a typical site tree: `index.html`, `css/`, `js/`, `assets/`, plus `supabase/` for optional auth, Postgres, Storage, and the OG function. Layers and load order: [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Users
 

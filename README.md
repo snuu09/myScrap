@@ -2,7 +2,7 @@
 
 Personal capture box for things you saw on the web, photos, and files. Static HTML, CSS, and JS. No build step.
 
-Shipped vs next: [ROADMAP.md](ROADMAP.md). Product and design: [PRODUCT.md](PRODUCT.md), [DESIGN.md](DESIGN.md).
+Shipped vs next: [ROADMAP.md](ROADMAP.md). Product and design: [PRODUCT.md](PRODUCT.md), [DESIGN.md](DESIGN.md). Folders and layers: [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Open
 
@@ -19,6 +19,18 @@ python3 -m http.server 8080
 ```
 
 Then visit [http://localhost:8080](http://localhost:8080).
+
+## Project structure
+
+Typical static web tree. No bundler, no `src/` vs `public/` split. See [ARCHITECTURE.md](ARCHITECTURE.md).
+
+```
+index.html     view
+css/           styles
+js/            config, backend, storage, services, app
+assets/        favicon
+supabase/      migrations, Edge Functions (optional until keys are set)
+```
 
 ## Use
 
