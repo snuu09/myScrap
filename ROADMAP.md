@@ -2,9 +2,9 @@
 
 Personal capture box: paste or drop once, see type tags and a preview, find it again in a recency list. This file lists what ships today, what comes next, and in what order.
 
-Related: [README.md](README.md) · [PRODUCT.md](PRODUCT.md) · [DESIGN.md](DESIGN.md)
+Related: [README.md](README.md) · [PRODUCT.md](PRODUCT.md) · [DESIGN.md](DESIGN.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
 
-**Order of work:** Phase 1 (tech debt), Phase 2 (UI/UX), and Phase 3 (Supabase wiring) are in this client. The app stays static HTML / CSS / JS with no build step. API keys are not in the repo; fill [`js/config.js`](js/config.js) later. Empty or placeholder keys keep the on-device `localStorage` path.
+**Order of work:** Phase 1 (tech debt), Phase 2 (UI/UX), and Phase 3 (Supabase wiring) are in this client. The app stays static HTML / CSS / JS with no build step. Folders follow a typical static site plus `supabase/` ([ARCHITECTURE.md](ARCHITECTURE.md)). API keys are not in the repo; fill [`js/config.js`](js/config.js) later. Empty or placeholder keys keep the on-device `localStorage` path.
 
 ```mermaid
 flowchart TB
@@ -60,6 +60,7 @@ Static client. With empty [`js/config.js`](js/config.js), Apple / Google / Brows
 - Share, export, account settings screens.
 - Bundler, test runner, or framework. Stay static HTML / CSS / JS.
 - IndexedDB as a new client database. Frontend-external storage is Supabase (Phase 3, wired; keys filled later).
+- Moving into `src/` / `public/` or an app-router tree. The current folders already match a typical static site ([ARCHITECTURE.md](ARCHITECTURE.md)).
 
 ### Operator follow-up (not code)
 

@@ -1,5 +1,7 @@
 # Supabase (Phase 3)
 
+This is the standard Supabase CLI tree at the repo root (`migrations/`, `functions/`). The static client stays in `index.html`, `css/`, `js/`, `assets/`. How the layers connect: [ARCHITECTURE.md](../ARCHITECTURE.md).
+
 Keys stay in [`js/config.js`](../js/config.js). This folder is schema and the Open Graph function only. The committed config file is empty so the app keeps the localStorage path until you paste values.
 
 ## Once you have a project
