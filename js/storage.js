@@ -1,6 +1,7 @@
 (function (global) {
-  // Persist adapter. Call sites must use MyScrapStorage only; do not read these
-  // keys from app.js. Phase 3 (Supabase) replaces this implementation.
+  // Persist adapter. Call sites must use MyScrapStorage only.
+  // When js/config.js has a real URL and anon key, scraps go through MyScrapBackend (Supabase).
+  // Language and theme always stay on this device.
   const KEYS = {
     lang: "myscrap.lang",
     theme: "myscrap.theme",
@@ -9,6 +10,15 @@
   };
   const BUDGET = 4.2 * 1024 * 1024;
   const MEDIA_TYPES = { image: 1, video: 1, audio: 1 };
+
+  function backend() {
+    return global.MyScrapBackend || null;
+  }
+
+  function remoteOn() {
+    const b = backend();
+    return !!(b && b.isActive());
+  }
 
   function safeParse(raw, fallback) {
     try {
@@ -44,10 +54,13 @@
   }
 
   function getSession() {
+    const b = backend();
+    if (b && b.isConfigured()) return b.getSession();
     return safeParse(localStorage.getItem(KEYS.session), null);
   }
 
   function setSession(session) {
+    if (remoteOn()) return;
     localStorage.setItem(KEYS.session, JSON.stringify(session));
   }
 
@@ -62,7 +75,7 @@
     return next;
   }
 
-  function loadScraps() {
+  function loadLocal() {
     const list = safeParse(localStorage.getItem(KEYS.scraps), []);
     if (!Array.isArray(list)) return [];
     return list.map(normalizeLoaded);
@@ -71,7 +84,7 @@
   function stripForPersist(scrap) {
     const copy = { ...scrap };
     if (copy.ephemeral) {
-      delete copy.dataUrl;
+      copy.dataUrl = "";
       copy.storedMedia = false;
     }
     return copy;
@@ -81,7 +94,7 @@
     return JSON.stringify(list).length;
   }
 
-  function saveScraps(scraps) {
+  function saveLocal(scraps) {
     let payload = scraps.map(stripForPersist);
     if (estimate(payload) > BUDGET) {
       payload = payload.map((item) => {
@@ -115,6 +128,39 @@
     }
   }
 
+  async function ready() {
+    const b = backend();
+    if (b && b.isConfigured()) await b.init();
+  }
+
+  async function loadScraps() {
+    if (remoteOn()) return backend().loadScraps();
+    return loadLocal();
+  }
+
+  async function saveScraps(scraps) {
+    if (remoteOn()) return backend().saveScraps(scraps);
+    return saveLocal(scraps);
+  }
+
+  async function signIn(method) {
+    const b = backend();
+    if (b && b.isConfigured()) return b.signIn(method);
+    return { ok: true, redirect: false, local: true };
+  }
+
+  async function signOut() {
+    const b = backend();
+    if (b && b.isConfigured()) await b.signOut();
+    clearSession();
+  }
+
+  async function migrateLocalIfNeeded() {
+    const b = backend();
+    if (b && b.isActive()) return b.migrateLocalIfNeeded();
+    return { migrated: false };
+  }
+
   global.MyScrapStorage = {
     getLang,
     setLang,
@@ -125,5 +171,18 @@
     clearSession,
     loadScraps,
     saveScraps,
+    ready,
+    signIn,
+    signOut,
+    migrateLocalIfNeeded,
+    isConfigured() {
+      const b = backend();
+      return !!(b && b.isConfigured());
+    },
+    isRemote: remoteOn,
+    onRemoteChange(fn) {
+      const b = backend();
+      if (b) b.onRemoteChange(fn);
+    },
   };
 })(window);

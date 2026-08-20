@@ -65,10 +65,23 @@
           : session.method === "google"
             ? t("sessionGoogle")
             : t("sessionBrowse");
-      chip.textContent = method + " · " + t("headerSession");
+      const where = storage.isRemote() ? t("headerCloud") : t("headerSession");
+      chip.textContent = method + " · " + where;
       chip.hidden = false;
     } else if (chip) {
       chip.hidden = true;
+    }
+    const loginHint = $(".login-hint");
+    if (loginHint) {
+      loginHint.textContent = storage.isConfigured() ? t("loginHintCloud") : t("loginHint");
+    }
+    const browseHint = $(".browse-hint");
+    if (browseHint) {
+      browseHint.textContent = storage.isConfigured() ? t("browseHintCloud") : t("browseHint");
+    }
+    const footerNote = $("[data-i18n='footerNote']");
+    if (footerNote) {
+      footerNote.textContent = storage.isRemote() ? t("footerNoteCloud") : t("footerNote");
     }
     syncThemeButtons();
     renderList();
@@ -114,12 +127,12 @@
     els.status.classList.toggle("is-info", kind === "info");
   }
 
-  function persist() {
-    const result = storage.saveScraps(scraps);
+  async function persist() {
+    const result = await storage.saveScraps(scraps);
     if (result.ok && result.scraps) {
       scraps = mergePersisted(scraps, result.scraps);
     }
-    if (!result.ok) showStatus(t("errorQuota"));
+    if (!result.ok) showStatus(t(result.error === "quota" ? "errorQuota" : "syncError"));
     else if (result.quota) showStatus(t("errorQuota"), "info");
     return result.ok;
   }
@@ -134,9 +147,11 @@
       }
       return Object.assign({}, item, {
         storedMedia: next.storedMedia !== false,
-        dataUrl: next.dataUrl || "",
-        posterUrl: next.posterUrl || "",
-        og: next.og || null,
+        dataUrl: next.dataUrl || item.dataUrl || "",
+        posterUrl: next.posterUrl || item.posterUrl || "",
+        og: next.og || item.og || null,
+        mediaPath: next.mediaPath || item.mediaPath || "",
+        posterPath: next.posterPath || item.posterPath || "",
       });
     });
   }
@@ -159,17 +174,74 @@
     return !els.viewApp.hidden;
   }
 
-  function enterApp(method) {
-    storage.setSession({ method: method, enteredAt: Date.now() });
+  async function enterApp(method) {
+    if (!storage.isRemote()) {
+      storage.setSession({ method: method, enteredAt: Date.now() });
+    }
     els.viewLogin.hidden = true;
     els.viewApp.hidden = false;
     els.logoutBtn.hidden = false;
     els.clearBtn.hidden = false;
+    if (storage.isRemote()) {
+      showStatus(t("migrating"), "info");
+      const migrated = await storage.migrateLocalIfNeeded();
+      let loadFailed = false;
+      try {
+        scraps = await storage.loadScraps();
+      } catch {
+        scraps = [];
+        loadFailed = true;
+        showStatus(t("syncError"));
+      }
+      if (loadFailed) {
+        /* keep syncError */
+      } else if (migrated && migrated.migrated) {
+        showStatus(t("migrateOk"), "info");
+      } else {
+        showStatus("");
+      }
+    } else {
+      scraps = await storage.loadScraps();
+    }
     applyI18n();
     els.input.focus();
     updateCameraItem();
     updateFab();
     growComposer();
+  }
+
+  let authBusy = false;
+
+  async function requestAuth(method) {
+    if (authBusy) return;
+    authBusy = true;
+    try {
+      if (!storage.isConfigured()) {
+        await enterApp(method);
+        return;
+      }
+      showStatus(t("authWorking"), "info");
+      const result = await storage.signIn(method);
+      if (!result.ok) {
+        showStatus(t("authError"));
+        return;
+      }
+      if (result.redirect) return;
+      await storage.ready();
+      await enterApp(method);
+    } finally {
+      authBusy = false;
+    }
+  }
+
+  async function reloadRemoteScraps() {
+    if (!storage.isRemote() || !isAppOpen() || draft) return;
+    try {
+      scraps = await storage.loadScraps();
+      renderList();
+    } catch {
+      showStatus(t("syncError"));
+    }
   }
 
   function resetLeaveArm() {
@@ -194,8 +266,8 @@
     leaveArmedTimer = setTimeout(resetLeaveArm, 4000);
   }
 
-  function leaveApp() {
-    storage.clearSession();
+  async function leaveApp() {
+    await storage.signOut();
     els.viewApp.hidden = true;
     els.viewLogin.hidden = false;
     els.logoutBtn.hidden = true;
@@ -207,6 +279,7 @@
     tagFilter = "";
     searchQuery = "";
     if (els.search) els.search.value = "";
+    scraps = [];
     resetLeaveArm();
     applyI18n();
     updateFab();
@@ -309,6 +382,9 @@
       domain: "",
       error: "",
       memo: "",
+      updatedAt: Date.now(),
+      mediaPath: "",
+      posterPath: "",
       ...partial,
     };
   }
@@ -361,7 +437,7 @@
     if (!silent) showStatus("");
   }
 
-  function saveDraft() {
+  async function saveDraft() {
     if (!draft) return;
     const editing = !!draft.editing;
     const item = Object.assign({}, draft);
@@ -374,12 +450,12 @@
     }
     if (editing) {
       const idx = scraps.findIndex((s) => s.id === item.id);
-      if (idx >= 0) scraps[idx] = Object.assign({}, scraps[idx], item);
+      if (idx >= 0) scraps[idx] = Object.assign({}, scraps[idx], item, { updatedAt: Date.now() });
       else scraps.unshift(item);
-      persist();
+      await persist();
       renderList();
     } else {
-      addScrap(item);
+      await addScrap(item);
     }
     showStatus("");
     const next = fileQueue.shift();
@@ -537,24 +613,24 @@
     els.draftPanel.replaceChildren(head, labelField, contentField, previewBlock, tagField, memoField, actions);
   }
 
-  function addScrap(scrap) {
+  async function addScrap(scrap) {
     scraps.unshift(scrap);
-    persist();
+    await persist();
     renderList();
     return scrap;
   }
 
-  function updateScrap(id, patch) {
+  async function updateScrap(id, patch) {
     const item = scraps.find((s) => s.id === id);
     if (!item) return;
-    Object.assign(item, patch);
-    persist();
+    Object.assign(item, patch, { updatedAt: Date.now() });
+    await persist();
     renderList();
   }
 
-  function removeScrap(id) {
+  async function removeScrap(id) {
     scraps = scraps.filter((s) => s.id !== id);
-    persist();
+    await persist();
     renderList();
   }
 
@@ -652,7 +728,7 @@
     }
     const item = scraps.find((s) => s.id === id);
     if (!item) return;
-    updateScrap(id, {
+    await updateScrap(id, {
       og: result.data,
       ogStatus: result.ok ? "ok" : "error",
       title: (result.data && result.data.title) || item.title,
@@ -748,11 +824,11 @@
     return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
   }
 
-  function loadSamples() {
+  async function loadSamples() {
     const existing = scraps.filter((s) => s.sample);
     if (existing.length) {
       scraps = scraps.filter((s) => !s.sample);
-      persist();
+      await persist();
       renderList();
       return;
     }
@@ -781,7 +857,7 @@
       sample: true,
     });
     scraps.unshift(photo, link, note);
-    persist();
+    await persist();
     renderList();
     hydrateOg(link.id, link.url);
   }
@@ -1292,11 +1368,11 @@
     els.toTop.hidden = !isAppOpen() || y < 80;
   }
 
-  function confirmClear() {
+  async function confirmClear() {
     if (els.clearBtn.dataset.armed === "1") {
       cancelDraft(true);
       scraps = [];
-      persist();
+      await persist();
       renderList();
       els.clearBtn.dataset.armed = "0";
       els.clearBtn.textContent = t("clear");
@@ -1349,7 +1425,7 @@
       btn.addEventListener("click", () => setTheme(btn.getAttribute("data-theme-choice")));
     });
     $all("[data-auth]").forEach((btn) => {
-      btn.addEventListener("click", () => enterApp(btn.getAttribute("data-auth")));
+      btn.addEventListener("click", () => requestAuth(btn.getAttribute("data-auth")));
     });
     els.logoutBtn.addEventListener("click", requestLeave);
     els.clearBtn.addEventListener("click", confirmClear);
@@ -1467,28 +1543,40 @@
     });
   }
 
-  function init() {
+  async function init() {
     cacheEls();
     reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     lang = storage.getLang();
     themePref = storage.getTheme();
-    scraps = storage.loadScraps();
     bind();
     applyTheme();
-    applyI18n();
     updateStick();
     growComposer();
     updateCameraItem();
-    if (storage.getSession()) enterApp(storage.getSession().method);
-    else {
+    await storage.ready();
+    storage.onRemoteChange(reloadRemoteScraps);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") reloadRemoteScraps();
+    });
+    if (storage.getSession()) {
+      await enterApp(storage.getSession().method);
+    } else {
+      try {
+        scraps = await storage.loadScraps();
+      } catch {
+        scraps = [];
+      }
       els.viewLogin.hidden = false;
       els.viewApp.hidden = true;
+      applyI18n();
     }
     updateFab();
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init);
+    document.addEventListener("DOMContentLoaded", () => {
+      init();
+    });
   } else {
     init();
   }

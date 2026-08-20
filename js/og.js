@@ -89,8 +89,25 @@
     return res.text();
   }
 
+  async function fetchOgRemote(pageUrl) {
+    const b = global.MyScrapBackend;
+    if (!b || !b.isActive() || typeof b.fetchOg !== "function") return null;
+    try {
+      return await b.fetchOg(pageUrl);
+    } catch {
+      return null;
+    }
+  }
+
   async function fetchOg(pageUrl) {
     const fallback = parseUrlFallback(pageUrl);
+    const remote = await fetchOgRemote(pageUrl);
+    if (remote && remote.data && (remote.data.title || remote.data.image || remote.data.description || remote.ok === false)) {
+      return {
+        ok: !!remote.ok,
+        data: { ...fallback, ...remote.data },
+      };
+    }
     const clock = timeout(9000);
     try {
       try {

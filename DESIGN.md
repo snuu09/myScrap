@@ -226,4 +226,4 @@ States required: hover, focus-visible, disabled (Stick), loading (OG skeleton), 
 
 ## Open UX gaps
 
-Phase 1 and 2 of [ROADMAP.md](ROADMAP.md) are in the client. Remaining product work is Phase 3 (Supabase): real auth, sync, and server storage. Do not reopen a Notion sidebar, folder tree, or AI chat on cream.
+Phase 1, 2, and 3 of [ROADMAP.md](ROADMAP.md) are in the client. Phase 3 stays dormant until [`js/config.js`](js/config.js) has a project URL and anon key. Do not reopen a Notion sidebar, folder tree, or AI chat on cream.
