@@ -1,4 +1,4 @@
--- myScrap Phase 3: scraps table, RLS, private media bucket, realtime.
+-- Mybrary Phase 3: scraps table, RLS, private media bucket, realtime.
 -- Apply when the project exists. Do not put API keys in this file.
 
 create table if not exists public.scraps (

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ko" data-surface="intro" data-palette="kitchen">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#fff7f2" />
+    <title>이용약관 · MyBrary</title>
+    <link rel="icon" href="../assets/favicon.svg?v=book" type="image/svg+xml" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/sun-typeface/SUIT@2/fonts/static/woff2/SUIT.css"
+    />
+    <link rel="stylesheet" href="../css/styles.css" />
+    <link rel="stylesheet" href="../css/ai.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main" data-i18n="skip">본문으로 건너뛰기</a>
+    <div class="app-frame">
+      <header class="site-header">
+        <a class="brand" href="../index.html">
+          <img class="brand-mark" src="../assets/favicon.svg?v=book" width="22" height="22" alt="" aria-hidden="true" />
+          <span class="brand-name" data-i18n="appName">MyBrary</span>
+        </a>
+        <div class="header-tools">
+          <div class="lang-switch" role="group" data-i18n-aria="langSwitch" aria-label="언어">
+            <button type="button" data-lang="ko" aria-pressed="true">KO</button>
+            <button type="button" data-lang="en" aria-pressed="false">EN</button>
+          </div>
+        </div>
+      </header>
+      <main id="main" class="site-main legal-main">
+        <article class="legal-article">
+          <h1 data-i18n="terms">이용약관</h1>
+          <p class="legal-updated" data-i18n="legalUpdated">이 문서는 서비스가 실제로 하는 일만 적습니다.</p>
+          <div class="legal-copy" data-legal-lang="ko">
+            <p>MyBrary는 웹에서 본 것, 사진, 파일을 한곳에 붙이는 개인 스크랩 상자입니다. 팀 공간이나 쇼핑몰이 아닙니다.</p>
+            <h2>이용</h2>
+            <p>문을 연 뒤 붙여넣기, 파일 첨부, 분류, 목록 찾기를 사용할 수 있습니다. 둘러보기는 계정 없이 이 기기에서만 저장합니다.</p>
+            <h2>저장</h2>
+            <p>지금 이 배포는 브라우저의 localStorage에 조각을 둡니다. 운영자가 Supabase 주소와 공개 키를 넣은 뒤에는 계정에 맞춰 클라우드에 저장할 수 있습니다. 아직 키가 없으면 다른 기기와 이어지지 않습니다.</p>
+            <h2>운영</h2>
+            <p>운영 주체, 대표, 주소, 연락처는 아래에 표시합니다. 값이 없으면 「표시 예정」입니다. 사업자등록번호나 통신판매업 신고번호는 해당할 때만 적습니다. 이 문서는 없는 번호를 만들지 않습니다.</p>
+            <h2>책임</h2>
+            <p>붙인 내용의 권리는 붙인 사람에게 있습니다. 서비스는 분류와 미리보기를 도울 뿐, 외부 사이트의 내용을 보증하지 않습니다.</p>
+          </div>
+          <div class="legal-copy" data-legal-lang="en" hidden>
+            <p>MyBrary is a personal capture box for things you saw on the web, photos, and files. It is not a team space or a store.</p>
+            <h2>Use</h2>
+            <p>After you open the door you can paste, attach, classify, and find scraps. Browse saves on this device only, with no account.</p>
+            <h2>Storage</h2>
+            <p>This build keeps scraps in the browser localStorage. After the operator pastes a Supabase URL and publishable key, scraps can follow an account in the cloud. With empty keys they do not sync across devices.</p>
+            <h2>Operator</h2>
+            <p>Operator, representative, address, and contact appear below. Empty fields read “To be shown”. A business registration number is listed only when a real one exists. This page does not invent one.</p>
+            <h2>Responsibility</h2>
+            <p>Rights in stuck material stay with the person who stuck it. The service helps classify and preview. It does not guarantee third-party pages.</p>
+          </div>
+        </article>
+      </main>
+      <footer class="site-footer">
+        <nav class="footer-legal" data-i18n-aria="footerLegal" aria-label="정책">
+          <a href="terms.html" data-i18n="terms">이용약관</a>
+          <a href="privacy.html" class="footer-privacy" data-i18n="privacy">개인정보처리방침</a>
+        </nav>
+        <p class="footer-identity">
+          <span data-i18n="footerMark">MyBrary</span>
+          · <span data-i18n="legalOperator">운영</span> <span data-legal="operator"></span>
+          · <span data-i18n="legalRep">대표</span> <span data-legal="representative"></span>
+          · <span data-legal="address"></span>
+          · <span data-legal="phone"></span>
+          · <a data-legal-email><span data-legal="email"></span></a>
+          · <span data-i18n="legalHost">호스팅</span> <span data-legal="host"></span>
+          · © <span data-legal-year></span> <span data-i18n="appName">MyBrary</span>
+        </p>
+      </footer>
+    </div>
+    <script src="../js/config.js?v=mybrary"></script>
+    <script src="../js/legal.js?v=mybrary"></script>
+    <script src="../js/i18n.js?v=mybrary"></script>
+    <script src="../js/legal-page.js?v=mybrary"></script>
+  </body>
+</html>

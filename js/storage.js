@@ -1,8 +1,15 @@
 (function (global) {
-  // Persist adapter. Call sites must use MyScrapStorage only.
-  // When js/config.js has a real URL and anon key, scraps go through MyScrapBackend (Supabase).
+  // Persist adapter. Call sites must use MybraryStorage only.
+  // When js/config.js has a real URL and anon key, scraps go through MybraryBackend (Supabase).
   // Language, theme, and color palette always stay on this device.
   const KEYS = {
+    lang: "mybrary.lang",
+    theme: "mybrary.theme",
+    palette: "mybrary.palette",
+    session: "mybrary.session",
+    scraps: "mybrary.scraps",
+  };
+  const LEGACY = {
     lang: "myscrap.lang",
     theme: "myscrap.theme",
     palette: "myscrap.palette",
@@ -13,7 +20,35 @@
   const MEDIA_TYPES = { image: 1, video: 1, audio: 1 };
 
   function backend() {
-    return global.MyScrapBackend || null;
+    return global.MybraryBackend || null;
+  }
+
+  function adopt(key, legacy) {
+    try {
+      const next = localStorage.getItem(key);
+      if (next != null) return next;
+      const prev = localStorage.getItem(legacy);
+      if (prev != null) {
+        localStorage.setItem(key, prev);
+        return prev;
+      }
+    } catch {
+      /* ignore quota or private mode */
+    }
+    return null;
+  }
+
+  function readKey(name) {
+    return adopt(KEYS[name], LEGACY[name]);
+  }
+
+  function dropKey(name) {
+    try {
+      localStorage.removeItem(KEYS[name]);
+      localStorage.removeItem(LEGACY[name]);
+    } catch {
+      /* ignore */
+    }
   }
 
   function remoteOn() {
@@ -30,7 +65,7 @@
   }
 
   function getLang() {
-    const stored = localStorage.getItem(KEYS.lang);
+    const stored = readKey("lang");
     if (stored === "en" || stored === "ko") return stored;
     const nav = (navigator.language || "").toLowerCase();
     return nav.startsWith("en") ? "en" : "ko";
@@ -41,7 +76,7 @@
   }
 
   function getTheme() {
-    const stored = localStorage.getItem(KEYS.theme);
+    const stored = readKey("theme");
     if (stored === "light" || stored === "dark") return stored;
     return "system";
   }
@@ -51,23 +86,24 @@
       localStorage.setItem(KEYS.theme, theme);
       return;
     }
-    localStorage.removeItem(KEYS.theme);
+    dropKey("theme");
   }
 
   function getPalette() {
-    const stored = localStorage.getItem(KEYS.palette);
-    return stored === "basalt" ? "basalt" : "kitchen";
+    const stored = readKey("palette");
+    if (stored === "basalt" || stored === "ai") return stored;
+    return "kitchen";
   }
 
   function setPalette(palette) {
-    if (palette === "basalt") localStorage.setItem(KEYS.palette, "basalt");
-    else localStorage.removeItem(KEYS.palette);
+    if (palette === "basalt" || palette === "ai") localStorage.setItem(KEYS.palette, palette);
+    else dropKey("palette");
   }
 
   function getSession() {
     const b = backend();
     if (b && b.isConfigured()) return b.getSession();
-    return safeParse(localStorage.getItem(KEYS.session), null);
+    return safeParse(readKey("session"), null);
   }
 
   function setSession(session) {
@@ -76,7 +112,7 @@
   }
 
   function clearSession() {
-    localStorage.removeItem(KEYS.session);
+    dropKey("session");
   }
 
   function normalizeLoaded(item) {
@@ -87,7 +123,7 @@
   }
 
   function loadLocal() {
-    const list = safeParse(localStorage.getItem(KEYS.scraps), []);
+    const list = safeParse(readKey("scraps"), []);
     if (!Array.isArray(list)) return [];
     return list.map(normalizeLoaded);
   }
@@ -172,7 +208,7 @@
     return { migrated: false };
   }
 
-  global.MyScrapStorage = {
+  global.MybraryStorage = {
     getLang,
     setLang,
     getTheme,

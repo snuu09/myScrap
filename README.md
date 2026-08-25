@@ -1,10 +1,10 @@
-# myScrap
+# MyBrary
 
 Personal capture box for things you saw on the web, photos, and files. Static HTML, CSS, and JS. No build step.
 
 Shipped vs next: [ROADMAP.md](ROADMAP.md). Product and design: [PRODUCT.md](PRODUCT.md), [DESIGN.md](DESIGN.md) (includes motion and interaction rules). Folders and layers: [ARCHITECTURE.md](ARCHITECTURE.md).
 
-Phases 1–3 are in this client. **Next is Phase 4:** intro page, header login, 일자별 calendar filter, Korean legal footer.
+Phases 1–4 are in this client. Operator keys in [`js/config.js`](js/config.js) turn on cloud auth and sync.
 
 ## Open
 
@@ -32,15 +32,15 @@ css/           styles
 js/            config, backend, storage, services, app
 assets/        favicon
 supabase/      migrations, Edge Functions (optional until keys are set)
-legal/         terms + privacy (Phase 4)
+legal/         terms + privacy
 ```
 
 ## Use
 
-1. Pick Apple ID, Google, or Browse. With empty [`js/config.js`](js/config.js), these stay on this device (demo session). After you paste a project URL and anon key, Apple/Google use OAuth and Browse uses anonymous auth. See [`supabase/README.md`](supabase/README.md).
+1. On the intro, **로그인** then Apple ID, Google, or Browse. With empty [`js/config.js`](js/config.js), these stay on this device (demo session). After you paste a project URL and anon key, Apple/Google use OAuth and Browse uses anonymous auth. See [`supabase/README.md`](supabase/README.md). A saved session skips the intro.
 2. Paste text or a URL, drop a file, or use **+** (clipboard, camera on phones, photo, file). A new stick replaces an open classify draft.
-3. Confirm the type tags in the preview, then save. Items land newest-first. Search, type chips, and tag filters sit above the list. Link drafts show an on-device phishing-risk note.
-4. KO / EN, 기본 / 현무암 magnet color, and light / system / dark in the header. Theme follows the system until you pick light or dark. You can return to system. Language, theme, and palette are remembered on this device.
+3. Confirm the type tags in the preview, then save. Items land newest-first. Search, type chips, tag filters, and 일자별 sit above the list. Link drafts show an on-device phishing-risk note.
+4. KO / EN, 기본 / 현무암 / AI, and light / system / dark in the settings sheet. Theme follows the system until you pick light or dark. You can return to system. Language, theme, and palette are remembered on this device.
 
 ## What is demo vs real
 

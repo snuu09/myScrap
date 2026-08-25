@@ -1,10 +1,10 @@
 (function () {
-  const i18n = window.MyScrapI18n;
-  const storage = window.MyScrapStorage;
-  const tagger = window.MyScrapTagger;
-  const phish = window.MyScrapPhish;
-  const og = window.MyScrapOg;
-  const preview = window.MyScrapPreview;
+  const i18n = window.MybraryI18n;
+  const storage = window.MybraryStorage;
+  const tagger = window.MybraryTagger;
+  const phish = window.MybraryPhish;
+  const og = window.MybraryOg;
+  const preview = window.MybraryPreview;
 
   const els = {};
   let lang = "ko";
@@ -21,6 +21,9 @@
   let typeFilter = "";
   let tagFilter = "";
   let searchQuery = "";
+  let dayFilter = "";
+  let calYear = new Date().getFullYear();
+  let calMonth = new Date().getMonth();
   let peelArmedId = "";
   let peelArmedTimer = 0;
   let leaveArmedTimer = 0;
@@ -46,6 +49,7 @@
 
   function applyI18n() {
     document.documentElement.lang = lang;
+    document.title = t("appName");
     $all("[data-i18n]").forEach((node) => {
       node.textContent = t(node.getAttribute("data-i18n"));
     });
@@ -54,6 +58,9 @@
     });
     $all("[data-i18n-aria]").forEach((node) => {
       node.setAttribute("aria-label", t(node.getAttribute("data-i18n-aria")));
+    });
+    $all("[data-i18n-alt]").forEach((node) => {
+      node.setAttribute("alt", t(node.getAttribute("data-i18n-alt")));
     });
     $all("[data-lang]").forEach((btn) => {
       btn.setAttribute("aria-pressed", btn.getAttribute("data-lang") === lang ? "true" : "false");
@@ -77,17 +84,20 @@
     if (loginHint) {
       loginHint.textContent = storage.isConfigured() ? t("loginHintCloud") : t("loginHint");
     }
-    const browseHint = $(".browse-hint");
-    if (browseHint) {
-      browseHint.textContent = storage.isConfigured() ? t("browseHintCloud") : t("browseHint");
-    }
+    const browseHints = $all(".browse-hint");
+    browseHints.forEach((node) => {
+      node.textContent = storage.isConfigured() ? t("browseHintCloud") : t("browseHint");
+    });
     const footerNote = $("[data-i18n='footerNote']");
     if (footerNote) {
       footerNote.textContent = storage.isRemote() ? t("footerNoteCloud") : t("footerNote");
     }
+    if (window.MybraryLegal) window.MybraryLegal.fill(document, lang);
+    syncEnterBtn();
     syncThemeButtons();
     renderList();
     if (draft) renderDraft();
+    syncFooterHeight();
   }
 
   function setLang(next) {
@@ -101,18 +111,23 @@
     return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   }
 
+  function resolvedPalette() {
+    if (palettePref === "basalt" || palettePref === "ai") return palettePref;
+    return "kitchen";
+  }
+
   function applyTheme() {
     const resolved = resolvedTheme();
-    const palette = palettePref === "basalt" ? "basalt" : "kitchen";
+    const palette = resolvedPalette();
     document.documentElement.setAttribute("data-theme", resolved);
     document.documentElement.setAttribute("data-palette", palette);
     document.documentElement.style.colorScheme = resolved;
     const meta = document.querySelector('meta[name="theme-color"]');
-    const surface = document.documentElement.getAttribute("data-surface") || "login";
+    const surface = document.documentElement.getAttribute("data-surface") || "intro";
     if (meta) {
-      let color = "#ffffff";
-      if (resolved === "dark") color = "#302b26";
-      else if (surface !== "login") color = "#fff7f2";
+      let color = palette === "ai" ? "#f3f7f5" : "#fff7f2";
+      if (resolved === "dark") color = palette === "ai" ? "#252c29" : "#302b26";
+      else if (surface === "intro") color = palette === "ai" ? "#f3f7f5" : "#fff7f2";
       meta.setAttribute("content", color);
     }
     syncThemeButtons();
@@ -121,8 +136,34 @@
   }
 
   function setSurface(name) {
-    document.documentElement.setAttribute("data-surface", name === "app" ? "app" : "login");
+    document.documentElement.setAttribute("data-surface", name === "app" ? "app" : "intro");
     applyTheme();
+  }
+
+  function introHoverFine() {
+    return window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+  }
+
+  function introHotspots() {
+    return $all("[data-hotspot]", els.introHotspots);
+  }
+
+  function collapseIntroHotspots() {
+    introHotspots().forEach((btn) => btn.setAttribute("aria-expanded", "false"));
+  }
+
+  function bindIntroHotspots() {
+    const root = els.introHotspots;
+    if (!root) return;
+    introHotspots().forEach((btn) => {
+      btn.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        if (introHoverFine()) return;
+        const on = btn.getAttribute("aria-expanded") === "true";
+        collapseIntroHotspots();
+        if (!on) btn.setAttribute("aria-expanded", "true");
+      });
+    });
   }
 
   function syncThemeButtons() {
@@ -145,9 +186,10 @@
   }
 
   function setPalette(next) {
-    palettePref = next === "basalt" ? "basalt" : "kitchen";
+    palettePref = next === "basalt" || next === "ai" ? next : "kitchen";
     storage.setPalette(palettePref);
     applyTheme();
+    renderList();
   }
 
   function showStatus(message, kind) {
@@ -277,11 +319,13 @@
     const instant = !!(opts && opts.instant);
     els.logoutBtn.hidden = false;
     els.clearBtn.hidden = false;
+    syncEnterBtn();
+    closeEnter(true);
     if (instant || prefersReducedMotion()) {
-      swapInstant(els.viewLogin, els.viewApp);
+      swapInstant(els.viewIntro, els.viewApp);
       setSurface("app");
     } else {
-      await conceal(els.viewLogin);
+      await conceal(els.viewIntro);
       setSurface("app");
       await reveal(els.viewApp);
     }
@@ -320,6 +364,7 @@
     if (authBusy) return;
     authBusy = true;
     try {
+      closeEnter(true);
       if (!storage.isConfigured()) {
         await enterApp(method);
         return;
@@ -374,25 +419,30 @@
   async function leaveApp() {
     await storage.signOut();
     closeMenu();
+    closeSettings();
+    closeEnter(true);
+    closeCalendar();
     await closeLightbox();
     await cancelDraft(true);
     els.logoutBtn.hidden = true;
     els.clearBtn.hidden = true;
+    syncEnterBtn();
     if (els.toTop) {
       els.toTop.classList.remove("is-shown");
       els.toTop.hidden = true;
     }
     if (prefersReducedMotion()) {
-      swapInstant(els.viewApp, els.viewLogin);
-      setSurface("login");
+      swapInstant(els.viewApp, els.viewIntro);
+      setSurface("intro");
     } else {
       await conceal(els.viewApp);
-      setSurface("login");
-      await reveal(els.viewLogin);
+      setSurface("intro");
+      await reveal(els.viewIntro);
     }
     typeFilter = "";
     tagFilter = "";
     searchQuery = "";
+    dayFilter = "";
     if (els.search) els.search.value = "";
     scraps = [];
     resetLeaveArm();
@@ -466,6 +516,83 @@
     if (!els.addMenu || els.addMenu.hidden) return;
     els.addBtn.setAttribute("aria-expanded", "false");
     conceal(els.addMenu);
+  }
+
+  function settingsFocusables() {
+    if (!els.settingsSheet) return [];
+    return $all("button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])", els.settingsSheet).filter(
+      (node) => !node.hidden && !node.disabled && node.getAttribute("aria-hidden") !== "true"
+    );
+  }
+
+  function openSettings() {
+    if (!els.settingsSheet || !els.settingsSheet.hidden) return;
+    closeMenu();
+    closeEnter(true);
+    closeCalendar();
+    els.settingsBtn.setAttribute("aria-expanded", "true");
+    reveal(els.settingsSheet);
+    els.settingsSheet.focus();
+  }
+
+  function closeSettings() {
+    if (!els.settingsSheet || els.settingsSheet.hidden) return;
+    els.settingsBtn.setAttribute("aria-expanded", "false");
+    conceal(els.settingsSheet);
+    els.settingsBtn.focus();
+  }
+
+  function toggleSettings() {
+    if (els.settingsSheet.hidden) openSettings();
+    else closeSettings();
+  }
+
+  function enterFocusables() {
+    if (!els.enterSheet) return [];
+    return $all("button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])", els.enterSheet).filter(
+      (node) => !node.hidden && !node.disabled && node.getAttribute("aria-hidden") !== "true"
+    );
+  }
+
+  function syncEnterBtn() {
+    const on = !!storage.getSession();
+    if (els.enterBtn) els.enterBtn.hidden = on;
+    if (on) closeEnter(true);
+  }
+
+  function syncFooterHeight() {
+    const footer = $(".site-footer");
+    if (!footer) return;
+    document.documentElement.style.setProperty("--footer-h", footer.offsetHeight + "px");
+  }
+
+  function openEnter() {
+    if (!els.enterSheet || !els.enterBtn || els.enterBtn.hidden) return;
+    if (!els.enterSheet.hidden) return;
+    closeMenu();
+    closeSettings();
+    closeCalendar();
+    els.enterBtn.setAttribute("aria-expanded", "true");
+    reveal(els.enterSheet);
+    els.enterSheet.focus();
+  }
+
+  function closeEnter(silent) {
+    if (!els.enterSheet || els.enterSheet.hidden) return;
+    if (els.enterBtn) els.enterBtn.setAttribute("aria-expanded", "false");
+    if (silent) {
+      els.enterSheet.hidden = true;
+      els.enterSheet.classList.remove("is-enter", "is-exit");
+      return;
+    }
+    conceal(els.enterSheet);
+    if (els.enterBtn && !els.enterBtn.hidden) els.enterBtn.focus();
+  }
+
+  function toggleEnter() {
+    if (!els.enterSheet) return;
+    if (els.enterSheet.hidden) openEnter();
+    else closeEnter();
   }
 
   function toggleMenu() {
@@ -963,6 +1090,7 @@
   function magnetHex() {
     const dark = resolvedTheme() === "dark";
     if (palettePref === "basalt") return dark ? "#c8c6c1" : "#3a3936";
+    if (palettePref === "ai") return dark ? "#7ecfb8" : "#1f6b58";
     return dark ? "#f4a24a" : "#e56f0a";
   }
 
@@ -1332,6 +1460,7 @@
   function visibleScraps() {
     const q = searchQuery.trim().toLowerCase();
     return scraps.filter((item) => {
+      if (dayFilter && localDayKey(item.createdAt) !== dayFilter) return false;
       if (typeFilter && item.type !== typeFilter) return false;
       if (tagFilter) {
         const wanted = String(tagFilter).toLowerCase();
@@ -1354,6 +1483,136 @@
     });
   }
 
+  function pad2(n) {
+    return String(n).padStart(2, "0");
+  }
+
+  function localDayKey(ts) {
+    const d = new Date(ts);
+    return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
+  }
+
+  function dayCounts() {
+    const map = {};
+    scraps.forEach((item) => {
+      const key = localDayKey(item.createdAt);
+      map[key] = (map[key] || 0) + 1;
+    });
+    return map;
+  }
+
+  function isCalendarOpen() {
+    return !!(els.dayCalendar && !els.dayCalendar.hidden);
+  }
+
+  function openCalendar() {
+    if (!els.dayCalendar || !els.dayCalendar.hidden) return;
+    if (els.dayFilterBtn) els.dayFilterBtn.setAttribute("aria-expanded", "true");
+    els.dayCalendar.hidden = false;
+    renderCalendar();
+  }
+
+  function closeCalendar() {
+    if (!els.dayCalendar || els.dayCalendar.hidden) return;
+    if (els.dayFilterBtn) els.dayFilterBtn.setAttribute("aria-expanded", "false");
+    els.dayCalendar.hidden = true;
+  }
+
+  function toggleCalendar() {
+    if (isCalendarOpen()) closeCalendar();
+    else openCalendar();
+  }
+
+  function setDayFilter(key) {
+    dayFilter = dayFilter === key ? "" : key || "";
+    if (els.dayFilterBtn) els.dayFilterBtn.setAttribute("aria-pressed", dayFilter ? "true" : "false");
+    renderList();
+  }
+
+  function shiftCalMonth(delta) {
+    calMonth += delta;
+    if (calMonth < 0) {
+      calMonth = 11;
+      calYear -= 1;
+    } else if (calMonth > 11) {
+      calMonth = 0;
+      calYear += 1;
+    }
+    renderCalendar();
+  }
+
+  function renderCalendar() {
+    if (!els.dayCalGrid || !els.dayCalLabel) return;
+    const locale = lang === "en" ? "en" : "ko";
+    els.dayCalLabel.textContent = new Intl.DateTimeFormat(locale, {
+      year: "numeric",
+      month: "long",
+    }).format(new Date(calYear, calMonth, 1));
+    if (els.dayCalWeekdays) {
+      els.dayCalWeekdays.replaceChildren(
+        ...[0, 1, 2, 3, 4, 5, 6].map((i) => el("span", { text: t("weekday." + i) }))
+      );
+    }
+    const counts = dayCounts();
+    const startPad = new Date(calYear, calMonth, 1).getDay();
+    const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+    const today = localDayKey(Date.now());
+    const cells = [];
+    for (let i = 0; i < startPad; i++) {
+      cells.push(el("span", { class: "day-cal-pad", "aria-hidden": "true" }));
+    }
+    for (let day = 1; day <= daysInMonth; day++) {
+      const key = calYear + "-" + pad2(calMonth + 1) + "-" + pad2(day);
+      const count = counts[key] || 0;
+      const selected = dayFilter === key;
+      const isToday = today === key;
+      cells.push(
+        el(
+          "button",
+          {
+            type: "button",
+            class: "day-cal-day" + (count ? " has-scraps" : "") + (isToday ? " is-today" : ""),
+            "aria-pressed": selected ? "true" : "false",
+            "data-day": key,
+            onclick: () => setDayFilter(key),
+          },
+          [
+            el("span", { class: "day-cal-num", text: String(day) }),
+            count ? el("span", { class: "day-cal-count", text: String(count) }) : null,
+          ]
+        )
+      );
+    }
+    els.dayCalGrid.replaceChildren(...cells);
+    if (els.dayFilterBtn) {
+      els.dayFilterBtn.setAttribute("aria-pressed", dayFilter ? "true" : "false");
+    }
+  }
+
+  function handleCalendarKeys(ev) {
+    if (!isCalendarOpen()) return false;
+    if (ev.key === "Escape") {
+      closeCalendar();
+      if (els.dayFilterBtn) els.dayFilterBtn.focus();
+      return true;
+    }
+    if (ev.key !== "ArrowLeft" && ev.key !== "ArrowRight" && ev.key !== "ArrowUp" && ev.key !== "ArrowDown") {
+      return false;
+    }
+    ev.preventDefault();
+    const days = $all(".day-cal-day", els.dayCalGrid);
+    if (!days.length) return true;
+    let idx = days.findIndex((d) => d === document.activeElement);
+    if (idx < 0) {
+      const sel = days.findIndex((d) => d.getAttribute("aria-pressed") === "true");
+      idx = sel >= 0 ? sel : 0;
+    }
+    const delta = ev.key === "ArrowLeft" ? -1 : ev.key === "ArrowRight" ? 1 : ev.key === "ArrowUp" ? -7 : 7;
+    idx = Math.max(0, Math.min(days.length - 1, idx + delta));
+    days[idx].focus();
+    return true;
+  }
+
   function setTypeFilter(next) {
     typeFilter = next || "";
     renderList();
@@ -1368,7 +1627,9 @@
     typeFilter = "";
     tagFilter = "";
     searchQuery = "";
+    dayFilter = "";
     if (els.search) els.search.value = "";
+    closeCalendar();
     renderList();
   }
 
@@ -1382,7 +1643,10 @@
     if (!els.listTools || !els.typeChips) return;
     const hasAny = scraps.length > 0;
     els.listTools.hidden = !hasAny;
-    if (!hasAny) return;
+    if (!hasAny) {
+      closeCalendar();
+      return;
+    }
     const types = ["", "text", "image", "video", "audio", "link", "document"];
     els.typeChips.replaceChildren(
       ...types.map((name) =>
@@ -1406,6 +1670,8 @@
         );
       }
     }
+    if (els.dayCalendar && !els.dayCalendar.hidden) renderCalendar();
+    if (els.dayFilterBtn) els.dayFilterBtn.setAttribute("aria-pressed", dayFilter ? "true" : "false");
   }
 
   function scrapActions(item) {
@@ -1483,9 +1749,7 @@
         tags.appendChild(el("span", { class: "tag sample-tag", text: t("sample") }));
       }
       const peeling = peelArmedId === item.id;
-      const li = el("li", { class: "scrap is-" + item.type, dataset: { id: item.id } }, [
-        el("span", { class: "magnet-dot", "aria-hidden": "true" }),
-        el("article", { class: "scrap-body" }, [
+      const body = el("article", { class: "scrap-body" }, [
           el("div", { class: "scrap-head" }, [
             tags,
             el("time", { class: "time", datetime: new Date(item.createdAt).toISOString(), text: formatWhen(item.createdAt) }),
@@ -1526,8 +1790,9 @@
           item.type === "link" && item.url ? renderPhishMeter(item.url, true) : null,
           item.memo ? el("p", { class: "scrap-memo", text: item.memo }) : null,
           scrapActions(item),
-        ]),
-      ]);
+        ]);
+      const kids = palettePref === "ai" ? [body] : [el("span", { class: "magnet-dot", "aria-hidden": "true" }), body];
+      const li = el("li", { class: "scrap is-" + item.type, dataset: { id: item.id } }, kids);
       els.list.appendChild(li);
     });
   }
@@ -1611,11 +1876,16 @@
   }
 
   function cacheEls() {
-    els.viewLogin = $("#view-login");
+    els.viewIntro = $("#view-intro");
+    els.introHotspots = $("#intro-hotspots");
     els.viewApp = $("#view-app");
     els.logoutBtn = $("[data-action='logout']");
     els.clearBtn = $("[data-action='clear']");
     els.sessionChip = $("[data-session-label]");
+    els.settingsBtn = $("#settings-btn");
+    els.settingsSheet = $("#settings-sheet");
+    els.enterBtn = $("#enter-btn");
+    els.enterSheet = $("#enter-sheet");
     els.composer = $("#composer");
     els.input = $("#composer-input");
     els.addBtn = $("#add-btn");
@@ -1634,12 +1904,18 @@
     els.typeChips = $("#type-chips");
     els.tagFilterBar = $("#tag-filter-bar");
     els.filterEmpty = $("#filter-empty");
+    els.dayFilterBtn = $("#day-filter-btn");
+    els.dayCalendar = $("#day-calendar");
+    els.dayCalLabel = $("#day-cal-label");
+    els.dayCalWeekdays = $("#day-cal-weekdays");
+    els.dayCalGrid = $("#day-cal-grid");
     els.lightbox = $("#lightbox");
     els.lightboxClose = $("#lightbox-close");
     els.lightboxImage = $("#lightbox-image");
   }
 
   function bind() {
+    bindIntroHotspots();
     $all("[data-lang]").forEach((btn) => {
       btn.addEventListener("click", () => setLang(btn.getAttribute("data-lang")));
     });
@@ -1657,6 +1933,8 @@
     els.composer.addEventListener("submit", onSubmit);
     els.addBtn.addEventListener("click", (ev) => {
       ev.stopPropagation();
+      closeSettings();
+      closeEnter(true);
       toggleMenu();
     });
     els.addMenu.addEventListener("click", (ev) => {
@@ -1677,8 +1955,55 @@
         els.fileAny.click();
       }
     });
+    els.settingsBtn.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      toggleSettings();
+    });
+    els.settingsSheet.addEventListener("click", (ev) => {
+      if (ev.target.closest("[data-action='close-settings']")) {
+        ev.preventDefault();
+        closeSettings();
+      }
+    });
+    if (els.enterBtn) {
+      els.enterBtn.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        toggleEnter();
+      });
+    }
+    if (els.enterSheet) {
+      els.enterSheet.addEventListener("click", (ev) => {
+        if (ev.target.closest("[data-action='close-enter']")) {
+          ev.preventDefault();
+          closeEnter();
+        }
+      });
+    }
+    $all("[data-action='open-enter']").forEach((btn) => {
+      btn.addEventListener("click", (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        openEnter();
+      });
+    });
+    if (els.dayFilterBtn) {
+      els.dayFilterBtn.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        toggleCalendar();
+      });
+    }
+    if (els.dayCalendar) {
+      els.dayCalendar.addEventListener("click", (ev) => {
+        const nav = ev.target.closest("[data-cal]");
+        if (!nav) return;
+        shiftCalMonth(nav.getAttribute("data-cal") === "prev" ? -1 : 1);
+      });
+    }
     document.addEventListener("click", (ev) => {
       if (!els.addMenu.hidden && !ev.target.closest(".add-wrap")) closeMenu();
+      if (!els.settingsSheet.hidden && !ev.target.closest(".header-tools")) closeSettings();
+      if (els.enterSheet && !els.enterSheet.hidden && !ev.target.closest(".header-tools")) closeEnter();
+      if (els.introHotspots && !ev.target.closest("#intro-hotspots .intro-hotspot")) collapseIntroHotspots();
     });
     document.addEventListener("keydown", (ev) => {
       if (ev.key === "Escape") {
@@ -1686,7 +2011,45 @@
           closeLightbox();
           return;
         }
+        if (els.enterSheet && !els.enterSheet.hidden) {
+          closeEnter();
+          return;
+        }
+        if (!els.settingsSheet.hidden) {
+          closeSettings();
+          return;
+        }
+        if (handleCalendarKeys(ev)) return;
+        collapseIntroHotspots();
         closeMenu();
+        return;
+      }
+      if (handleCalendarKeys(ev)) return;
+      if (els.enterSheet && !els.enterSheet.hidden && ev.key === "Tab") {
+        const items = enterFocusables();
+        if (!items.length) return;
+        const first = items[0];
+        const last = items[items.length - 1];
+        if (ev.shiftKey && document.activeElement === first) {
+          ev.preventDefault();
+          last.focus();
+        } else if (!ev.shiftKey && document.activeElement === last) {
+          ev.preventDefault();
+          first.focus();
+        }
+      }
+      if (!els.settingsSheet.hidden && ev.key === "Tab") {
+        const items = settingsFocusables();
+        if (!items.length) return;
+        const first = items[0];
+        const last = items[items.length - 1];
+        if (ev.shiftKey && document.activeElement === first) {
+          ev.preventDefault();
+          last.focus();
+        } else if (!ev.shiftKey && document.activeElement === last) {
+          ev.preventDefault();
+          first.focus();
+        }
       }
       if (!els.addMenu.hidden && (ev.key === "ArrowDown" || ev.key === "ArrowUp")) {
         ev.preventDefault();
@@ -1750,6 +2113,7 @@
     const onViewportChange = () => {
       updateCameraItem();
       updateFab();
+      syncFooterHeight();
       if (els.addMenu && !els.addMenu.hidden) placeMenu();
     };
     window.addEventListener("resize", onViewportChange);
@@ -1789,15 +2153,9 @@
     if (storage.getSession()) {
       await enterApp(storage.getSession().method, { instant: true });
     } else {
-      try {
-        scraps = await storage.loadScraps();
-        restyleSamplePhotos();
-      } catch {
-        scraps = [];
-      }
-      els.viewLogin.hidden = false;
+      if (els.viewIntro) els.viewIntro.hidden = false;
       els.viewApp.hidden = true;
-      setSurface("login");
+      setSurface("intro");
       applyI18n();
     }
     updateFab();

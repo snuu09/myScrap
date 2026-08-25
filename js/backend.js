@@ -1,9 +1,12 @@
 (function (global) {
   const BUCKET = "scrap-media";
   const SIGNED_TTL = 60 * 60;
-  const MIGRATE_KEY = "myscrap.migratedUser";
-  const LOCAL_SCRAPS = "myscrap.scraps";
-  const LOCAL_SESSION = "myscrap.session";
+  const MIGRATE_KEY = "mybrary.migratedUser";
+  const MIGRATE_LEGACY = "myscrap.migratedUser";
+  const LOCAL_SCRAPS = "mybrary.scraps";
+  const LOCAL_SCRAPS_LEGACY = "myscrap.scraps";
+  const LOCAL_SESSION = "mybrary.session";
+  const LOCAL_SESSION_LEGACY = "myscrap.session";
 
   let client = null;
   let user = null;
@@ -15,11 +18,26 @@
   let readyPromise = null;
 
   function readConfig() {
-    const c = global.MyScrapConfig || {};
+    const c = global.MybraryConfig || {};
     return {
       url: String(c.supabaseUrl || c.url || "").trim(),
       key: String(c.supabaseAnonKey || c.anonKey || "").trim(),
     };
+  }
+
+  function adoptKey(key, legacy) {
+    try {
+      const next = localStorage.getItem(key);
+      if (next != null) return next;
+      const prev = localStorage.getItem(legacy);
+      if (prev != null) {
+        localStorage.setItem(key, prev);
+        return prev;
+      }
+    } catch {
+      /* ignore */
+    }
+    return null;
   }
 
   function isConfigured() {
@@ -300,11 +318,11 @@
 
   async function migrateLocalIfNeeded() {
     if (!isActive()) return { migrated: false };
-    const already = localStorage.getItem(MIGRATE_KEY);
+    const already = adoptKey(MIGRATE_KEY, MIGRATE_LEGACY);
     if (already === user.id) return { migrated: false };
     let local = [];
     try {
-      local = JSON.parse(localStorage.getItem(LOCAL_SCRAPS) || "[]");
+      local = JSON.parse(adoptKey(LOCAL_SCRAPS, LOCAL_SCRAPS_LEGACY) || "[]");
     } catch {
       local = [];
     }
@@ -322,6 +340,7 @@
       localStorage.setItem(MIGRATE_KEY, user.id);
       try {
         localStorage.removeItem(LOCAL_SCRAPS);
+        localStorage.removeItem(LOCAL_SCRAPS_LEGACY);
       } catch {
         /* keep local if quota path fails */
       }
@@ -386,6 +405,7 @@
     fingerprints = {};
     try {
       localStorage.removeItem(LOCAL_SESSION);
+      localStorage.removeItem(LOCAL_SESSION_LEGACY);
     } catch {
       /* ignore */
     }
@@ -426,7 +446,7 @@
     return readyPromise;
   }
 
-  global.MyScrapBackend = {
+  global.MybraryBackend = {
     isConfigured,
     isActive,
     init,

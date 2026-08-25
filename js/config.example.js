@@ -7,8 +7,16 @@
  * then apply supabase/migrations and deploy supabase/functions/og-preview.
  */
 (function (global) {
-  global.MyScrapConfig = {
+  global.MybraryConfig = {
     supabaseUrl: "https://YOUR_PROJECT_REF.supabase.co",
     supabaseAnonKey: "YOUR_SUPABASE_ANON_OR_PUBLISHABLE_KEY",
+    legal: {
+      operator: "",
+      representative: "",
+      address: "",
+      phone: "",
+      email: "",
+      host: "",
+    },
   };
 })(window);

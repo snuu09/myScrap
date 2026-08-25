@@ -170,7 +170,7 @@
     return (size / (1024 * 1024)).toFixed(1) + " MB";
   }
 
-  global.MyScrapTagger = {
+  global.MybraryTagger = {
     URL_RE,
     DOC_EXT,
     extOf,

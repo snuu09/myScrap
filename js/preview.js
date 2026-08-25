@@ -156,7 +156,7 @@
     return { kind: "none" };
   }
 
-  global.MyScrapPreview = {
+  global.MybraryPreview = {
     readFileAsDataUrl,
     compressImage,
     captureVideoPoster,

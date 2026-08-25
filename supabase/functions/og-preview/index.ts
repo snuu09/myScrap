@@ -99,7 +99,7 @@ Deno.serve(async (req) => {
   try {
     const res = await fetch(pageUrl, {
       redirect: "follow",
-      headers: { "User-Agent": "myScrap-og/1.0" },
+      headers: { "User-Agent": "Mybrary-og/1.0" },
     });
     const html = await res.text();
     const data = { ...base, ...parseOg(html, pageUrl) };

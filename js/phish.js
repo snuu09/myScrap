@@ -159,5 +159,5 @@
     return { level: level, score: score, reasons: reasons };
   }
 
-  global.MyScrapPhish = { assess: assess };
+  global.MybraryPhish = { assess: assess };
 })(window);

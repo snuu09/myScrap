@@ -1,63 +1,782 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-08-14T11:36:00.000Z",
-  "title": "Design System: myScrap",
+  "generatedAt": "2026-08-25T07:30:00.000Z",
+  "title": "Design System: 마이브러리",
   "extensions": {
     "colorMeta": {
-      "magnet": { "role": "primary", "displayName": "Magnet cobalt", "canonical": "oklch(45% 0.12 262)" },
-      "magnet-deep": { "role": "primary", "displayName": "Magnet deep", "canonical": "oklch(35% 0.11 262)" },
-      "magnet-ink": { "role": "neutral", "displayName": "Enamel highlight", "canonical": "oklch(97% 0.01 240)" },
-      "enamel": { "role": "neutral", "displayName": "Cool enamel", "canonical": "oklch(93% 0.008 240)" },
-      "enamel-deep": { "role": "neutral", "displayName": "Deep enamel", "canonical": "oklch(88% 0.01 240)" },
-      "enamel-ink": { "role": "neutral", "displayName": "Enamel shade", "canonical": "oklch(82% 0.012 240)" },
-      "gasket": { "role": "neutral", "displayName": "Gasket charcoal", "canonical": "oklch(27% 0.015 240)" },
-      "gasket-soft": { "role": "neutral", "displayName": "Soft gasket", "canonical": "oklch(36% 0.015 240)" },
-      "ink": { "role": "neutral", "displayName": "Graphite ink", "canonical": "oklch(22% 0.02 240)" },
-      "ink-soft": { "role": "neutral", "displayName": "Soft ink", "canonical": "oklch(35% 0.02 240)" },
-      "muted": { "role": "neutral", "displayName": "Kitchen mute", "canonical": "oklch(42% 0.025 240)" },
-      "paper": { "role": "neutral", "displayName": "Note paper", "canonical": "oklch(96% 0.015 95)" },
-      "photo-mat": { "role": "neutral", "displayName": "Photo mat", "canonical": "oklch(97% 0.005 90)" },
-      "manila": { "role": "neutral", "displayName": "Manila slip", "canonical": "oklch(84% 0.08 90)" },
-      "manila-ink": { "role": "neutral", "displayName": "Manila ink", "canonical": "oklch(38% 0.07 75)" },
-      "disc": { "role": "neutral", "displayName": "Audio disc", "canonical": "oklch(28% 0.015 240)" },
-      "danger": { "role": "error", "displayName": "Peel rust", "canonical": "oklch(42% 0.12 28)" },
-      "kitchen-wall": { "role": "neutral", "displayName": "Kitchen wall", "canonical": "oklch(84% 0.012 240)" }
+      "magnet": {
+        "role": "primary",
+        "displayName": "Jeju tangerine",
+        "canonical": "#e56f0a",
+        "tonalRamp": [
+          "#3b2511",
+          "#68411e",
+          "#965c2b",
+          "#c37839",
+          "#d29764",
+          "#dfb591",
+          "#ecd3be",
+          "#f9f2eb"
+        ]
+      },
+      "magnet-deep": {
+        "role": "primary",
+        "displayName": "Magnet deep",
+        "canonical": "#d06612",
+        "tonalRamp": [
+          "#3b2411",
+          "#683f1e",
+          "#965a2b",
+          "#c37639",
+          "#d29464",
+          "#dfb391",
+          "#ecd2be",
+          "#f9f1eb"
+        ]
+      },
+      "magnet-ink": {
+        "role": "neutral",
+        "displayName": "Magnet ink",
+        "canonical": "#2a1a08",
+        "tonalRamp": [
+          "#3b2711",
+          "#68461e",
+          "#96642b",
+          "#c38239",
+          "#d29e64",
+          "#dfba91",
+          "#ecd6be",
+          "#f9f3eb"
+        ]
+      },
+      "enamel": {
+        "role": "neutral",
+        "displayName": "Warm enamel",
+        "canonical": "#fff6f0",
+        "tonalRamp": [
+          "#3b2211",
+          "#683c1e",
+          "#96562b",
+          "#c37039",
+          "#d29064",
+          "#dfb091",
+          "#ecd0be",
+          "#f9f1eb"
+        ]
+      },
+      "enamel-deep": {
+        "role": "neutral",
+        "displayName": "Deep enamel",
+        "canonical": "#f3e6dc",
+        "tonalRamp": [
+          "#392414",
+          "#643f22",
+          "#905a31",
+          "#bb7640",
+          "#cc946a",
+          "#dbb395",
+          "#ead2c1",
+          "#f8f1ec"
+        ]
+      },
+      "enamel-ink": {
+        "role": "neutral",
+        "displayName": "Enamel shade",
+        "canonical": "#e4d2c6",
+        "tonalRamp": [
+          "#342419",
+          "#5b3f2b",
+          "#835a3e",
+          "#ab7551",
+          "#bf9477",
+          "#d1b39f",
+          "#e4d2c6",
+          "#f7f1ee"
+        ]
+      },
+      "gasket": {
+        "role": "neutral",
+        "displayName": "Gasket taupe",
+        "canonical": "#5a524a",
+        "tonalRamp": [
+          "#2a2623",
+          "#4a433d",
+          "#6a6157",
+          "#8a7e71",
+          "#a59b91",
+          "#bfb8b1",
+          "#d9d5d1",
+          "#f3f2f1"
+        ]
+      },
+      "gasket-soft": {
+        "role": "neutral",
+        "displayName": "Soft gasket",
+        "canonical": "#cbbfaf",
+        "tonalRamp": [
+          "#2e271e",
+          "#524535",
+          "#75634c",
+          "#988163",
+          "#b09e86",
+          "#c7baa9",
+          "#ded6cc",
+          "#f5f3f0"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Warm ink",
+        "canonical": "#322c26",
+        "tonalRamp": [
+          "#2b2621",
+          "#4d433a",
+          "#6e6153",
+          "#8f7e6d",
+          "#a89b8d",
+          "#c2b8ae",
+          "#dbd5cf",
+          "#f4f2f1"
+        ]
+      },
+      "ink-soft": {
+        "role": "neutral",
+        "displayName": "Soft ink",
+        "canonical": "#524940",
+        "tonalRamp": [
+          "#2b2622",
+          "#4c433b",
+          "#6c6155",
+          "#8d7e6e",
+          "#a79b8e",
+          "#c1b8af",
+          "#dad5d0",
+          "#f4f2f1"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Kitchen mute",
+        "canonical": "#6e665c",
+        "tonalRamp": [
+          "#2a2723",
+          "#49443d",
+          "#696158",
+          "#897f72",
+          "#a49c92",
+          "#beb9b2",
+          "#d9d6d1",
+          "#f3f2f1"
+        ]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Note paper",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "#282525",
+          "#464141",
+          "#645d5d",
+          "#837979",
+          "#9f9797",
+          "#bbb5b5",
+          "#d7d3d3",
+          "#f3f2f2"
+        ]
+      },
+      "photo-mat": {
+        "role": "neutral",
+        "displayName": "Photo mat",
+        "canonical": "#fffaf6",
+        "tonalRamp": [
+          "#3b2411",
+          "#683f1e",
+          "#965b2b",
+          "#c37639",
+          "#d29564",
+          "#dfb491",
+          "#ecd3be",
+          "#f9f1eb"
+        ]
+      },
+      "manila": {
+        "role": "neutral",
+        "displayName": "Manila",
+        "canonical": "#ebc98a",
+        "tonalRamp": [
+          "#3b2d11",
+          "#684e1e",
+          "#96702b",
+          "#c39239",
+          "#d2ab64",
+          "#dfc491",
+          "#ecdcbe",
+          "#f9f4eb"
+        ]
+      },
+      "manila-ink": {
+        "role": "neutral",
+        "displayName": "Manila ink",
+        "canonical": "#5c4520",
+        "tonalRamp": [
+          "#392b14",
+          "#644b23",
+          "#8f6b32",
+          "#ba8c41",
+          "#cba66a",
+          "#dac096",
+          "#e9dac1",
+          "#f8f4ec"
+        ]
+      },
+      "disc": {
+        "role": "neutral",
+        "displayName": "Disc charcoal",
+        "canonical": "#3a342e",
+        "tonalRamp": [
+          "#2b2622",
+          "#4b433c",
+          "#6c6155",
+          "#8c7e6f",
+          "#a69b8f",
+          "#c0b8b0",
+          "#dad5d0",
+          "#f4f2f1"
+        ]
+      },
+      "danger": {
+        "role": "error",
+        "displayName": "Peel rust",
+        "canonical": "#b44532",
+        "tonalRamp": [
+          "#3b1711",
+          "#68291e",
+          "#963b2b",
+          "#c34d39",
+          "#d27464",
+          "#df9c91",
+          "#ecc5be",
+          "#f9edeb"
+        ]
+      },
+      "login-wall": {
+        "role": "neutral",
+        "displayName": "Login white",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "#282525",
+          "#464141",
+          "#645d5d",
+          "#837979",
+          "#9f9797",
+          "#bbb5b5",
+          "#d7d3d3",
+          "#f3f2f2"
+        ]
+      },
+      "kitchen-wall": {
+        "role": "neutral",
+        "displayName": "Porcelain peach",
+        "canonical": "#fff7f2",
+        "tonalRamp": [
+          "#3b2111",
+          "#683b1e",
+          "#96542b",
+          "#c36e39",
+          "#d28e64",
+          "#dfaf91",
+          "#ecd0be",
+          "#f9f1eb"
+        ]
+      },
+      "kitchen-lo": {
+        "role": "neutral",
+        "displayName": "Kitchen low",
+        "canonical": "#f3e7de",
+        "tonalRamp": [
+          "#382414",
+          "#633f24",
+          "#8e5a33",
+          "#b87543",
+          "#ca946c",
+          "#d9b397",
+          "#e9d2c2",
+          "#f8f1ec"
+        ]
+      },
+      "hairline": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "color-mix(in srgb, var(--ink) 12%, transparent)",
+        "tonalRamp": [
+          "#2e271e",
+          "#524535",
+          "#75634c",
+          "#988163",
+          "#b09e86",
+          "#c7baa9",
+          "#ded6cc",
+          "#f5f3f0"
+        ]
+      },
+      "dark-magnet": {
+        "role": "primary",
+        "displayName": "Night tangerine",
+        "canonical": "#f4a24a",
+        "tonalRamp": [
+          "#3b2711",
+          "#68451e",
+          "#96622b",
+          "#c38039",
+          "#d29d64",
+          "#dfb991",
+          "#ecd6be",
+          "#f9f2eb"
+        ]
+      },
+      "dark-enamel": {
+        "role": "neutral",
+        "displayName": "Night enamel",
+        "canonical": "#302b26",
+        "tonalRamp": [
+          "#2b2622",
+          "#4b433c",
+          "#6c6155",
+          "#8c7e6f",
+          "#a69b8f",
+          "#c0b8b0",
+          "#dad5d0",
+          "#f4f2f1"
+        ]
+      },
+      "dark-kitchen": {
+        "role": "neutral",
+        "displayName": "Night kitchen",
+        "canonical": "#2a2622",
+        "tonalRamp": [
+          "#2a2622",
+          "#4a433c",
+          "#6b6156",
+          "#8b7e70",
+          "#a59b90",
+          "#bfb8b0",
+          "#dad5d1",
+          "#f4f2f1"
+        ]
+      },
+      "dark-kitchen-lo": {
+        "role": "neutral",
+        "displayName": "Night kitchen low",
+        "canonical": "#1f1c19",
+        "tonalRamp": [
+          "#2a2622",
+          "#4b433c",
+          "#6b6156",
+          "#8b7e70",
+          "#a69b90",
+          "#c0b8b0",
+          "#dad5d1",
+          "#f4f2f1"
+        ]
+      },
+      "dark-muted": {
+        "role": "neutral",
+        "displayName": "Night mute",
+        "canonical": "#c5b8a8",
+        "tonalRamp": [
+          "#2e271f",
+          "#514536",
+          "#74634d",
+          "#978065",
+          "#af9d87",
+          "#c6b9aa",
+          "#ddd6cd",
+          "#f5f3f0"
+        ]
+      },
+      "dark-ink": {
+        "role": "neutral",
+        "displayName": "Night ink",
+        "canonical": "#f4eee6",
+        "tonalRamp": [
+          "#352817",
+          "#5e4729",
+          "#86663b",
+          "#af854d",
+          "#c2a074",
+          "#d4bc9c",
+          "#e5d7c5",
+          "#f7f3ed"
+        ]
+      },
+      "basalt": {
+        "role": "primary",
+        "displayName": "Jeju basalt",
+        "canonical": "#3a3936",
+        "tonalRamp": [
+          "#282725",
+          "#464541",
+          "#64625d",
+          "#838079",
+          "#9f9d97",
+          "#bbb9b5",
+          "#d7d6d3",
+          "#f3f3f2"
+        ]
+      },
+      "basalt-deep": {
+        "role": "primary",
+        "displayName": "Basalt deep",
+        "canonical": "#2a2a28",
+        "tonalRamp": [
+          "#282825",
+          "#464641",
+          "#64645d",
+          "#838379",
+          "#9f9f97",
+          "#bbbbb5",
+          "#d7d7d3",
+          "#f3f3f2"
+        ]
+      },
+      "basalt-ink": {
+        "role": "neutral",
+        "displayName": "Basalt ink",
+        "canonical": "#f4f3f0",
+        "tonalRamp": [
+          "#2c2920",
+          "#4e4939",
+          "#6f6852",
+          "#91876a",
+          "#aaa38b",
+          "#c3bdad",
+          "#dcd8cf",
+          "#f4f3f0"
+        ]
+      },
+      "dark-basalt": {
+        "role": "primary",
+        "displayName": "Night basalt",
+        "canonical": "#c8c6c1",
+        "tonalRamp": [
+          "#292724",
+          "#47453f",
+          "#66635b",
+          "#858176",
+          "#a19d95",
+          "#bcbab4",
+          "#d8d6d3",
+          "#f3f3f1"
+        ]
+      },
+      "dark-basalt-deep": {
+        "role": "primary",
+        "displayName": "Night basalt deep",
+        "canonical": "#dddcd8",
+        "tonalRamp": [
+          "#292824",
+          "#48463f",
+          "#67655a",
+          "#868375",
+          "#a29f94",
+          "#bdbbb3",
+          "#d8d7d2",
+          "#f3f3f1"
+        ]
+      },
+      "dark-basalt-ink": {
+        "role": "neutral",
+        "displayName": "Night basalt ink",
+        "canonical": "#1c1c1a",
+        "tonalRamp": [
+          "#282825",
+          "#464641",
+          "#64645d",
+          "#838379",
+          "#9f9f97",
+          "#bbbbb5",
+          "#d7d7d3",
+          "#f3f3f2"
+        ]
+      },
+      "celadon": {
+        "role": "primary",
+        "displayName": "AI celadon",
+        "canonical": "#1f6b58",
+        "tonalRamp": [
+          "#113b31",
+          "#1e6856",
+          "#2b967b",
+          "#39c3a0",
+          "#64d2b6",
+          "#91dfcb",
+          "#beece1",
+          "#ebf9f6"
+        ]
+      },
+      "celadon-deep": {
+        "role": "primary",
+        "displayName": "Celadon deep",
+        "canonical": "#175446",
+        "tonalRamp": [
+          "#113b32",
+          "#1e6857",
+          "#2b967d",
+          "#39c3a3",
+          "#64d2b9",
+          "#91dfcd",
+          "#beece2",
+          "#ebf9f6"
+        ]
+      },
+      "celadon-ink": {
+        "role": "neutral",
+        "displayName": "Celadon ink",
+        "canonical": "#f4fbf8",
+        "tonalRamp": [
+          "#143829",
+          "#246348",
+          "#338e67",
+          "#43b886",
+          "#6ccaa2",
+          "#97d9bd",
+          "#c2e9d8",
+          "#ecf8f3"
+        ]
+      },
+      "celadon-wall": {
+        "role": "neutral",
+        "displayName": "Celadon wall",
+        "canonical": "#f4f6f5",
+        "tonalRamp": [
+          "#222a26",
+          "#3d4a43",
+          "#576a61",
+          "#718a7e",
+          "#91a59b",
+          "#b1bfb8",
+          "#d1d9d5",
+          "#f1f4f2"
+        ]
+      },
+      "celadon-wall-lo": {
+        "role": "neutral",
+        "displayName": "Celadon wall low",
+        "canonical": "#e8eeeb",
+        "tonalRamp": [
+          "#212c26",
+          "#394e43",
+          "#526f61",
+          "#6b917e",
+          "#8caa9b",
+          "#adc3b8",
+          "#cfdbd5",
+          "#f0f4f2"
+        ]
+      },
+      "dark-celadon": {
+        "role": "primary",
+        "displayName": "Night celadon",
+        "canonical": "#7ecfb8",
+        "tonalRamp": [
+          "#15382e",
+          "#256251",
+          "#348d74",
+          "#44b797",
+          "#6dc9af",
+          "#97d8c6",
+          "#c2e8dd",
+          "#ecf8f5"
+        ]
+      },
+      "dark-celadon-deep": {
+        "role": "primary",
+        "displayName": "Night celadon deep",
+        "canonical": "#a6e0d0",
+        "tonalRamp": [
+          "#14392f",
+          "#236452",
+          "#328f75",
+          "#41ba99",
+          "#6acbb1",
+          "#96dac7",
+          "#c1e9de",
+          "#ecf8f5"
+        ]
+      },
+      "dark-celadon-ink": {
+        "role": "neutral",
+        "displayName": "Night celadon ink",
+        "canonical": "#0e241c",
+        "tonalRamp": [
+          "#15372b",
+          "#26614b",
+          "#368b6c",
+          "#46b58d",
+          "#6fc7a7",
+          "#99d7c0",
+          "#c3e8da",
+          "#edf8f4"
+        ]
+      },
+      "dark-celadon-wall": {
+        "role": "neutral",
+        "displayName": "Night celadon wall",
+        "canonical": "#1e2522",
+        "tonalRamp": [
+          "#222a27",
+          "#3c4a44",
+          "#566b62",
+          "#718b80",
+          "#90a59c",
+          "#b1bfb9",
+          "#d1d9d6",
+          "#f1f4f2"
+        ]
+      },
+      "dark-celadon-wall-lo": {
+        "role": "neutral",
+        "displayName": "Night celadon wall low",
+        "canonical": "#161c1a",
+        "tonalRamp": [
+          "#222b28",
+          "#3b4b46",
+          "#556c64",
+          "#6f8d83",
+          "#8fa79f",
+          "#afc0bb",
+          "#d0dad7",
+          "#f1f4f3"
+        ]
+      }
     },
     "typographyMeta": {
-      "display": { "displayName": "Display", "purpose": "Login lead only." },
-      "headline": { "displayName": "Headline", "purpose": "Wordmark." },
-      "title": { "displayName": "Title", "purpose": "Link and document titles." },
-      "body": { "displayName": "Body", "purpose": "UI copy and notes." },
-      "label": { "displayName": "Label", "purpose": "Type tags and timestamps." }
+      "display": {
+        "displayName": "Display",
+        "purpose": "Intro scene titles; empty title companion."
+      },
+      "display-hero": {
+        "displayName": "Display hero",
+        "purpose": "Intro hero only. Do not reuse in the app door."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Wordmark and empty title."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Link and document titles, draft detect."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Notes and page default."
+      },
+      "ui": {
+        "displayName": "UI",
+        "purpose": "Buttons, composer, search, hints."
+      },
+      "caption": {
+        "displayName": "Caption",
+        "purpose": "Chips, tags, session, footer, labels."
+      },
+      "micro": {
+        "displayName": "Micro",
+        "purpose": "Timestamps, file excerpts, play badge."
+      }
     },
     "shadows": [
-      { "name": "door", "value": "6px 10px 22px rgba(28, 35, 41, 0.18)", "purpose": "Enamel slab lift." },
-      { "name": "clipping", "value": "3px 5px 12px rgba(28, 35, 41, 0.16)", "purpose": "Paper on the door." },
-      { "name": "fab", "value": "3px 6px 14px rgba(22, 61, 120, 0.35)", "purpose": "Floating magnet." }
+      {
+        "name": "sheet",
+        "value": "0 18px 40px rgba(50, 44, 38, 0.08)",
+        "purpose": "Header auth sheet and menus. Dark uses rgba(0, 0, 0, 0.28)."
+      },
+      {
+        "name": "scrap",
+        "value": "0 10px 28px rgba(50, 44, 38, 0.06)",
+        "purpose": "Paper clipping on the door."
+      },
+      {
+        "name": "scrap-hover",
+        "value": "0 14px 32px rgba(50, 44, 38, 0.09)",
+        "purpose": "Fine-pointer lift on a clipping."
+      },
+      {
+        "name": "fab",
+        "value": "0 10px 22px rgba(208, 102, 18, 0.26)",
+        "purpose": "Scroll-to-top magnet."
+      }
     ],
     "motion": [
-      { "name": "magnet-snap", "value": "220ms cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "New clipping landing on the door." }
+      {
+        "name": "ease-out",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Enter, snap, sheet open."
+      },
+      {
+        "name": "ease-in",
+        "value": "cubic-bezier(0.4, 0, 1, 1)",
+        "purpose": "Exit."
+      },
+      {
+        "name": "dur-fast",
+        "value": "140ms",
+        "purpose": "Press, drop veil, sheet exit."
+      },
+      {
+        "name": "dur-mid",
+        "value": "220ms",
+        "purpose": "View enter, magnet-snap."
+      },
+      {
+        "name": "dur-slow",
+        "value": "320ms",
+        "purpose": "Intro scene reveal."
+      },
+      {
+        "name": "magnet-snap",
+        "value": "220ms cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "New clipping landing on the door."
+      }
     ],
     "breakpoints": [
-      { "name": "mobile", "value": "720px" }
+      {
+        "name": "composer-split",
+        "value": "560px"
+      },
+      {
+        "name": "handle",
+        "value": "640px"
+      },
+      {
+        "name": "camera",
+        "value": "721px"
+      }
     ]
   },
   "components": [
     {
-      "name": "Primary Button",
+      "name": "Stick",
       "kind": "button",
       "refersTo": "button-primary",
-      "description": "Cobalt magnet action: Browse, Stick.",
-      "html": "<button class=\"ds-btn-primary\">둘러보기</button>",
-      "css": ".ds-btn-primary { background: #2156a6; color: #f4f7fb; border: 0; border-radius: 4px; min-height: 48px; padding: 10px 16px; font-weight: 650; cursor: pointer; } .ds-btn-primary:hover { background: #163d78; } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 3px #e7ecef, 0 0 0 5px #2156a6; }"
+      "description": "Hallabong magnet in the bottom Stick dock.",
+      "html": "<button class=\"ds-btn-primary\">붙이기</button>",
+      "css": ".ds-btn-primary { background: var(--magnet, #e56f0a); color: var(--magnet-ink, #2a1a08); border: 0; border-radius: var(--radius-sm, 14px); min-height: var(--control-md, 48px); padding: 0 18px; font: 700 0.9375rem/1.4 SUIT, sans-serif; letter-spacing: -0.02em; cursor: pointer; } .ds-btn-primary:hover { background: var(--magnet-deep, #d06612); } .ds-btn-primary:active { transform: scale(0.98); } .ds-btn-primary:focus-visible { outline: none; box-shadow: var(--focus, 0 0 0 3px #fff6f0, 0 0 0 5px #e56f0a); } .ds-btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }"
+    },
+    {
+      "name": "Open the door",
+      "kind": "button",
+      "refersTo": "button-cta",
+      "description": "Intro primary. Pill magnet, not the Stick control.",
+      "html": "<button class=\"ds-btn-cta\">문을 연다</button>",
+      "css": ".ds-btn-cta { background: var(--magnet, #e56f0a); color: var(--magnet-ink, #2a1a08); border: 0; border-radius: var(--radius-pill, 999px); min-height: var(--control-md, 48px); padding: 0 20px; font: 700 0.9375rem/1.4 SUIT, sans-serif; letter-spacing: -0.02em; cursor: pointer; } .ds-btn-cta:hover { background: var(--magnet-deep, #d06612); } .ds-btn-cta:active { transform: scale(0.98); } .ds-btn-cta:focus-visible { outline: none; box-shadow: var(--focus, 0 0 0 3px #fff6f0, 0 0 0 5px #e56f0a); }"
     },
     {
       "name": "Composer field",
       "kind": "input",
       "refersTo": "input-composer",
-      "description": "Paper strip on the freezer band.",
+      "description": "Paper strip in the bottom Stick dock.",
       "html": "<textarea class=\"ds-composer\" placeholder=\"붙여넣기 할 내용이나 파일을 첨부해주세요.\"></textarea>",
-      "css": ".ds-composer { width: 100%; min-height: 44px; border: 0; background: #f6f3ea; padding: 10px 8px; font: 15px/1.45 SUIT, sans-serif; color: #1c2329; resize: vertical; } .ds-composer::placeholder { color: #5a6758; } .ds-composer:focus-visible { outline: none; box-shadow: 0 0 0 3px #e7ecef, 0 0 0 5px #2156a6; }"
+      "css": ".ds-composer { width: 100%; min-height: var(--control-md, 48px); border: 1px solid var(--composer-border, #ead8cc); background: var(--paper, #fff); border-radius: var(--radius-lg, 24px); padding: 12px 10px; font: 16px/1.5 SUIT, sans-serif; color: var(--ink, #322c26); resize: none; } .ds-composer::placeholder { color: var(--muted, #6e665c); } .ds-composer:hover { border-color: color-mix(in srgb, var(--ink, #322c26) 18%, transparent); } .ds-composer:focus-visible { outline: none; box-shadow: var(--focus, 0 0 0 3px #fff6f0, 0 0 0 5px #e56f0a); }"
     },
     {
       "name": "Type tag",
@@ -65,51 +784,146 @@
       "refersTo": "chip-tag",
       "description": "Disc-magnet pill naming a media type.",
       "html": "<span class=\"ds-tag\">메모</span>",
-      "css": ".ds-tag { display: inline-flex; align-items: center; min-height: 22px; padding: 0 8px; border-radius: 999px; background: #2156a6; color: #f4f7fb; font-size: 0.75rem; font-weight: 700; }"
+      "css": ".ds-tag { display: inline-flex; align-items: center; min-height: var(--control-tag, 26px); padding: 0 10px; border-radius: var(--radius-pill, 999px); background: var(--magnet, #e56f0a); color: var(--magnet-ink, #2a1a08); font: 700 0.8125rem/1 SUIT, sans-serif; }"
     },
     {
       "name": "Clipping",
       "kind": "card",
       "refersTo": "scrap-clipping",
-      "description": "Paper stuck with a magnet, not a product card.",
-      "html": "<article class=\"ds-clip\"><span class=\"ds-magnet\"></span><span class=\"ds-tag\">링크</span><p>A URL you just saw.</p></article>",
-      "css": ".ds-clip { position: relative; background: #f6f3ea; border: 1px solid rgba(28,35,41,0.12); border-radius: 0; box-shadow: 3px 5px 12px rgba(28,35,41,0.16); padding: 14px; } .ds-magnet { position: absolute; top: -8px; left: 18px; width: 18px; height: 18px; border-radius: 50%; background: #2156a6; box-shadow: 1px 2px 0 #163d78, 2px 3px 6px rgba(28,35,41,0.25); } .ds-tag { display: inline-flex; min-height: 22px; padding: 0 8px; border-radius: 999px; background: #2156a6; color: #f4f7fb; font-size: 0.75rem; font-weight: 700; }"
+      "description": "Paper stuck with a magnet, 18px radius.",
+      "html": "<article class=\"ds-clip\"><span class=\"ds-magnet\"></span><span class=\"ds-tag\">링크</span><p>방금 본 링크</p></article>",
+      "css": ".ds-clip { position: relative; background: var(--paper, #fff); border: 1px solid color-mix(in srgb, var(--ink, #322c26) 8%, transparent); border-radius: var(--radius-md, 18px); box-shadow: 0 10px 28px rgba(50, 44, 38, 0.06); padding: 16px; } .ds-clip:hover { box-shadow: 0 14px 32px rgba(50, 44, 38, 0.09); transform: translateY(-3px); } .ds-magnet { position: absolute; top: -8px; left: 50%; width: 18px; height: 18px; margin-left: -9px; border-radius: 50%; background: var(--magnet, #e56f0a); box-shadow: 1px 2px 0 color-mix(in srgb, var(--magnet-deep, #d06612) 70%, #000 30%); } .ds-tag { display: inline-flex; min-height: 26px; padding: 0 10px; border-radius: 999px; background: var(--magnet, #e56f0a); color: var(--magnet-ink, #2a1a08); font: 700 0.8125rem/1 SUIT, sans-serif; } .ds-clip p { margin: 10px 0 0; font: 400 1rem/1.5 SUIT, sans-serif; color: var(--ink, #322c26); }"
+    },
+    {
+      "name": "Intro still",
+      "kind": "card",
+      "refersTo": "intro-scene",
+      "description": "Fridge-door photograph for stick, classify, or find. 견본 label, one line of copy.",
+      "html": "<article class=\"ds-intro\"><div class=\"ds-still\"></div><p class=\"ds-kicker\">견본</p><h2>붙인다</h2><p>붙여넣거나 떨어뜨리면 문에 붙습니다.</p></article>",
+      "css": ".ds-intro { background: var(--paper, #fff); border: 1px solid color-mix(in srgb, var(--ink, #322c26) 8%, transparent); border-radius: var(--radius-md, 18px); overflow: hidden; box-shadow: 0 10px 28px rgba(50, 44, 38, 0.06); padding: 0 0 16px; } .ds-still { width: 100%; aspect-ratio: 4 / 3; background: linear-gradient(160deg, #fff7f2, #e4d2c6); } .ds-kicker { margin: 14px 16px 8px; font: 700 0.75rem/1.3 SUIT, sans-serif; } .ds-intro h2 { margin: 0 16px 6px; font: 750 1.125rem/1.2 SUIT, sans-serif; letter-spacing: -0.03em; } .ds-intro p:last-child { margin: 0 16px; color: var(--muted, #6e665c); font: 400 0.9375rem/1.4 SUIT, sans-serif; }"
     },
     {
       "name": "Language switch",
       "kind": "nav",
       "refersTo": "button-icon",
-      "description": "Two magnet cells in the header.",
+      "description": "KO / EN cells inside the settings sheet.",
       "html": "<div class=\"ds-lang\"><button class=\"is-on\">KO</button><button>EN</button></div>",
-      "css": ".ds-lang { display: flex; border: 1px solid #3d4850; background: #e7ecef; padding: 2px; gap: 2px; } .ds-lang button { border: 0; background: transparent; padding: 5px 10px; color: #4d5b66; cursor: pointer; } .ds-lang button.is-on { background: #2156a6; color: #f4f7fb; } .ds-lang button:focus-visible { outline: none; box-shadow: 0 0 0 3px #e7ecef, 0 0 0 5px #2156a6; }"
+      "css": ".ds-lang { display: flex; border: 1px solid color-mix(in srgb, var(--ink, #322c26) 12%, transparent); background: var(--paper, #fff); padding: 3px; gap: 2px; border-radius: 999px; } .ds-lang button { border: 0; background: transparent; min-width: 40px; min-height: 40px; padding: 0 12px; color: var(--muted, #6e665c); cursor: pointer; border-radius: 999px; font: 700 0.8125rem/1 SUIT, sans-serif; } .ds-lang button:hover { color: var(--ink, #322c26); } .ds-lang button.is-on { background: var(--magnet, #e56f0a); color: var(--magnet-ink, #2a1a08); } .ds-lang button:focus-visible { outline: none; box-shadow: var(--focus, 0 0 0 3px #fff6f0, 0 0 0 5px #e56f0a); }"
     }
   ],
   "narrative": {
     "northStar": "The Kitchen Fridge Door",
-    "overview": "myScrap is a personal capture box, not a knowledge base. The surface is a cool enamel fridge door standing in mixed indoor kitchen light: rubber gasket, stainless handle, cobalt disc magnets, and paper clippings of uneven size. You open the door (sign in or browse), stick something in the freezer-band composer, and it snaps onto the door already tagged.\n\nThe product is Operate-mode. Brand lives in material details (gasket, magnets, clipping rotation) while controls stay familiar. Korean and English share one layout. Light theme is locked because enamel under window-plus-overhead light is a pale field; tokens exist so a later dark stainless door could be added without rewriting components.",
+    "overview": "마이브러리 (Mybrary) is a personal capture box, not a knowledge base. The surface is a warm enamel fridge door: rubber gasket, stainless handle, Jeju tangerine (hallabong) disc magnets, and paper clippings of uneven size. You open the door (header 로그인, then Apple / Google / Browse), read the recency door, and stick from a bottom dock. What you stick snaps onto the door already tagged.\n\nThe product is Operate-mode. Brand lives in material details (gasket, magnets, clipping rotation) while controls stay familiar. Korean and English share one layout. Auth sits in a header sheet. Light is a peach porcelain kitchen; dark is a night kitchen. The pressable magnet is Jeju tangerine by default, or Jeju basalt when that palette is on.",
     "keyCharacteristics": [
-      "Cool enamel ground, one cobalt magnet accent",
-      "Square clippings, not equal rounded cards",
-      "Capture composer first; recency list second",
+      "Wordmark: 마이브러리 (KO) / Mybrary (EN)",
+      "Intro is the first public surface on porcelain peach / night kitchen (celadon if AI); peach kitchen shows before the door opens",
+      "Header auth sheet is the white doorstep (light) or night enamel (dark)",
+      "Centered capture column on every breakpoint",
+      "Soft rounded clippings (18px), not razor-square paper and not identical SaaS cards",
+      "Recency list to read; Stick docked at the thumb",
       "Personal voice: stick, peel, empty the door"
     ],
     "rules": [
-      { "name": "The One Magnet Rule", "body": "Cobalt is the only accent. It marks the thing you can press or the tag that names a type. It does not wash backgrounds or glow.", "section": "colors" },
-      { "name": "The One Face Rule", "body": "Do not pair a Latin display serif or Inter-like default with SUIT. Hangul and English share the same cuts.", "section": "typography" },
-      { "name": "The Offset Rule", "body": "Shadows carry offset and blur. A colored halo is not depth.", "section": "elevation" }
+      {
+        "name": "The One Magnet Rule",
+        "body": "One accent at a time. It marks the thing you can press or the tag that names a type. It does not wash backgrounds.",
+        "section": "colors"
+      },
+      {
+        "name": "The Two Magnets Rule",
+        "body": "Default magnet is hallabong tangerine. 현무암 swaps that accent to Jeju basalt charcoal. Do not retint enamel, paper, or the kitchen wall when testing basalt. Sample photo SVGs must read --magnet (or the matching hex) at paint time; do not bake #e56f0a. The 견본 tag is hairline ink, not danger orange.",
+        "section": "colors"
+      },
+      {
+        "name": "The Stick Dock Rule",
+        "body": "After the door opens, Stick is a bottom dock on every palette (기본, 현무암, AI). Search and the recency list sit above it. Classify draft sits above the field, still in the dock. Intro has no dock. Do not put the composer back above the list.",
+        "section": "layout"
+      },
+      {
+        "name": "The AI Comparison Rule",
+        "body": "Header AI opens a second surface: celadon accent, cooler ground, and an editorial magazine feed. The bottom Stick dock is shared with the fridge palettes. Header and footer chrome stay. Fridge collage, magnet dots, and tilted paper do not. It is not a purple chat or zinc-blue SaaS skin. Switch back to 기본 or 현무암 to judge the incumbent fridge.",
+        "section": "colors"
+      },
+      {
+        "name": "The White Doorstep",
+        "body": "The doorstep is a header auth sheet (light: white; dark: night enamel). The intro sits on porcelain peach / night kitchen. Dark intro is not a white flash.",
+        "section": "layout"
+      },
+      {
+        "name": "The Cave Check",
+        "body": "Light kitchen wall stays porcelain peach (#fff7f2 → #f3e7de). Dark mode is a night kitchen (#2a2622 → #1f1c19), not #0c0b0a. If a fill looks like printer toner, lift it. Muted copy must stay AA on enamel (≥4.5:1): light #6e665c on #fff7f2 (~5.4:1); dark #c5b8a8 on #302b26 (~7.2:1).",
+        "section": "colors"
+      },
+      {
+        "name": "The One Face Rule",
+        "body": "Do not pair a Latin display serif or Inter-like default with SUIT. Hangul and English share the same cuts.",
+        "section": "typography"
+      },
+      {
+        "name": "The Offset Rule",
+        "body": "Shadows carry offset and blur. A colored halo is not depth.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Focus Follows Form Rule",
+        "body": "Every focusable control has a radius from the scale. The tangerine companion ring is box-shadow so it follows that radius. Composer shell stays --radius-lg (24px) so it sits with the 14px + and Stick. Focus is that shell, not a square on the textarea, and not a pill that fights the inner buttons.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Quiet Door Rule",
+        "body": "Motion is short and decelerates. Nothing loops except the OG skeleton sheen. No bounce, no page-wide parallax, no confetti.",
+        "section": "layout"
+      },
+      {
+        "name": "The One Job Rule",
+        "body": "One transition at a time for a given surface: intro hands off to the app, the draft exits before the new clipping snaps on, the + menu and header sheets close before another overlay opens.",
+        "section": "layout"
+      },
+      {
+        "name": "The Reduced-Motion Rule",
+        "body": "prefers-reduced-motion: reduce turns off animation and transition, including hover-play on video/audio. Instant show/hide. Smooth scroll becomes auto. First paint after a saved session never plays the door-open motion.",
+        "section": "layout"
+      },
+      {
+        "name": "The Open Kitchen Rule",
+        "body": "First visit is an intro that shows the fridge job. Auth does not own the first viewport. Apple / Google / Browse live in the header. Browse and sign-in both open the door. A saved session still skips intro.",
+        "section": "layout"
+      },
+      {
+        "name": "The Demo Is The Product Rule",
+        "body": "Intro scenes show stick, classify, and find as fridge-door stills (porcelain enamel, tangerine magnets, paper clippings) labeled 견본 / Sample. One line of copy under each still. Do not invent customers, download counts, testimonials, or AI claims. Do not build a purple SaaS landing, a phone farm of fake UI, or CSS widgets that impersonate the composer.",
+        "section": "layout"
+      },
+      {
+        "name": "The Day Magnet Rule",
+        "body": "일자별 is a filter on the recency list, not a calendar product and not a second home. Counts are scraps stuck that local calendar day (createdAt). One selected day at a time. Combine with type, tag, and search. Inside a day, newest first.",
+        "section": "layout"
+      },
+      {
+        "name": "The Korean Footer Rule",
+        "body": "Intro and app show operator identity plus 이용약관 plus 개인정보처리방침. Privacy is easier to spot than the other links (bold or magnet). Placeholders until real operator data. Do not invent a 사업자등록번호 or 통신판매업 신고번호. 비우기 stays an app-only footer action.",
+        "section": "layout"
+      }
     ],
     "dos": [
       "Speak like a personal box: stick, peel, empty the door, this device.",
       "Show the media itself (image, hover-play, OG, PDF first page).",
       "Label synthetic scraps as Sample / 견본.",
-      "Keep KO and EN on one layout."
+      "Keep KO and EN on one layout.",
+      "Use the type / icon / control scale. Do not invent a one-off size.",
+      "Keep fills inside the Cave Check. Porcelain peach kitchen, night kitchen, not toner. The header auth sheet is white in light mode.",
+      "Honor prefers-reduced-motion.",
+      "Keep two-step confirms for peel, Leave-with-draft, and Empty.",
+      "Put auth in the header and counts on the day grid, not in a new information architecture."
     ],
     "donts": [
       "Build a Notion sidebar of equal cards, or a purple AI chat on cream.",
       "Use Inter, Space Grotesk, IBM Plex, Outfit, Plus Jakarta, DM Sans, or Instrument Sans as the UI face.",
       "Put camera on fine-pointer desktop as a dead control.",
       "Invent team, workspace, or research-lab language.",
-      "Use em-dashes in product copy."
+      "Use em-dashes in product copy.",
+      "Turn 일자별 into a scheduling calendar, heatmap product, or folders-by-month.",
+      "Ship a login wall as the first page."
     ]
   }
 }

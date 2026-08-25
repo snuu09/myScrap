@@ -5,8 +5,16 @@
  * Copy from js/config.example.js if you replace this file.
  */
 (function (global) {
-  global.MyScrapConfig = {
+  global.MybraryConfig = {
     supabaseUrl: "",
     supabaseAnonKey: "",
+    legal: {
+      operator: "",
+      representative: "",
+      address: "",
+      phone: "",
+      email: "",
+      host: "",
+    },
   };
 })(window);

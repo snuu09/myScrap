@@ -90,7 +90,7 @@
   }
 
   async function fetchOgRemote(pageUrl) {
-    const b = global.MyScrapBackend;
+    const b = global.MybraryBackend;
     if (!b || !b.isActive() || typeof b.fetchOg !== "function") return null;
     try {
       return await b.fetchOg(pageUrl);
@@ -144,5 +144,5 @@
     }
   }
 
-  global.MyScrapOg = { fetchOg, parseUrlFallback };
+  global.MybraryOg = { fetchOg, parseUrlFallback };
 })(window);
