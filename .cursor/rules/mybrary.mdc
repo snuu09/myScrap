@@ -1,0 +1,26 @@
+---
+description: MyBrary product identity and current stack. Apply before changing architecture or adding a second client.
+alwaysApply: true
+---
+
+# MyBrary
+
+Personal scrap shelf: stick / classify / find. Live name **MyBrary**; repo folder may still be `myScrap`. Not a team knowledge base, not a recipe app.
+
+## Stack now
+
+Vite 8 + React 19 + TypeScript + Tailwind v4 + Lucide. Firebase Hosting project `mybrary-snuu09` (`public: dist`, SPA rewrite). Supabase email/password Auth, `public.scraps`, private `scrap-media`. Claude classify at `/api/analyze` with model **`claude-sonnet-4-5`** (assignment name `claude-sonnet-5` is not a current id).
+
+Primary host is **Firebase Hosting**. Netlify files are a classify/dev twin, not a second product.
+
+## Do not
+
+- Revive `js/`, `css/`, `legal/*.html`, or a parallel static client
+- Put Firebase Auth in the browser (Supabase stays Auth)
+- Put `service_role` or `ANTHROPIC_API_KEY` in Vite
+- Dualize taggers: Claude in the function, MIME/URL fallback only in `src/lib/tagger.ts`
+- Invent customers, testimonials, download counts, or a 사업자등록번호
+- Use em-dashes in product copy
+- Purple/glass SaaS, Inter as the UI face, Notion sidebar
+
+Read [ARCHITECTURE.md](ARCHITECTURE.md), [PRODUCT.md](PRODUCT.md), [DESIGN.md](DESIGN.md). Env names: [`.env.example`](.env.example).

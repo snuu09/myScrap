@@ -2,7 +2,7 @@
 
 Verdict: the tree is a **Vite + React SPA** on Firebase Hosting, with a Cloud Function (and a Netlify Function twin) for Claude classify, and the official **Supabase** folder for Auth, Postgres, and Storage.
 
-Related: [README.md](README.md) · [PRODUCT.md](PRODUCT.md) · [ROADMAP.md](ROADMAP.md) · [supabase/README.md](supabase/README.md)
+Related: [README.md](README.md) · [PRODUCT.md](PRODUCT.md) · [ROADMAP.md](ROADMAP.md) · [supabase/README.md](supabase/README.md) · `.cursor/rules/`
 
 ## Why this shape
 

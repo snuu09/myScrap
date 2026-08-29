@@ -206,7 +206,7 @@ The product is Operate-mode. Brand lives in material details (gasket, magnets, c
 
 **Key Characteristics:**
 - Wordmark: MyBrary (KO and EN)
-- Intro is the first public surface on porcelain peach / night kitchen (celadon if AI); peach kitchen shows before the door opens
+- Intro is the first public surface on porcelain peach / night kitchen; peach kitchen shows before the door opens
 - Header auth sheet is the white doorstep (light) or night enamel (dark)
 - Centered capture column on every breakpoint
 - Soft rounded clippings (18px), not razor-square paper and not identical SaaS cards
@@ -218,9 +218,9 @@ The product is Operate-mode. Brand lives in material details (gasket, magnets, c
 Restrained palette: one Jeju tangerine plus neutrals in the same hue family. Yellow-gray 미색 made the magnet look dirty. Complementary blue would pop the orange but would not be a kitchen.
 
 ### Primary
-- **Jeju tangerine** (#e56f0a light, #f4a24a dark): Default magnet. Stick, Browse, KO/EN selected, tags, magnet discs, focus companion, FAB. Ink on tangerine is #2a1a08 so small type stays AA.
+- **Jeju tangerine** (#e56f0a light, #f4a24a dark): Default magnet. Stick, KO/EN selected, tags, magnet discs, focus companion, FAB. Ink on tangerine is #2a1a08 so small type stays AA.
 - **Jeju basalt** (#3a3936 light, #c8c6c1 dark): Test swap for that magnet. Same slots. Ink on dark stone is #f4f3f0; ink on light stone in dark mode is #1c1c1a. Does not retint the kitchen wall.
-- **AI celadon** (#1f6b58 light, #7ecfb8 dark): Comparison theme. Magnet plus a cooler porcelain kitchen. Ink on celadon is #f4fbf8; ink on the light celadon in dark mode is #0e241c. Not zinc-blue SaaS and not purple.
+- **AI celadon** (#1f6b58 light, #7ecfb8 dark): Reserved token only. Not a shipped palette in this SPA.
 
 ### Neutral
 - **Login white** (#ffffff): Light-mode header auth sheet only. No kitchen glow on that sheet. Intro and app sit on porcelain peach / night kitchen.
@@ -231,26 +231,26 @@ Restrained palette: one Jeju tangerine plus neutrals in the same hue family. Yel
 - **Warm ink** (#322c26 / dark #f4eee6): Body and wordmark. Not near-black.
 - **Kitchen mute** (#6e665c / dark #c5b8a8): Secondary copy. AA on peach and white (≥4.5:1).
 - **Note paper** (#ffffff / dark #3c362f): Composer and clippings. White slips on a peach door.
-- **Apple charcoal** (#3a342e): Auth Apple only. Warm, not #111.
+- **Apple charcoal** (#3a342e): Disc / audio. Not an Apple Sign-In button in this SPA.
 - **Manila** (#ebc98a): Document slips.
 - **Disc charcoal** (#3a342e): Audio clippings, one step up from void.
 
 ### Palettes
 
-Header: brand plus a settings disc. Language, **기본** / **현무암** / **AI**, and light / system / dark live in that sheet, remembered on this device. Basalt keeps the peach kitchen wall. AI cools the wall and replaces the fridge main with one editorial feed.
+Header: brand plus a settings disc. Language, **기본** / **현무암**, and light / system / dark live in that sheet, remembered on this device. Basalt keeps the peach kitchen wall.
 
 - **Kitchen (default):** Magnet `#e56f0a` / dark `#f4a24a`. Fridge door. Stick dock at the bottom; magnets and tilted paper stay.
 - **Jeju basalt:** Magnet `#3a3936` / dark `#c8c6c1`. Replaces the orange only. Ground stays porcelain peach / night kitchen. Same bottom Stick dock as kitchen.
-- **AI celadon:** Magnet `#1f6b58` / dark `#7ecfb8`. Kitchen wall `#f4f6f5` → `#e8eeeb` / night `#1e2522` → `#161c1a`. Main is not the fridge door. Editorial magazine feed. Same bottom Stick dock. Same SUIT face. Same capture features.
+- **AI celadon:** Not in this SPA. Do not add a third header swatch unless PRODUCT asks.
 
 ### Named Rules
 **The One Magnet Rule.** One accent at a time. It marks the thing you can press or the tag that names a type. It does not wash backgrounds.
 
 **The Two Magnets Rule.** Default magnet is hallabong tangerine. 현무암 swaps that accent to Jeju basalt charcoal. Do not retint enamel, paper, or the kitchen wall when testing basalt. Sample photo SVGs must read `--magnet` (or the matching hex) at paint time; do not bake `#e56f0a`. The 견본 tag is hairline ink, not danger orange.
 
-**The Stick Dock Rule.** After the door opens, Stick is a bottom dock on every palette (기본, 현무암, AI). Search and the recency list sit above it. Classify draft sits above the field, still in the dock. Intro has no dock. Do not put the composer back above the list.
+**The Stick Dock Rule.** After the door opens, Stick is a bottom dock on 기본 and 현무암. Search and the recency list sit above it. Classify draft sits above the field, still in the dock. Intro has no dock. Do not put the composer back above the list.
 
-**The AI Comparison Rule.** Header **AI** opens a second surface: celadon accent, cooler ground, and an editorial magazine feed. The bottom Stick dock is shared with the fridge palettes. Header and footer chrome stay. Fridge collage, magnet dots, and tilted paper do not. It is not a purple chat or zinc-blue SaaS skin. Switch back to 기본 or 현무암 to judge the incumbent fridge.
+**The AI Comparison Rule.** Celadon editorial is not shipped. Do not add header **AI** in this client unless PRODUCT asks. It must not become a purple chat or zinc-blue SaaS skin.
 
 **The White Doorstep.** The doorstep is a **header auth sheet** (light: white; dark: night enamel). The intro sits on porcelain peach / night kitchen. Dark intro is not a white flash.
 
@@ -279,11 +279,11 @@ Body is 16px / 1.5. UI copy on controls is 15px so Hangul still fits in 48px. 12
 
 | Token | Size | Use |
 | --- | --- | --- |
-| sm | 18px | Theme glyphs, menu items, peel/edit, magnet disc, brand mark, Apple/Google auth |
+| sm | 18px | Theme glyphs, menu items, peel/edit, magnet disc, brand mark |
 | md | 22px | + button, lightbox close |
 | lg | 24px | FAB |
 
-The glyph is smaller than the hit target. Auth marks stay at the original 18px (`--icon-sm`) in a 48px control.
+The glyph is smaller than the hit target.
 
 ### Controls (`--control-*`)
 
@@ -309,9 +309,9 @@ Auth, Stick, and + share 48px so the door and the header auth sheet feel like on
 
 ## Layout
 
-Header, door (main), footer. Compact header is brand, 로그인 when signed out, and settings. The door is the canvas. Intro, empty state, and clippings share a centered column. After entry, Stick is a fixed bottom dock on every palette; classify draft stacks above the field. AI editorial uses a wider magazine feed. Fridge clippings no longer stagger left; magnets sit on the center of each slip.
+Header, door (main), footer. Compact header is brand, 로그인 when signed out, and settings. The door is the canvas. Intro, empty state, and clippings share a centered column. After entry, Stick is a fixed bottom dock; classify draft stacks above the field.
 
-Intro is a full-bleed library still under the header, peach (or celadon) ground. The app capture column stays 36–40rem. Legal pages reuse the header/footer chrome.
+Intro is a full-bleed library still under the header, peach ground. The app capture column stays 36–40rem. Legal routes `/terms` and `/privacy` reuse the header/footer chrome.
 
 Gutter is fluid (`clamp(16px, 4vw, 40px)`). Door padding is fluid so resize does not jump. Composer becomes two-row when the door is under 560px (container query). Fridge handle hides under 640px door width. Camera control appears under 721px or coarse pointer, including DevTools width resize.
 
@@ -337,25 +337,24 @@ Slight clipping rotation (±0.45deg) on every third scrap. That is the fridge, n
 
 ## Components
 
-- **Auth stack:** Apple charcoal, Google outlined, Browse tangerine. Vertical, in the header 로그인 sheet (32px radius). 48px controls, 18px marks, 15px label. Light sheet is `--login-wall` white.
-- **Settings sheet:** One 40px disc in the header opens a 14px paper card (`role="dialog"`). After the title, the session chip (who is in, and where) sits at the top when a session exists. Then language, palette, appearance, and Leave. Escape, outside click, and the close disc dismiss it. Do not open it together with the 로그인 sheet. Not a purple modal and not a sidebar.
-- **Palette switch:** Pill track, 40px cells. 기본 (tangerine swatch), 현무암 (basalt swatch), and AI (celadon swatch). Lives in the settings sheet. Default is tangerine.
+- **Auth stack:** Email and password in the header 로그인 sheet (32px radius). 48px controls, 15px label. Light sheet is `--login-wall` white. No Apple, Google, or 둘러보기 in this SPA.
+- **Settings sheet:** One 40px disc in the header opens a 14px paper card (`role="dialog"`). After the title, the session chip (who is in) sits at the top when a session exists. Then language, palette, appearance, and Leave. Escape, outside click, and the close disc dismiss it. Do not open it together with the 로그인 sheet. Not a purple modal and not a sidebar.
+- **Palette switch:** Pill track, 40px cells. 기본 (tangerine swatch) and 현무암 (basalt swatch). Lives in the settings sheet. Default is tangerine.
 - **Theme switch:** Light, system, and dark magnets in a pill track, 40px cells, 18px glyphs. Also in the settings sheet.
-- **Composer:** Bottom dock after entry. 24px shell; 22px +; 15px field; Stick 48px / 14px. Focus ring follows the 24px shell (`:has(.composer-field:focus)`), not a square on the textarea and not a pill. AI uses `--radius-sm` on the same shell.
-- **Classify draft:** A new Stick, paste, or drop replaces the open classify card in place. Editing a saved scrap still asks to save or cancel first.
+- **Composer:** Bottom dock after entry. 24px shell; 22px +; 15px field; Stick 48px / 14px. Focus ring follows the 24px shell, not a square on the textarea and not a pill.
+- **Classify draft:** A new Stick, paste, or drop replaces the open classify card in place.
 - **+ menu:** 40px rows, 18px glyphs, hairline border.
-- **Clipping:** Magnet 18px, caption tags 13px / `--control-tag` 26px tall, peel/edit 40px hits with 18px glyphs.
-- **Search:** 48px capsule, 15px type. Type chips 34px / 13px. 일자별 chip in this row; month panel 18px radius under the tools, not a modal over the Stick dock.
+- **Clipping:** Caption tags 13px / `--control-tag` 26px tall, peel 40px hits with 18px glyphs.
+- **Search:** 48px capsule, 15px type. Type chips 34px / 13px.
 - **Language magnets:** Pill switch, 40px cells, 13px KO/EN.
 - **FAB:** 48px disc, 24px glyph.
-- **Phish meter:** When Stick detects a web link, the draft shows an on-device URL-shape risk (낮음 / 주의 / 높음). Not a live blocklist and not a guarantee. Compact line on saved link scraps. Mid uses ink, not tangerine. High uses `--danger`.
-- **Footer:** policy links (caption; privacy magnet/bold) then identity (micro). 비우기 is app-only. Empty operator fields read 표시 예정.
+- **Footer:** policy links (caption; privacy magnet/bold) then identity (micro). Empty operator fields read 표시 예정.
 
 States required: hover, focus-visible, disabled (Stick), loading (OG skeleton), error (OG fallback copy), empty ("항목이 없습니다." / English equivalent), pressed (`:active` scale), enter/exit for views.
 
 ## Motion & interaction
 
-These rules are binding for intro, header auth, capture, draft, list, calendar, menu, lightbox, and legal pages. Duration and easing live as CSS variables in [`css/styles.css`](css/styles.css): `--dur-fast` 140ms, `--dur-mid` 220ms, `--dur-slow` 320ms, `--ease-out` (`cubic-bezier(0.16, 1, 0.3, 1)`), `--ease-in` (`cubic-bezier(0.4, 0, 1, 1)`).
+These rules are binding for intro, header auth, capture, draft, list, menu, and legal routes. Duration and easing belong in [`src/index.css`](src/index.css) (`--ease-out` `cubic-bezier(0.16, 1, 0.3, 1)`). Prefer `--dur-fast` 140ms, `--dur-mid` 220ms, `--dur-slow` 320ms when adding motion.
 
 ### Named rules
 
@@ -399,19 +398,19 @@ Binding against [ROADMAP.md](ROADMAP.md) Phase 4. Header stays brand + 로그인
 
 **The Open Kitchen Rule.** First visit is an intro that shows the fridge job. Auth does not own the first viewport. Email sign in / sign up live in the header sheet. A saved session skips intro.
 
-**The Demo Is The Product Rule.** Intro is a full-bleed library still (`assets/intro-hero.jpg`) filling below the header. Hero and **책장을 연다** sit on the photo. No 견본 / Sample on the still. Stick, classify, and find sit as hotspots on the matching objects: titles always visible, two short beats on hover or tap. App list samples stay labeled 견본 / Sample. Do not invent customers, download counts, testimonials, or AI claims. Do not build a purple SaaS landing, a phone farm of fake UI, or CSS widgets that impersonate the composer.
+**The Demo Is The Product Rule.** Intro is a full-bleed library still (`public/assets/intro-hero.jpg`) filling below the header. Hero and **책장을 연다** sit on the photo. No 견본 / Sample on the still. Stick, classify, and find sit as hotspots on the matching objects: titles always visible, two short beats on hover or tap. Do not invent customers, download counts, testimonials, or AI claims. Do not build a purple SaaS landing, a phone farm of fake UI, or CSS widgets that impersonate the composer.
 
-**The Day Magnet Rule.** 일자별 is a filter on the recency list, not a calendar product and not a second home. Counts are scraps stuck that local calendar day (`createdAt`). One selected day at a time. Combine with type, tag, and search. Inside a day, newest first.
+**The Day Magnet Rule.** 일자별 is not in this SPA. If it returns, it is a filter on the recency list, not a calendar product and not a second home.
 
-**The Korean Footer Rule.** Intro and app show operator identity plus 이용약관 plus 개인정보처리방침. Privacy is easier to spot than the other links (bold or magnet). Placeholders until real operator data. Do not invent a 사업자등록번호 or 통신판매업 신고번호. 비우기 stays an app-only footer action.
+**The Korean Footer Rule.** Intro and app show operator identity plus 이용약관 plus 개인정보처리방침. Privacy is easier to spot than the other links (bold or magnet). Placeholders until real operator data. Do not invent a 사업자등록번호 or 통신판매업 신고번호.
 
 ### Intro
 
 - Sticky compact header: brand, 로그인, settings (KO/EN, palette, theme live in the settings sheet).
 - Hero uses `--text-display-hero` (clamp 2–3rem) once, overlaid top-left on the still with the magnet-fill CTA. A thin peach enamel gradient under the type. No glass blur. No kicker.
 - The still is full-bleed under the header (`object-fit: cover`). No 4:3 card, no scrap radius. Titles sit on the catalog card, the linen book, and the holdings. The body is two short beats on hover or tap. No three-card stack. One job at a time.
-- Primary CTA copy stays personal. Secondary is 둘러보기 if it is not already the primary.
-- Ground: porcelain peach / night kitchen, kitchen glow allowed. AI intro follows celadon. Not a white marketing slab and not toner.
+- Primary CTA copy stays personal (**책장을 연다**). No 둘러보기 on the intro.
+- Ground: porcelain peach / night kitchen, kitchen glow allowed. Not a white marketing slab and not toner.
 
 ### Header auth
 
@@ -422,29 +421,24 @@ Binding against [ROADMAP.md](ROADMAP.md) Phase 4. Header stays brand + 로그인
 
 ### 일자별 calendar
 
-- Chip in `#list-tools` next to type chips. Open calendar is a paper panel under the tools, 18px radius, not a modal that covers the composer.
-- Month grid. Days with scraps show a count in caption/micro. Empty days are muted. Selected day is magnet fill + magnet-ink. Today is a hairline ring, not magnet, unless it is also selected.
-- Counts use local date of `createdAt`. Do not use UTC day if the user is in Korea (Asia/Seoul local).
-- Coarse pointer: 40px day hits (`--control-sm`). Fine pointer may stay compact but not under 32px.
+Not in this SPA. If it returns: chip next to type chips, paper panel under the tools, local `createdAt` day, magnet for the selected day. Do not build a scheduling calendar.
 
 ### Korean footer
 
 - Two bands: policy links (caption) then identity (micro). Privacy link is distinct.
-- Legal pages (`legal/terms.html`, `legal/privacy.html`) reuse header/footer chrome and SUIT. No new typeface.
+- Legal routes `/terms` and `/privacy` ([`src/pages/Legal.tsx`](src/pages/Legal.tsx)) reuse header/footer chrome and SUIT. No new typeface.
 - Identity values come from placeholders; empty looks like "표시 예정", never a made-up number.
 
 ## Do's and Don'ts
 
 **Do**
-- Speak like a personal box: stick, peel, empty the door, this device.
-- Show the media itself (image, hover-play, OG, PDF first page).
-- Label synthetic scraps as Sample / 견본.
+- Speak like a personal box: stick, peel, 나가기.
+- Show the media itself when a preview URL exists.
 - Keep KO and EN on one layout.
 - Use the type / icon / control scale. Do not invent a one-off size.
 - Keep fills inside the Cave Check. Porcelain peach kitchen, night kitchen, not toner. The header auth sheet is white in light mode.
 - Honor `prefers-reduced-motion`.
-- Keep two-step confirms for peel, Leave-with-draft, and Empty.
-- Put auth in the header and counts on the day grid, not in a new information architecture.
+- Put auth in the header, not in a new information architecture.
 
 **Don't**
 - Build a Notion sidebar of equal cards, or a purple AI chat on cream.
@@ -457,7 +451,7 @@ Binding against [ROADMAP.md](ROADMAP.md) Phase 4. Header stays brand + 로그인
 
 ## Open UX gaps
 
-Phases 1–4 of [ROADMAP.md](ROADMAP.md) plus the Vite SPA live in the client. Cloud stays dormant until Vite env vars are set.
+Phases 1–4 of the old static client plus the Vite SPA live in this repo. Hosting is [https://mybrary-snuu09.web.app](https://mybrary-snuu09.web.app). The shelf writes only after Vite env vars are set and the user signs in with email.
 
 Fill operator identity when real. Do not reopen a Notion sidebar, folder tree, or AI chat on cream.
 

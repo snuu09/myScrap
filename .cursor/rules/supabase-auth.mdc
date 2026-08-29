@@ -1,0 +1,17 @@
+---
+description: Supabase email Auth, RLS scraps, and Storage paths.
+globs: src/lib/supabase.ts,src/lib/scraps.ts,src/context/Auth.tsx,supabase/**
+alwaysApply: false
+---
+
+# Supabase
+
+Email/password only in this SPA. No Apple, Google, anonymous, or Browse. No `localStorage` scrap store. Prefs (`mybrary.lang`, `mybrary.theme`, `mybrary.palette`) stay on the device.
+
+Vite: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`. Empty keys keep the intro; the shelf cannot write. Never `service_role` in the client.
+
+Schema: `public.scraps`, RLS `auth.uid() = user_id`. Media: `scrap-media/{userId}/{scrapId}/`. Migration: [`supabase/migrations/20260820140000_scraps_media_realtime.sql`](supabase/migrations/20260820140000_scraps_media_realtime.sql).
+
+Auth redirect origins: `http://localhost:5173`, `https://mybrary-snuu09.web.app`, `https://mybrary-snuu09.firebaseapp.com`.
+
+`/api/analyze` must reject requests whose `mediaPath` is not `{uid}/...`.

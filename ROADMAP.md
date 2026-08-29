@@ -4,75 +4,63 @@ Personal capture box: paste or drop once, see type tags and a preview, find it a
 
 Related: [README.md](README.md) · [PRODUCT.md](PRODUCT.md) · [DESIGN.md](DESIGN.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
 
-**Shipped:** Phases 1–4 in the old static client, then a Vite + React SPA migration. Email Auth, `public.scraps`, Claude classify via `/api/analyze`.
+**Shipped:** Vite + React SPA on Firebase Hosting (`mybrary-snuu09`). Email Auth, `public.scraps`, Claude classify via `/api/analyze`.
 
-**Next:** Fill Vite env vars, rebuild, and add the Firebase Hosting origin to Supabase Auth redirect URLs. Binding product and visual rules: [PRODUCT.md](PRODUCT.md) and [DESIGN.md](DESIGN.md).
+**Next:** Fill Vite env vars, rebuild Hosting, add the Firebase origin to Supabase Auth redirect URLs. Blaze + `functions/.env` if Claude should run on Firebase. Binding product and visual rules: [PRODUCT.md](PRODUCT.md) and [DESIGN.md](DESIGN.md).
 
 The app is a Vite + React (TypeScript) SPA. API keys are not in the repo. Copy [.env.example](.env.example). Language, theme, and palette stay on this device. Scraps require a signed-in Supabase user.
 
 ```mermaid
 flowchart TB
-  p1[Phase1_tech_debt]
-  p2[Phase2_ui_ux]
-  p3[Phase3_supabase]
-  p4[Phase4_intro_calendar_footer]
-  p1 --> p2 --> p3 --> p4
+  spa[Vite_SPA]
+  host[Firebase_Hosting]
+  auth[Supabase_email]
+  fn[api_analyze]
+  spa --> host
+  spa --> auth
+  spa --> fn
 ```
 
 ---
 
-## Shipped
+## Current SPA
 
-SPA client. With empty Vite env vars the intro stays public. With a real URL and anon key, email sign in writes scraps per user.
+With empty Vite env vars the intro stays public. With a real URL and anon key, email sign in writes scraps per user. Live: [https://mybrary-snuu09.web.app](https://mybrary-snuu09.web.app).
 
 ### Capture and classify
 
-- [x] Entry: Apple ID, Google, or Browse. Demo session in `localStorage` until keys are set. After keys, Apple/Google are OAuth and Browse is anonymous auth.
-- [x] Composer: paste text or a URL, Enter to stick, drag-and-drop on the input.
-- [x] `+` menu: clipboard, photo pick, file attach. Camera only on coarse pointers or viewports under 721px.
-- [x] Classify-then-save draft: detected type, editable label, add/remove tags, memo, preview, save or cancel.
-- [x] A new Stick, paste, or drop replaces an open classify draft. Extra files from the same drop still queue. Editing a saved scrap still asks to save or cancel first.
-- [x] Link drafts show an on-device phishing-risk meter (URL shape only). Compact mark on saved link scraps.
-- [x] Sample scraps labeled Sample / 견본. Toggle to show or clear them.
+- [x] Entry: email sign up / sign in in the header sheet. No Apple, Google, 둘러보기, or `localStorage` scrap store.
+- [x] Composer: paste text or a URL, drag-and-drop, `+` (clipboard, camera on phones, photo, file).
+- [x] Classify-then-save draft: type, tags, memo, skeleton while `/api/analyze` (or MIME fallback) runs. A new Stick replaces an open draft.
+- [x] Recency list, newest first. Type chips and search. Peel from the row.
+- [x] KO / EN, 기본 / 현무암, light / system / dark on this device.
+- [x] Intro full-bleed still, legal routes `/terms` `/privacy`, operator 표시 예정.
+- [x] Firebase Hosting `dist` + SPA rewrite. Cloud Function source for `/api/analyze` (needs Blaze to go live).
 
-### Type previews
+### Not in this SPA (later)
 
-- [x] Link: Open Graph via the `og-preview` Edge Function when signed in to Supabase, then microlink, then corsproxy / allorigins. Fallback is hostname and path.
-- [x] Image: show the image. Compress long edge to 1600px before persist.
-- [x] Video: poster frame; hover or tap to play. Honors `prefers-reduced-motion` for hover-play.
-- [x] Audio: disc art; hover or tap to play.
-- [x] Document: PDF first page via pdf.js (best over `http://localhost`). txt / md / csv excerpt. Office and HWP: extension tag and filename slip, not a page render.
-
-### List and chrome
-
-- [x] Recency list, newest first. Peel (delete) one item with a two-step confirm. Empty the door with a two-step confirm.
-- [x] KO / EN in one layout. Light / system / dark. Magnet color: tangerine (default) or Jeju basalt. Follows the system until the user picks light or dark. Can return to system. Remembered on this device. Type / icon / control scale, white login, peach kitchen: [DESIGN.md](DESIGN.md).
-- [x] Empty state ("항목이 없습니다." / English equivalent). Scroll-to-top FAB when not at the top.
-- [x] Skip link, visible focus, `prefers-reduced-motion`.
-- [x] Persist scraps in `localStorage` (~4.2MB budget) when keys are empty. Large files may stay session-only. Over quota, media data URLs are stripped. With keys and a signed-in user, scraps go to Postgres and media to a private Storage bucket.
-- [x] Missing-media slip (filename, extension, size) instead of a broken preview.
-- [x] Unsaved draft warning on Leave and Empty the door. Composer auto-grows. Edit a saved scrap.
-- [x] Type chips, tag click-to-filter, light search. Image lightbox. Copy URL / save file when media is stored.
-- [x] View motion: login ↔ app, draft, + menu, lightbox, clipping snap, FAB. Hover lift and press scale. Honors `prefers-reduced-motion`. See [DESIGN.md](DESIGN.md).
-- [x] Header color theme: 기본 (tangerine magnet) and 현무암 (basalt magnet). Swaps the accent only. Kitchen wall stays porcelain peach. Sample photos retint; 견본 tag is hairline ink.
+일자별 calendar, celadon AI palette, Apple/Google OAuth, sample-scrap toggle, phishing meter, lightbox, Empty-the-door, edit-saved-scrap, OG/pdf.js previews from the old static client.
 
 ---
 
-## Not shipped
-
-### Intentionally out of this product
+## Intentionally out of this product
 
 - Team / workspace language, Notion-style sidebar, folder tree.
 - Live camera viewfinder (file `capture` input is enough).
-- Server-side or paid AI tagging.
-- Share, export, account settings screens.
-- Bundler, test runner, or framework. Stay static HTML / CSS / JS.
-- IndexedDB as a new client database. Frontend-external storage is Supabase (Phase 3, wired; keys filled later).
-- Moving into `src/` / `public/` or an app-router tree. The current folders already match a typical static site ([ARCHITECTURE.md](ARCHITECTURE.md)).
+- Share, export, account settings screens beyond 나가기.
+- IndexedDB as a client database. Persist scraps in Supabase.
+- A second static `js/` / `css/` client.
 
 ### Operator follow-up (not code)
 
-Create a Supabase project and paste the URL plus anon key into [`js/config.js`](js/config.js). Until then the local demo path is unchanged. See [`supabase/README.md`](supabase/README.md).
+Create a Supabase project and paste the URL plus anon key into `.env` as `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. Rebuild before Hosting deploy. See [`supabase/README.md`](supabase/README.md).
+
+---
+
+## Phases 1–4 (historical)
+
+The checklists below describe the **old static HTML/JS client**. They stay as a record of what that tree shipped. Do not re-open `js/config.js` or `legal/*.html`. Current files: [ARCHITECTURE.md](ARCHITECTURE.md).
+
 
 ---
 
@@ -163,7 +151,7 @@ Server-side AI tagging stays optional and is not required to close Phase 3.
 
 ## Phase 4 — Intro, calendar filter, Korean footer
 
-Public first screen, header auth, date findability, and the legal chrome a Korean web service needs. Keep classify-then-save, the fridge-door app, and no-build static HTML / CSS / JS. Binding visuals: [DESIGN.md](DESIGN.md) Phase 4 rules. Do not add a Notion sidebar, a calendar product, or a purple SaaS landing.
+Public first screen, header auth, date findability, and the legal chrome a Korean web service needs. Historical: this phase shipped on the static client. The SPA kept intro, header email, and footer; it did not keep 일자별. Binding visuals: [DESIGN.md](DESIGN.md) Phase 4 rules. Do not add a Notion sidebar, a calendar product, or a purple SaaS landing.
 
 ### Sequence inside Phase 4
 
@@ -230,12 +218,10 @@ Folder tree, share/export, account settings beyond 나가기, cookie consent ban
 
 ---
 
-## Suggested sequence inside a phase
+## Suggested sequence now
 
-Phase 1: `typeFromMime` → `el()` innerHTML → hover-play → clipboard ingest → error copy → `storedMedia` persist → Stick disabled → confirm `MybraryStorage` is the only persist API.
+1. Fill `.env`, `npm run deploy:hosting`, add Firebase origins to Supabase Auth.
+2. Blaze + `functions/.env` if `/api/analyze` should call Claude on Hosting.
+3. Later product (optional): 일자별, edit saved scrap, richer previews. Do not revive `js/` or `css/`.
 
-Phase 2: missing-media slip → Stick/draft safety (unsaved warning, auto-grow) → theme system reset → edit saved scrap → type chips → tag filter → search → lightbox → copy/save → peel confirm.
-
-Phase 3: storage adapter behind `MybraryStorage` → Auth → tables + RLS → Storage buckets → OG function → localStorage migration. Keys stay out of git until you paste them into `js/config.js`.
-
-Phase 4: intro + header login → Korean legal footer on intro and app → 일자별 calendar filter in list tools. **Done in this client.**
+Phases 1–4 below are the static-client history, not the next build order.

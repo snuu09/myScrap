@@ -1,0 +1,20 @@
+---
+description: Firebase Hosting, SPA rewrites, and Claude classify functions.
+globs: firebase.json,functions/**,netlify/**,src/lib/analyze.ts
+alwaysApply: false
+---
+
+# Hosting and /api/analyze
+
+Hosting serves `dist`. Rewrite `/api/analyze` to Cloud Function `analyze` in `asia-northeast3`, then `**` → `/index.html`. Hashed `/assets/**` may be immutable; HTML is `no-cache`.
+
+The client always `fetch("/api/analyze")` with the user JWT. Same path on Firebase and Netlify.
+
+- Firebase: [`functions/src/index.ts`](functions/src/index.ts), `process.env`
+- Netlify: [`netlify/functions/analyze.ts`](netlify/functions/analyze.ts), `Netlify.env.get`
+
+Both verify Supabase `getUser`, then Anthropic. On 401/503 the client uses `src/lib/tagger.ts`. 2nd-gen functions need Blaze; Spark Hosting still ships the SPA.
+
+Function env (never Vite): `ANTHROPIC_API_KEY`, `SUPABASE_URL` or `VITE_SUPABASE_URL`, `SUPABASE_ANON_KEY` or `VITE_SUPABASE_ANON_KEY`. Keep `functions/.env` gitignored.
+
+Deploy Hosting: `npx -y firebase-tools@latest deploy --only hosting` (or `npm run deploy:hosting`). Live: `https://mybrary-snuu09.web.app`.

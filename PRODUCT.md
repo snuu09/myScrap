@@ -20,7 +20,7 @@ MyBrary is a web service that automatically tags and categorizes scraps. Success
 
 ## Positioning
 
-One capture surface that inspects what you pasted (text, image, video, audio, URL, document) and returns type tags plus the matching preview (Open Graph for links, page preview for documents, hover-play for video/audio). Neighboring notes apps store blobs; this product classifies and shows them.
+One capture surface that inspects what you pasted (text, image, video, audio, URL, document) and returns type tags plus a usable preview when the media can render. Neighboring notes apps store blobs; this product classifies and shows them.
 
 ## Operating Context
 
@@ -40,28 +40,21 @@ Work order and checkboxes: [ROADMAP.md](ROADMAP.md). Env vars live in `.env` loc
 
 ### Shipped
 
-Confirmed from brief and implemented in this static client:
+Confirmed from brief and implemented in the Vite SPA:
 
-- Responsive HTML/CSS/JS; header, main, footer.
+- Responsive React UI; header, main, footer.
 - i18n: Korean, English.
-- Auto-tag pasted/dropped content by type: text, image, video, audio, link, document extension.
+- Auto-tag pasted/dropped content by type: text, image, video, audio, link, document extension (Claude at `/api/analyze`, MIME/URL fallback).
 - Classify-then-save draft (type, tags, memo, preview) before the item hits the recency list.
-- A new Stick, paste, or drop replaces an open classify draft. Leave and Empty still confirm.
-- Link: Open Graph preview and basic site info.
-- Link drafts show an on-device phishing-risk meter (URL shape only). Compact mark on saved link scraps.
-- Image: show the image.
-- Video: thumbnail; play on hover.
-- Audio: thumbnail; play on hover.
-- Document: tag by extension; page preview (PDF first page; text excerpt; Office/HWP filename slip).
+- A new Stick, paste, or drop replaces an open classify draft.
+- Image: show the image when a signed URL exists.
 - + menu: clipboard, camera (mobile), photo, file.
 - Placeholder: "붙여넣기 할 내용이나 파일을 첨부해주세요."
 - Drag-and-drop analyzes dropped files.
 - Recency-sorted tagged list; empty state; scroll-to-top FAB.
-- Missing-media slip when quota or session-only files lose bytes.
-- Unsaved draft warning; composer auto-grow; light / system / dark.
 - Header color theme: 기본 (tangerine magnet), 현무암 (basalt magnet). Language, palette, appearance, and Leave sit in a header settings sheet.
-- Type chips and search. Two-step peel.
-- Supabase: email/password Auth, `scraps` + private media bucket. Claude classify via `/api/analyze` (MIME fallback if the function is down).
+- Type chips and search. Peel from the list.
+- Supabase: email/password Auth, `scraps` + private media bucket. No anonymous write path. Claude classify via `/api/analyze` (MIME fallback if the function is down).
 
 [Inferred] Language, theme, and palette stay local. Scraps never write without a signed-in user.
 
@@ -77,13 +70,13 @@ Empty operator fields render as 표시 예정 / To be shown. Do not invent a 사
 
 ### Later (not a numbered phase yet)
 
-Folder tree, share/export, account settings beyond 나가기, paid plans, 일자별 calendar, Apple/Google OAuth.
+Folder tree, share/export, account settings beyond 나가기, paid plans, 일자별 calendar, Apple/Google OAuth, 둘러보기, celadon AI palette.
 
 ## Brand Commitments
 
 - Product name: MyBrary (repository folder may still be myScrap).
 - Voice: personal capture box, not a team knowledge base or research lab. Functional Korean/English UI copy; user-supplied placeholder and empty-state strings are binding.
-- Main color: Jeju tangerine (hallabong) magnet by default. 현무암 swaps that accent to Jeju basalt. AI is a separate celadon editorial capture surface with the same features. Light and dark modes are required.
+- Main color: Jeju tangerine (hallabong) magnet by default. 현무암 swaps that accent to Jeju basalt. Light and dark modes are required. A celadon AI surface is not in this SPA.
 
 ## Evidence on Hand
 
@@ -99,4 +92,4 @@ No real user content, brand assets, or Open Graph corpus. Demonstration scraps m
 
 ## Accessibility & Inclusion
 
-[Inferred] Keyboard access to composer, + menu, settings sheet, 로그인 sheet, list, calendar, and language switch. Visible focus. WCAG AA contrast. Honor `prefers-reduced-motion` for hover-play, view motion, and intro motion. Camera control is mobile-only and must not appear as a dead desktop action. Motion and pointer rules: [DESIGN.md](DESIGN.md).
+[Inferred] Keyboard access to composer, + menu, settings sheet, 로그인 sheet, list, and language switch. Visible focus. WCAG AA contrast. Honor `prefers-reduced-motion`. Camera control is mobile-only and must not appear as a dead desktop action. Motion and pointer rules: [DESIGN.md](DESIGN.md).
