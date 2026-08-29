@@ -4,11 +4,11 @@ Personal capture box: paste or drop once, see type tags and a preview, find it a
 
 Related: [README.md](README.md) · [PRODUCT.md](PRODUCT.md) · [DESIGN.md](DESIGN.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
 
-**Shipped:** Phase 1 (tech debt), Phase 2 (UI/UX), Phase 3 (Supabase wiring), and Phase 4 (intro, header login, date calendar filter, Korean legal footer) are in this client.
+**Shipped:** Phases 1–4 in the old static client, then a Vite + React SPA migration. Email Auth, `public.scraps`, Claude classify via `/api/analyze`.
 
-**Next:** Operator keys in [`js/config.js`](js/config.js) when you want cloud auth and sync. Binding product and visual rules: [PRODUCT.md](PRODUCT.md) and [DESIGN.md](DESIGN.md). Do not start a new product surface (folders, share, paid plans, a framework rewrite) without a new phase.
+**Next:** Fill Vite env vars, rebuild, and add the Firebase Hosting origin to Supabase Auth redirect URLs. Binding product and visual rules: [PRODUCT.md](PRODUCT.md) and [DESIGN.md](DESIGN.md).
 
-The app stays static HTML / CSS / JS with no build step. Folders follow a typical static site plus `supabase/` ([ARCHITECTURE.md](ARCHITECTURE.md)). API keys are not in the repo; fill [`js/config.js`](js/config.js) later. Empty or placeholder keys keep the on-device `localStorage` path.
+The app is a Vite + React (TypeScript) SPA. API keys are not in the repo. Copy [.env.example](.env.example). Language, theme, and palette stay on this device. Scraps require a signed-in Supabase user.
 
 ```mermaid
 flowchart TB
@@ -23,7 +23,7 @@ flowchart TB
 
 ## Shipped
 
-Static client. With empty [`js/config.js`](js/config.js), Apple / Google / Browse stay on this device. With a real URL and anon key, those buttons talk to Supabase (OAuth or anonymous), and scraps sync per user.
+SPA client. With empty Vite env vars the intro stays public. With a real URL and anon key, email sign in writes scraps per user.
 
 ### Capture and classify
 

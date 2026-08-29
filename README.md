@@ -1,58 +1,59 @@
 # MyBrary
 
-Personal capture box for things you saw on the web, photos, and files. Static HTML, CSS, and JS. No build step.
+Personal capture box for things you saw on the web, photos, and files. Vite + React (TypeScript) SPA on Firebase Hosting (`mybrary-snuu09`). Auth, Postgres, and Storage stay on Supabase. Image/link classify can call Claude through a Cloud Function at `/api/analyze` (Netlify Function still works on Netlify).
 
-Shipped vs next: [ROADMAP.md](ROADMAP.md). Product and design: [PRODUCT.md](PRODUCT.md), [DESIGN.md](DESIGN.md) (includes motion and interaction rules). Folders and layers: [ARCHITECTURE.md](ARCHITECTURE.md).
-
-Phases 1–4 are in this client. Operator keys in [`js/config.js`](js/config.js) turn on cloud auth and sync.
+Shipped vs next: [ROADMAP.md](ROADMAP.md). Product and design: [PRODUCT.md](PRODUCT.md), [DESIGN.md](DESIGN.md). Folders: [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Open
 
-Fastest:
+```bash
+cp .env.example .env
+# paste VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
+npm install
+npm run dev
+```
+
+Then visit the Vite URL (usually [http://localhost:5173](http://localhost:5173)). Functions are available in that same dev server via `@netlify/vite-plugin`.
 
 ```bash
-open index.html
+npm run build
 ```
 
-Or, from this folder, a local server (better for PDF.js and some Open Graph fetches):
+## Env
 
-```bash
-python3 -m http.server 8080
-```
-
-Then visit [http://localhost:8080](http://localhost:8080).
-
-## Project structure
-
-Typical static web tree. No bundler, no `src/` vs `public/` split. See [ARCHITECTURE.md](ARCHITECTURE.md).
-
-```
-index.html     view
-css/           styles
-js/            config, backend, storage, services, app
-assets/        favicon
-supabase/      migrations, Edge Functions (optional until keys are set)
-legal/         terms + privacy
-```
+| Name | Where | Role |
+| --- | --- | --- |
+| `VITE_SUPABASE_URL` | Vite (baked into `dist`) | Project URL |
+| `VITE_SUPABASE_ANON_KEY` | Vite (baked into `dist`) | Publishable / anon key (never `service_role`) |
+| `ANTHROPIC_API_KEY` | Cloud Function / Netlify Function | Direct Anthropic SDK. Not in the browser. |
+| `SUPABASE_URL` | Cloud Function only | Same project URL; used to verify the user JWT |
+| `SUPABASE_ANON_KEY` | Cloud Function only | Same anon key; never `service_role` |
 
 ## Use
 
-1. On the intro, **로그인** then Apple ID, Google, or Browse. With empty [`js/config.js`](js/config.js), these stay on this device (demo session). After you paste a project URL and anon key, Apple/Google use OAuth and Browse uses anonymous auth. See [`supabase/README.md`](supabase/README.md). A saved session skips the intro.
-2. Paste text or a URL, drop a file, or use **+** (clipboard, camera on phones, photo, file). A new stick replaces an open classify draft.
-3. Confirm the type tags in the preview, then save. Items land newest-first. Search, type chips, tag filters, and 일자별 sit above the list. Link drafts show an on-device phishing-risk note.
-4. KO / EN, 기본 / 현무암 / AI, and light / system / dark in the settings sheet. Theme follows the system until you pick light or dark. You can return to system. Language, theme, and palette are remembered on this device.
+1. Intro: **책장을 연다** / **로그인**, then email sign up or sign in. Empty env vars show a config hint; scraps are not stored on the device without an account.
+2. Paste, drop, or use **+** (clipboard, camera on phones, photo, file). Classify runs Claude when the function is up, otherwise MIME/URL heuristics. A skeleton sits on the draft while it looks.
+3. Confirm tags, then save. Newest first. Search and type chips filter the list.
+4. KO / EN, 기본 / 현무암, light / system / dark in settings. Those prefs stay on this device. **나가기** returns to the intro.
 
-## What is demo vs real
+## Deploy (Firebase Hosting)
 
-- **Auth:** demo on this device until `js/config.js` has a real URL and anon key. Then Apple / Google are OAuth and Browse is anonymous. Never put `service_role` in the browser. Copy from [`js/config.example.js`](js/config.example.js).
-- **Tagging:** real, client-side (MIME, URL, file extension, Open Graph). No remote AI.
-- **Open Graph:** signed-in Supabase users try the `og-preview` Edge Function first. Otherwise microlink, then corsproxy / allorigins. If they fail, hostname and path still show.
-- **Storage:** without keys, scraps persist in `localStorage` on this browser. Large video/audio may stay session-only if quota is tight. With keys and a signed-in user, rows go to `public.scraps` and files to private bucket `scrap-media`.
+Live: [https://mybrary-snuu09.web.app](https://mybrary-snuu09.web.app) (also [https://mybrary-snuu09.firebaseapp.com](https://mybrary-snuu09.firebaseapp.com)).
 
-## Limits
+1. Put `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in `.env`, then `npm run deploy:hosting` (builds `dist` and deploys Hosting).
+2. Enable Email in Supabase Auth. Apply [supabase/migrations/20260820140000_scraps_media_realtime.sql](supabase/migrations/20260820140000_scraps_media_realtime.sql). Add `https://mybrary-snuu09.web.app` and `https://mybrary-snuu09.firebaseapp.com` to Auth redirect URLs.
+3. Claude classify is [functions/src/index.ts](functions/src/index.ts), rewritten from `/api/analyze`. 2nd-gen Cloud Functions need a Blaze plan. Until that function is deployed, the client uses MIME/URL fallback. On Blaze: put `ANTHROPIC_API_KEY`, `SUPABASE_URL`, and `SUPABASE_ANON_KEY` in `functions/.env` (gitignored), then `npx -y firebase-tools@latest deploy --only functions,hosting`.
+4. Model id is `claude-sonnet-4-5` (the brief’s `claude-sonnet-5` is not a current id).
 
-- Filling API keys, enabling providers, and deploying the Edge Function are operator steps (see [`supabase/README.md`](supabase/README.md)). The committed `js/config.js` is empty on purpose.
-- PDF first-page preview needs pdf.js from cdnjs and works best over `http://localhost`.
-- Office files (docx, pptx, hwp, …) get extension tags and a filename slip, not a full page render.
-- Some sites block OG images or proxy fetches (CORS).
-- Camera appears on coarse pointers or viewports under 721px.
+Netlify remains optional: build `npm run build`, publish `dist`, same Vite keys plus `ANTHROPIC_API_KEY` in site env. `/api/analyze` on Netlify is [netlify/functions/analyze.ts](netlify/functions/analyze.ts).
+
+## Project structure
+
+```
+src/                   React UI, i18n, Supabase client, tagger fallback
+public/assets/         favicon, intro still
+firebase.json          Hosting (dist) + /api/analyze rewrite
+functions/             Cloud Function classify (JWT required)
+netlify/functions/     Same classify for Netlify
+supabase/              Postgres RLS, scrap-media, optional og-preview
+```

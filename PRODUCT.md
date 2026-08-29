@@ -8,7 +8,7 @@ web
 
 ## Stack
 
-static HTML / CSS / JS (user-specified; no framework, no build step). Layout is a typical site tree: `index.html`, `css/`, `js/`, `assets/`, plus `supabase/` for optional auth, Postgres, Storage, and the OG function. Layers and load order: [ARCHITECTURE.md](ARCHITECTURE.md).
+Vite + React (TypeScript), Tailwind, Lucide. Firebase Hosting serves the SPA; `/api/analyze` is a Cloud Function (Netlify Function still exists as a twin). Supabase is Auth (email/password), Postgres `public.scraps`, and private Storage `scrap-media`. Layers: [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Users
 
@@ -26,17 +26,17 @@ One capture surface that inspects what you pasted (text, image, video, audio, UR
 
 Today (shipped):
 
-- First visit: intro on porcelain peach / night kitchen (celadon wall if AI is selected). Hero plus stick / classify / find scenes. Header **로그인** opens Apple / Google / Browse on a paper sheet. Settings stay a gear sheet (language, palette, theme, session chip, Leave).
+- First visit: intro on porcelain peach / night kitchen. Hero plus stick / classify / find hotspots. Header **로그인** opens email sign in / sign up. Settings stay a sheet (language, palette, theme, Leave).
 - A saved session skips intro and opens the door. Leave returns to intro.
-- After entry: recency list and search above a bottom Stick dock. Composer has a + menu (clipboard, camera on mobile, photo pick, file attach) and drag-and-drop. Classify draft sits above the field. 일자별 month filter sits with type chips.
-- Footer on intro and app: 이용약관, 개인정보처리방침, operator placeholders (표시 예정 until filled). 비우기 is app-only.
+- After entry: recency list and search above a bottom Stick dock. Composer has a + menu (clipboard, camera on mobile, photo pick, file attach) and drag-and-drop. Classify draft sits above the field, with a skeleton while Claude (or the MIME fallback) runs.
+- Footer on intro and app: 이용약관, 개인정보처리방침, operator placeholders (표시 예정 until filled).
 - Empty list copy: "항목이 없습니다."
 - List order: newest first.
 - Scroll-to-top FAB when not at the top.
 
 ## Capabilities and Constraints
 
-Work order and checkboxes: [ROADMAP.md](ROADMAP.md). Phases 1–4 are in the client. API keys are filled later in [`js/config.js`](js/config.js); empty config keeps the on-device path.
+Work order and checkboxes: [ROADMAP.md](ROADMAP.md). Env vars live in `.env` locally and are baked into the Hosting build. Empty Vite keys keep the intro, but scraps cannot be written.
 
 ### Shipped
 
@@ -59,29 +59,25 @@ Confirmed from brief and implemented in this static client:
 - Recency-sorted tagged list; empty state; scroll-to-top FAB.
 - Missing-media slip when quota or session-only files lose bytes.
 - Unsaved draft warning; composer auto-grow; light / system / dark.
-- Header color theme: 기본 (tangerine magnet), 현무암 (basalt magnet), and AI (celadon editorial capture surface). Language, palette, appearance, and Leave sit in a header settings sheet. Accent for 기본/현무암; AI also cools the kitchen wall and replaces the fridge main. Stick is a bottom dock on all three.
-- Edit a saved scrap (type, tags, memo).
-- Type chips, tag click-to-filter, light search, 일자별 calendar filter (local `createdAt`, view-only).
-- Image lightbox; copy URL / save file when media is stored; two-step peel.
-- Supabase adapter (`MybraryBackend`): OAuth / anonymous auth, `scraps` + private media bucket, last-write-wins sync, one-time local migrate, OG Edge Function. Inactive until `js/config.js` has a real URL and anon key.
+- Header color theme: 기본 (tangerine magnet), 현무암 (basalt magnet). Language, palette, appearance, and Leave sit in a header settings sheet.
+- Type chips and search. Two-step peel.
+- Supabase: email/password Auth, `scraps` + private media bucket. Claude classify via `/api/analyze` (MIME fallback if the function is down).
 
-[Inferred] Tagging and previews still run in the browser (MIME, URL, Open Graph fetch, object URLs). No paid AI API. With empty config, Apple/Google buttons are UI flows that enter the app (demo auth) and data persists in localStorage on this device. After keys, the same UI talks to Supabase; language, theme, and palette stay local.
+[Inferred] Language, theme, and palette stay local. Scraps never write without a signed-in user.
 
-Phase 1 tech debt, Phase 2 UI/UX, Phase 3 wiring, and Phase 4 intro / footer / 일자별 are implemented. See [ROADMAP.md](ROADMAP.md) and [supabase/README.md](supabase/README.md).
+See [ROADMAP.md](ROADMAP.md) and [supabase/README.md](supabase/README.md).
 
 ### Operator follow-up (keys, not code)
 
-Create a Supabase project, enable Google / Apple / Anonymous, apply `supabase/migrations`, deploy `og-preview`, paste URL + anon key into `js/config.js`. Never put `service_role` in the browser.
-
-Server-side AI tagging stays optional.
+Create a Supabase project, enable Email auth, apply `supabase/migrations`, set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in `.env` before `npm run build`. Set `ANTHROPIC_API_KEY` (and `SUPABASE_URL` / `SUPABASE_ANON_KEY`) on the Cloud Function or Netlify. Never put `service_role` in Vite.
 
 ### Operator identity (not code)
 
-Empty `legal` fields in [`js/config.js`](js/config.js) render as 표시 예정 / To be shown. Do not invent a 사업자등록번호.
+Empty operator fields render as 표시 예정 / To be shown. Do not invent a 사업자등록번호.
 
 ### Later (not a numbered phase yet)
 
-Folder tree, share/export, account settings beyond 나가기, paid plans, or a framework rewrite.
+Folder tree, share/export, account settings beyond 나가기, paid plans, 일자별 calendar, Apple/Google OAuth.
 
 ## Brand Commitments
 

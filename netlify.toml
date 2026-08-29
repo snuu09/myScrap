@@ -1,0 +1,14 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+# /api/analyze is served by netlify/functions/analyze.ts (Config.path).
+# Catch-all is last so it does not steal the function.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

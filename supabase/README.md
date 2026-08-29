@@ -1,15 +1,19 @@
-# Supabase (Phase 3)
+# Supabase
 
-This is the standard Supabase CLI tree at the repo root (`migrations/`, `functions/`). The static client stays in `index.html`, `css/`, `js/`, `assets/`. How the layers connect: [ARCHITECTURE.md](../ARCHITECTURE.md).
+This is the standard Supabase CLI tree (`migrations/`, `functions/`). The web client is the Vite app at the repo root. How the layers connect: [ARCHITECTURE.md](../ARCHITECTURE.md).
 
-Keys stay in [`js/config.js`](../js/config.js). This folder is schema and the Open Graph function only. The committed config file is empty so the app keeps the localStorage path until you paste values.
+Keys stay in `.env` (and `functions/.env` for the Cloud Function), never in git. See [`.env.example`](../.env.example).
 
 ## Once you have a project
 
-1. Copy [`js/config.example.js`](../js/config.example.js) over `js/config.js` if needed, then paste **Project URL** and the **anon / publishable** key. Never paste `service_role`.
-2. Authentication → Providers: enable Google, Apple, and Anonymous. Add this site's origin as a redirect URL (`http://localhost:8080` and the production origin).
-3. Run the SQL in `migrations/20260820140000_scraps_media_realtime.sql` (SQL editor or `supabase db push`).
-4. Deploy the function: `supabase functions deploy og-preview`.
-5. Reload the app. Apple / Google use OAuth. Browse uses anonymous auth. Scraps and media sync per signed-in user. Existing `mybrary.scraps` (or leftover `myscrap.scraps`) on this device copy once if the remote list is empty.
+1. Paste **Project URL** and the **anon / publishable** key into `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. Never paste `service_role`.
+2. Authentication → Providers: enable **Email**. Add this site's origin as a redirect URL (`http://localhost:5173`, `https://mybrary-snuu09.web.app`, and `https://mybrary-snuu09.firebaseapp.com`).
+3. Run the SQL in `migrations/20260820140000_scraps_media_realtime.sql` (SQL editor or `supabase db push`). Schema is still `public.scraps` + private bucket `scrap-media` with `auth.uid()` RLS. No new product tables.
+4. Optional: `supabase functions deploy og-preview`.
+5. Reload. Email sign up / sign in. Scraps and media sync per signed-in user.
 
-Until `js/config.js` has a real URL and key, the app keeps the on-device `localStorage` path. Placeholder strings that contain `YOUR_` also stay on the local path.
+Until Vite env vars are set, the intro stays public and the shelf cannot write.
+
+## Claude
+
+Image/link classify is not in this folder. On Firebase it is [functions/src/index.ts](../functions/src/index.ts) (Hosting rewrite `/api/analyze`). On Netlify it is [netlify/functions/analyze.ts](../netlify/functions/analyze.ts). Both verify the user JWT with the anon key, then call Anthropic (`claude-sonnet-4-5`).

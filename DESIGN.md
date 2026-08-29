@@ -200,7 +200,7 @@ components:
 
 **Creative North Star: "The Kitchen Fridge Door"**
 
-마이브러리 (Mybrary) is a personal capture box, not a knowledge base. The surface is a warm enamel fridge door: rubber gasket, stainless handle, Jeju tangerine (hallabong) disc magnets, and paper clippings of uneven size. You open the door (header 로그인, then Apple / Google / Browse), read the recency door, and stick from a bottom dock. What you stick snaps onto the door already tagged.
+마이브러리 (Mybrary) is a personal capture box, not a knowledge base. The surface is a warm enamel fridge door: rubber gasket, stainless handle, Jeju tangerine (hallabong) disc magnets, and paper clippings of uneven size. You open the door (header 로그인, email), read the recency door, and stick from a bottom dock. What you stick snaps onto the door already tagged.
 
 The product is Operate-mode. Brand lives in material details (gasket, magnets, clipping rotation) while controls stay familiar. Korean and English share one layout. Auth sits in a header sheet. Light is a peach porcelain kitchen; dark is a night kitchen. The pressable magnet is Jeju tangerine by default, or Jeju basalt when that palette is on.
 
@@ -397,7 +397,7 @@ Binding against [ROADMAP.md](ROADMAP.md) Phase 4. Header stays brand + 로그인
 
 ### Named rules
 
-**The Open Kitchen Rule.** First visit is an intro that shows the fridge job. Auth does not own the first viewport. Apple / Google / Browse live in the header. Browse and sign-in both open the door. A saved session still skips intro.
+**The Open Kitchen Rule.** First visit is an intro that shows the fridge job. Auth does not own the first viewport. Email sign in / sign up live in the header sheet. A saved session skips intro.
 
 **The Demo Is The Product Rule.** Intro is a full-bleed library still (`assets/intro-hero.jpg`) filling below the header. Hero and **책장을 연다** sit on the photo. No 견본 / Sample on the still. Stick, classify, and find sit as hotspots on the matching objects: titles always visible, two short beats on hover or tap. App list samples stay labeled 견본 / Sample. Do not invent customers, download counts, testimonials, or AI claims. Do not build a purple SaaS landing, a phone farm of fake UI, or CSS widgets that impersonate the composer.
 
@@ -415,7 +415,7 @@ Binding against [ROADMAP.md](ROADMAP.md) Phase 4. Header stays brand + 로그인
 
 ### Header auth
 
-- 로그인 / Sign in is a 40–48px header control. Open state: paper sheet, `--radius-xl` 32px, Apple / Google / Browse stacked as today (48px, 18px marks).
+- 로그인 / Sign in is a 40–48px header control. Open state: paper sheet, `--radius-xl` 32px, email and password. Light sheet is white. Dark sheet is night enamel.
 - Light sheet: `--login-wall` white. Dark sheet: night enamel.
 - Escape and click-outside close it. One Job: close the sheet before intro hands off to the app. Do not stack with settings.
 - After session: chip + 나가기 in the settings sheet. Leave from the app returns to intro.
@@ -457,8 +457,8 @@ Binding against [ROADMAP.md](ROADMAP.md) Phase 4. Header stays brand + 로그인
 
 ## Open UX gaps
 
-Phases 1–4 of [ROADMAP.md](ROADMAP.md) are in the client. Phase 3 stays dormant until [`js/config.js`](js/config.js) has a project URL and anon key.
+Phases 1–4 of [ROADMAP.md](ROADMAP.md) plus the Vite SPA live in the client. Cloud stays dormant until Vite env vars are set.
 
-Fill operator identity in `js/config.js` `legal` when real. Do not reopen a Notion sidebar, folder tree, or AI chat on cream.
+Fill operator identity when real. Do not reopen a Notion sidebar, folder tree, or AI chat on cream.
 
 Code folders and layers: [ARCHITECTURE.md](ARCHITECTURE.md). Visual tokens, motion, and interaction rules stay in this file.

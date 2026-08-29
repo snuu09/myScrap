@@ -1,0 +1,125 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
+@theme {
+  --font-sans: "SUIT", "SUIT Variable", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  --color-enamel: #fff6f0;
+  --color-enamel-deep: #f3e6dc;
+  --color-enamel-ink: #e4d2c6;
+  --color-ink: #322c26;
+  --color-ink-soft: #524940;
+  --color-muted: #6e665c;
+  --color-magnet: #e56f0a;
+  --color-magnet-ink: #2a1a08;
+  --color-magnet-deep: #d06612;
+  --color-paper: #ffffff;
+  --color-paper-line: #ead8cc;
+  --color-manila: #ebc98a;
+  --color-danger: #b44532;
+  --color-ok: #3d7a54;
+  --color-kitchen-hi: #fff7f2;
+  --color-login-wall: #ffffff;
+  --color-kitchen-glow: rgb(229 111 10 / 0.12);
+  --radius-xs: 10px;
+  --radius-sm: 14px;
+  --radius-md: 18px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+  --shadow-sheet: 0 18px 40px rgb(50 44 38 / 0.08);
+  --shadow-scrap: 0 10px 28px rgb(50 44 38 / 0.06);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+html {
+  font-family: var(--font-sans);
+  background: var(--color-enamel);
+  color: var(--color-ink);
+  --gutter: clamp(16px, 4vw, 40px);
+}
+
+html[data-theme="dark"] {
+  --color-enamel: #2a2420;
+  --color-enamel-deep: #1f1b18;
+  --color-enamel-ink: #3d3630;
+  --color-ink: #f7f1ea;
+  --color-ink-soft: #d9cfc4;
+  --color-muted: #b8aea3;
+  --color-paper: #322c28;
+  --color-paper-line: #4a423c;
+  --color-login-wall: #322c28;
+  --color-kitchen-hi: #2a2420;
+  --shadow-sheet: 0 18px 40px rgb(0 0 0 / 0.28);
+  --shadow-scrap: 0 10px 28px rgb(0 0 0 / 0.2);
+  color-scheme: dark;
+}
+
+html[data-palette="basalt"] {
+  --color-magnet: #3a3936;
+  --color-magnet-ink: #f7f1ea;
+  --color-magnet-deep: #2a2926;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  background: var(--color-enamel);
+}
+
+#root {
+  min-height: 100dvh;
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--color-enamel), 0 0 0 5px var(--color-magnet);
+}
+
+.intro-still-filter {
+  transition: filter 320ms var(--ease-out);
+}
+
+.intro-hotspots:has(.intro-hotspot:is(:hover, :focus-visible, [aria-expanded="true"])) .intro-still-filter {
+  filter: brightness(0.84);
+}
+
+.intro-hotspot-body {
+  display: block;
+  max-height: 0;
+  margin: 0;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(4px);
+  transition:
+    max-height 220ms var(--ease-out),
+    opacity 140ms var(--ease-out),
+    margin 220ms var(--ease-out),
+    transform 220ms var(--ease-out);
+}
+
+.intro-hotspot:focus-visible .intro-hotspot-body,
+.intro-hotspot[aria-expanded="true"] .intro-hotspot-body {
+  max-height: 8em;
+  margin-top: 6px;
+  opacity: 1;
+  transform: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .intro-hotspot:hover .intro-hotspot-body {
+    max-height: 8em;
+    margin-top: 6px;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intro-still-filter {
+    transition: none;
+  }
+
+  .intro-hotspots:has(.intro-hotspot:is(:hover, :focus-visible, [aria-expanded="true"])) .intro-still-filter {
+    filter: none;
+  }
+}
