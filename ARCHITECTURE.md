@@ -26,6 +26,8 @@ flowchart TB
   view["View: src/pages + Tailwind"]
   app["App: src/App.tsx"]
   auth["Auth: Supabase email"]
+  plan["Plan: src/context/Plan.tsx"]
+  filters["Filters: src/lib/scrapFilters.ts"]
   tagger["Tagger fallback: src/lib/tagger.ts"]
   fn["Function: /api/analyze"]
   persist["src/lib/scraps.ts"]
@@ -34,7 +36,9 @@ flowchart TB
 
   view --> app
   app --> auth
+  app --> plan
   app --> persist
+  plan --> persist
   persist --> baas
   app --> fn
   fn --> claude
@@ -47,16 +51,19 @@ flowchart TB
 | View | [`src/pages/`](src/pages/), [`src/components/`](src/components/), [`src/index.css`](src/index.css) | Intro, shelf, legal, DESIGN tokens |
 | App | [`src/App.tsx`](src/App.tsx) | Routes, sheets, session gate |
 | Prefs | [`src/context/Prefs.tsx`](src/context/Prefs.tsx) | Language, theme, palette on this device |
-| Auth | [`src/context/Auth.tsx`](src/context/Auth.tsx), [`src/lib/supabase.ts`](src/lib/supabase.ts) | Email / password. No anonymous write path |
+| Auth | [`src/context/Auth.tsx`](src/context/Auth.tsx), [`src/lib/supabase.ts`](src/lib/supabase.ts) | Email / password, Google, 둘러보기, find/reset email flows |
+| Plan | [`src/context/Plan.tsx`](src/context/Plan.tsx), [`src/lib/plans.ts`](src/lib/plans.ts), [`src/lib/profiles.ts`](src/lib/profiles.ts) | Tier limits, trial, storage usage, ad flag, upload gates |
+| Filters | [`src/lib/scrapFilters.ts`](src/lib/scrapFilters.ts) | Shared query/type/day filter and dashboard aggregates |
 | Classify | [`functions/src/index.ts`](functions/src/index.ts), [`netlify/functions/analyze.ts`](netlify/functions/analyze.ts), [`src/lib/tagger.ts`](src/lib/tagger.ts) | Claude with JWT; MIME/URL fallback |
-| Persist | [`src/lib/scraps.ts`](src/lib/scraps.ts) | `public.scraps` + `scrap-media/{userId}/{scrapId}/` |
+| Persist | [`src/lib/scraps.ts`](src/lib/scraps.ts) | `public.scraps` + `public.profiles` + `scrap-media/{userId}/{scrapId}/` |
 
 ## Data flow
 
 1. **Entry.** Intro is public. **책장을 연다** opens email sign in / sign up. A session paints the shelf.
 2. **Capture.** Paste/drop/`+`. Files upload first. `/api/analyze` gets the user JWT. Images may go to Claude vision. Failure uses the local tagger.
-3. **Save.** Upsert the scrap row. List is newest first, RLS `auth.uid() = user_id`.
-4. **Leave.** Sign out returns to intro. Scraps are not kept in `localStorage`.
+3. **Save.** Upsert the scrap row. List is newest first, RLS `auth.uid() = user_id`. `PlanProvider` sums stored-media bytes for quota; free trial ends at `profiles.trial_ends_at`.
+4. **Filter.** Shelf holds query, type, and optional local day. `filterScraps` drives list, detail prev/next, and dashboard stats.
+5. **Leave.** Sign out returns to intro. Scraps are not kept in `localStorage`.
 
 `ANTHROPIC_API_KEY` is read in the function only (`process.env` on Firebase, `Netlify.env.get` on Netlify). Never in Vite.
 

@@ -13,11 +13,11 @@ type Props = {
 export function AnalyzeSkeleton() {
   const { lang } = usePrefs();
   return (
-    <div className="rounded-[18px] border border-paper-line bg-paper p-4 shadow-[var(--shadow-scrap)]" aria-busy="true">
-      <p className="m-0 mb-3 text-[0.8125rem] text-muted">{t(lang, "analyzing")}</p>
-      <div className="mb-2 h-4 w-2/5 animate-pulse rounded bg-enamel-ink" />
-      <div className="mb-2 h-3 w-4/5 animate-pulse rounded bg-enamel-ink" />
-      <div className="h-24 animate-pulse rounded-[14px] bg-enamel-deep" />
+    <div className="classify-draft-skeleton" aria-busy="true">
+      <p className="list-tools-label">{t(lang, "analyzing")}</p>
+      <div className="classify-draft-skeleton-bar w-2/5" />
+      <div className="classify-draft-skeleton-bar w-4/5" />
+      <div className="classify-draft-skeleton-block" />
     </div>
   );
 }
@@ -28,39 +28,41 @@ export function DraftCard({ draft, onChange, onSave, onCancel }: Props) {
 
   return (
     <form
-      className="flex flex-col gap-3 rounded-[18px] border border-paper-line bg-paper p-4 shadow-[var(--shadow-scrap)]"
+      className="classify-draft-form"
       onSubmit={(e) => {
         e.preventDefault();
         onSave();
       }}
     >
-      <p className="m-0 text-[0.8125rem] font-semibold">{t(lang, "classifyTitle")}</p>
-      <p className="m-0 text-[0.8125rem] text-muted">{detectedLabel(lang, draft.type)}</p>
+      <div className="list-tools-head">
+        <p className="list-tools-label">{t(lang, "classifyTitle")}</p>
+      </div>
+      <p className="classify-draft-detected">{detectedLabel(lang, draft.type)}</p>
       {draft.dataUrl && draft.type === "image" ? (
         <img src={draft.dataUrl} alt="" className="max-h-48 rounded-[14px] object-cover" />
       ) : null}
       {draft.url ? (
-        <a href={draft.url} className="break-all text-[0.8125rem] text-magnet" target="_blank" rel="noreferrer">
+        <a href={draft.url} className="scrap-card-link" target="_blank" rel="noreferrer">
           {draft.url}
         </a>
       ) : null}
-      <label className="grid gap-1 text-[0.8125rem] text-muted">
-        {t(lang, "untitled")}
+      <label className="grid gap-1">
+        <span className="list-tools-label">{t(lang, "untitled")}</span>
         <input
           value={draft.title}
           onChange={(e) => onChange({ title: e.target.value })}
-          className="min-h-10 rounded-[14px] border border-paper-line bg-enamel px-3 text-[1rem] text-ink"
+          className="list-tools-search"
         />
       </label>
-      <p className="m-0 flex flex-wrap gap-1.5">
+      <p className="scrap-card-tags">
         {(draft.tags.length ? draft.tags : [draft.type]).map((tag) => (
-          <span key={tag} className="rounded-full border border-paper-line px-2 py-0.5 text-[0.75rem]">
+          <span key={tag} className="scrap-tag">
             {tag === draft.type ? typeLabel(lang, tag) : tag}
           </span>
         ))}
       </p>
       {draft.filename ? (
-        <p className="m-0 text-[0.75rem] text-muted">
+        <p className="scrap-card-file">
           {draft.filename} · {formatBytes(draft.size)}
         </p>
       ) : null}
@@ -69,13 +71,13 @@ export function DraftCard({ draft, onChange, onSave, onCancel }: Props) {
         onChange={(e) => onChange({ memo: e.target.value })}
         placeholder={t(lang, "memoPlaceholder")}
         rows={2}
-        className="rounded-[14px] border border-paper-line bg-enamel px-3 py-2 text-[0.9375rem] text-ink"
+        className="classify-draft-memo"
       />
-      <div className="flex justify-end gap-2">
-        <button type="button" className="min-h-10 px-3 text-[0.9375rem]" onClick={onCancel}>
+      <div className="classify-draft-actions">
+        <button type="button" className="auth-link-utility" onClick={onCancel}>
           {t(lang, "cancel")}
         </button>
-        <button type="submit" className="min-h-10 rounded-full bg-magnet px-4 font-bold text-magnet-ink">
+        <button type="submit" className="auth-btn-primary px-4">
           {t(lang, "save")}
         </button>
       </div>

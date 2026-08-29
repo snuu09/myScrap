@@ -13,3 +13,12 @@ export function formatWhen(ts: number, lang: "ko" | "en") {
     minute: "2-digit",
   });
 }
+
+/** Local calendar date for trial end display (YYYY-MM-DD). */
+export function formatTrialEndDate(ms: number, _lang: "ko" | "en" = "ko") {
+  const d = new Date(ms);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}

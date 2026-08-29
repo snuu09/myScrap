@@ -4,9 +4,9 @@ Personal capture box: paste or drop once, see type tags and a preview, find it a
 
 Related: [README.md](README.md) · [PRODUCT.md](PRODUCT.md) · [DESIGN.md](DESIGN.md) · [ARCHITECTURE.md](ARCHITECTURE.md)
 
-**Shipped:** Vite + React SPA on Firebase Hosting (`mybrary-snuu09`). Email Auth, `public.scraps`, Claude classify via `/api/analyze`.
+**Shipped:** Vite + React SPA on Firebase Hosting (`mybrary-snuu09`). Email Auth, 둘러보기, `public.scraps`, Claude classify via `/api/analyze`.
 
-**Next:** Fill Vite env vars, rebuild Hosting, add the Firebase origin to Supabase Auth redirect URLs. Blaze + `functions/.env` if Claude should run on Firebase. Binding product and visual rules: [PRODUCT.md](PRODUCT.md) and [DESIGN.md](DESIGN.md).
+**Next:** Blaze + `functions/.env` `ANTHROPIC_API_KEY` if Claude should run on Firebase. Binding product and visual rules: [PRODUCT.md](PRODUCT.md) and [DESIGN.md](DESIGN.md).
 
 The app is a Vite + React (TypeScript) SPA. API keys are not in the repo. Copy [.env.example](.env.example). Language, theme, and palette stay on this device. Scraps require a signed-in Supabase user.
 
@@ -14,7 +14,7 @@ The app is a Vite + React (TypeScript) SPA. API keys are not in the repo. Copy [
 flowchart TB
   spa[Vite_SPA]
   host[Firebase_Hosting]
-  auth[Supabase_email]
+  auth[Supabase_email_or_browse]
   fn[api_analyze]
   spa --> host
   spa --> auth
@@ -25,21 +25,23 @@ flowchart TB
 
 ## Current SPA
 
-With empty Vite env vars the intro stays public. With a real URL and anon key, email sign in writes scraps per user. Live: [https://mybrary-snuu09.web.app](https://mybrary-snuu09.web.app).
+With Vite env vars set, email sign in or 둘러보기 writes scraps per user. Live: [https://mybrary-snuu09.web.app](https://mybrary-snuu09.web.app).
 
 ### Capture and classify
 
-- [x] Entry: email sign up / sign in in the header sheet. No Apple, Google, 둘러보기, or `localStorage` scrap store.
+- [x] Entry: email sign up / sign in, **Google**, or **둘러보기** (anonymous Auth). No Apple or `localStorage` scrap store.
 - [x] Composer: paste text or a URL, drag-and-drop, `+` (clipboard, camera on phones, photo, file).
 - [x] Classify-then-save draft: type, tags, memo, skeleton while `/api/analyze` (or MIME fallback) runs. A new Stick replaces an open draft.
-- [x] Recency list, newest first. Type chips and search. Peel from the row.
+- [x] Recency list, newest first. Type chips, search, **일자별** day filter. Row detail sheet with prev/next on filtered order. Peel from list or detail.
 - [x] KO / EN, 기본 / 현무암, light / system / dark on this device.
+- [x] Plan tiers in `public.profiles` (free / standard / premium / admin). Trial, storage gate, ad placeholder. No payment in MVP.
+- [x] Dashboard `/dashboard`: type/tag counts, storage, recent timeline, day summary.
 - [x] Intro full-bleed still, legal routes `/terms` `/privacy`, operator 표시 예정.
 - [x] Firebase Hosting `dist` + SPA rewrite. Cloud Function source for `/api/analyze` (needs Blaze to go live).
 
 ### Not in this SPA (later)
 
-일자별 calendar, celadon AI palette, Apple/Google OAuth, sample-scrap toggle, phishing meter, lightbox, Empty-the-door, edit-saved-scrap, OG/pdf.js previews from the old static client.
+celadon AI palette, Apple OAuth, sample-scrap toggle, phishing meter, full-screen lightbox, Empty-the-door, edit-saved-scrap, OG/pdf.js previews from the old static client, payment integration.
 
 ---
 
@@ -54,6 +56,23 @@ With empty Vite env vars the intro stays public. With a real URL and anon key, e
 ### Operator follow-up (not code)
 
 Create a Supabase project and paste the URL plus anon key into `.env` as `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`. Rebuild before Hosting deploy. See [`supabase/README.md`](supabase/README.md).
+
+---
+
+## Phase 5 — Plans · Dashboard · Detail · Day filter
+
+Policy and UI only. No Stripe or ad network.
+
+- [x] Supabase `public.profiles` + `plan_tier` enum, signup trigger (free + 14-day trial), RLS select own.
+- [x] `src/lib/plans.ts`, `PlanProvider`, usage from stored media bytes, upload/trial gates on Stick.
+- [x] `scrapFilters.ts`: query + type + day AND; aggregates for dashboard.
+- [x] `DayFilter` month panel (Day Magnet Rule).
+- [x] `/scrap/:id` detail page with prev/next over shelf order (not auth sheet).
+- [x] `/dashboard` route: type/tag counts, storage, timeline, top days.
+- [x] `AdSlot` placeholder, settings plan block, legal plan paragraph.
+- [x] Docs + `npm run build`.
+
+Tier changes: Supabase Dashboard → `profiles.plan_tier` (admin manual). Payment stays Later.
 
 ---
 

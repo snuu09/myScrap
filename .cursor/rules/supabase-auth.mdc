@@ -6,9 +6,13 @@ alwaysApply: false
 
 # Supabase
 
-Email/password only in this SPA. No Apple, Google, anonymous, or Browse. No `localStorage` scrap store. Prefs (`mybrary.lang`, `mybrary.theme`, `mybrary.palette`) stay on the device.
+Email/password, **Google** (`signInWithOAuth`), plus **둘러보기**. Account recovery: `signInWithOtp` (find email), `resetPasswordForEmail`, `PASSWORD_RECOVERY` → `updateUser`. Google-only accounts use **Google로 계속** (no MyBrary password). Prefer `signInAnonymously` for 둘러보기. No Apple. No `localStorage` scrap store. Prefs stay on the device.
 
 Vite: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`. Empty keys keep the intro; the shelf cannot write. Never `service_role` in the client.
+
+Anonymous users are `authenticated` with `auth.uid()`; existing RLS applies. Clearing the browser drops that shelf.
+
+Project (org snuu09): display name **MyBrary**, ref `vrayhcfbpgyazrxlblbj`, region ap-southeast-2. Free-plan slot reuse (could not create a third project).
 
 Schema: `public.scraps`, RLS `auth.uid() = user_id`. Media: `scrap-media/{userId}/{scrapId}/`. Migration: [`supabase/migrations/20260820140000_scraps_media_realtime.sql`](supabase/migrations/20260820140000_scraps_media_realtime.sql).
 

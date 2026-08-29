@@ -8,7 +8,7 @@ web
 
 ## Stack
 
-Vite + React (TypeScript), Tailwind, Lucide. Firebase Hosting serves the SPA; `/api/analyze` is a Cloud Function (Netlify Function still exists as a twin). Supabase is Auth (email/password), Postgres `public.scraps`, and private Storage `scrap-media`. Layers: [ARCHITECTURE.md](ARCHITECTURE.md).
+Vite + React (TypeScript), Tailwind, Lucide. Firebase Hosting serves the SPA; `/api/analyze` is a Cloud Function (Netlify Function still exists as a twin). Supabase is Auth (email/password, Google, and 둘러보기), Postgres `public.scraps`, and private Storage `scrap-media`. Layers: [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Users
 
@@ -26,9 +26,9 @@ One capture surface that inspects what you pasted (text, image, video, audio, UR
 
 Today (shipped):
 
-- First visit: intro on porcelain peach / night kitchen. Hero plus stick / classify / find hotspots. Header **로그인** opens email sign in / sign up. Settings stay a sheet (language, palette, theme, Leave).
+- First visit: intro on porcelain peach / night kitchen. Hero plus stick / classify / find hotspots. Header **로그인** opens the auth sheet (Auth Ladder): email and password fields, primary **로그인** / **회원가입**, **또는** divider, **Google로 계속**, emphasized **둘러보기**, magnet toggle, then **아이디 찾기** / **비밀번호 찾기** at the bottom. Find / reset sub-screens use **Auth Recovery** (header back icon, brief, email, primary, **또는**, Google). Intro hero keeps **책장을 연다** only. Settings stay a sheet (language, palette, theme, Leave).
 - A saved session skips intro and opens the door. Leave returns to intro.
-- After entry: recency list and search above a bottom Stick dock. Composer has a + menu (clipboard, camera on mobile, photo pick, file attach) and drag-and-drop. Classify draft sits above the field, with a skeleton while Claude (or the MIME fallback) runs.
+- After entry: recency list and search; Stick is a **floating** ChatGPT-style composer (not in the legal Footer). Composer has a + menu (clipboard, camera on mobile, photo pick, file attach) and drag-and-drop. Classify draft appears **above** the composer pill, with a skeleton while Claude (or the MIME fallback) runs. Header **통계** opens the scrap dashboard. **일자별** chip filters the list by local day. Row tap opens **`/scrap/:id`** detail page with prev/next. Free and standard tiers see an ad slot below list-tools.
 - Footer on intro and app: 이용약관, 개인정보처리방침, operator placeholders (표시 예정 until filled).
 - Empty list copy: "항목이 없습니다."
 - List order: newest first.
@@ -53,16 +53,17 @@ Confirmed from brief and implemented in the Vite SPA:
 - Drag-and-drop analyzes dropped files.
 - Recency-sorted tagged list; empty state; scroll-to-top FAB.
 - Header color theme: 기본 (tangerine magnet), 현무암 (basalt magnet). Language, palette, appearance, and Leave sit in a header settings sheet.
-- Type chips and search. Peel from the list.
-- Supabase: email/password Auth, `scraps` + private media bucket. No anonymous write path. Claude classify via `/api/analyze` (MIME fallback if the function is down).
+- Type chips, search, and **일자별** day filter (AND). Peel from the list or detail page.
+- Plan tiers (policy only, no payment): free (14-day trial, 100MB, ads), standard (1GB, ads), premium/admin (unlimited, no ads). Settings shows tier, trial D-day, storage bar. Upload blocked after trial or over quota. Settings **DB 초기화** clears that account’s scraps and media only (profiles stay).
+- Supabase: email/password Auth, **Google**, **둘러보기** (anonymous Auth), `scraps` + `profiles` + private media bucket. Claude classify via `/api/analyze` (MIME fallback if the function is down).
 
-[Inferred] Language, theme, and palette stay local. Scraps never write without a signed-in user.
+[Inferred] Language, theme, and palette stay local. Scraps never write without a signed-in user (email, Google, or 둘러보기).
 
 See [ROADMAP.md](ROADMAP.md) and [supabase/README.md](supabase/README.md).
 
 ### Operator follow-up (keys, not code)
 
-Create a Supabase project, enable Email auth, apply `supabase/migrations`, set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in `.env` before `npm run build`. Set `ANTHROPIC_API_KEY` (and `SUPABASE_URL` / `SUPABASE_ANON_KEY`) on the Cloud Function or Netlify. Never put `service_role` in Vite.
+Create a Supabase project, enable Email and Google auth, apply `supabase/migrations`, set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in `.env` before `npm run build`. Set `ANTHROPIC_API_KEY` (and `SUPABASE_URL` / `SUPABASE_ANON_KEY`) on the Cloud Function or Netlify. Never put `service_role` in Vite.
 
 ### Operator identity (not code)
 
@@ -70,7 +71,7 @@ Empty operator fields render as 표시 예정 / To be shown. Do not invent a 사
 
 ### Later (not a numbered phase yet)
 
-Folder tree, share/export, account settings beyond 나가기, paid plans, 일자별 calendar, Apple/Google OAuth, 둘러보기, celadon AI palette.
+Folder tree, share/export, account settings beyond 나가기, payment integration (Stripe/PG), Apple OAuth, celadon AI palette.
 
 ## Brand Commitments
 

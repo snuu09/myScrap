@@ -154,6 +154,42 @@ export async function deleteScrap(user: User, scrap: Scrap) {
   if (error) throw error;
 }
 
+/** Account scrap count + stored media bytes from Supabase (RLS-scoped). */
+export async function loadUserDbUsage(user: User): Promise<{ count: number; bytes: number }> {
+  const supabase = getSupabase();
+  if (!supabase) return { count: 0, bytes: 0 };
+  const { data, error, count } = await supabase
+    .from("scraps")
+    .select("size, stored_media, media_path", { count: "exact" })
+    .eq("user_id", user.id);
+  if (error) throw error;
+  const rows = (data || []) as { size: number; stored_media: boolean; media_path: string | null }[];
+  const bytes = rows.reduce((sum, row) => {
+    if (row.stored_media || row.media_path) return sum + (Number(row.size) || 0);
+    return sum;
+  }, 0);
+  return { count: count ?? rows.length, bytes };
+}
+
+/** Delete all scraps and media for this user. Does not touch profiles. */
+export async function clearUserScraps(user: User) {
+  const supabase = getSupabase();
+  if (!supabase) throw new Error("config");
+  const { data, error } = await supabase.from("scraps").select("id, media_path").eq("user_id", user.id);
+  if (error) throw error;
+  const paths = (data || [])
+    .map((row) => (row as { media_path: string | null }).media_path)
+    .filter((path): path is string => Boolean(path));
+  for (let i = 0; i < paths.length; i += 50) {
+    const chunk = paths.slice(i, i + 50);
+    await supabase.storage.from(BUCKET).remove(chunk);
+  }
+  const { error: delError } = await supabase.from("scraps").delete().eq("user_id", user.id);
+  if (delError) throw delError;
+}
+
+export const SCRAPS_CLEARED_EVENT = "mybrary:scraps-cleared";
+
 export async function getAccessToken() {
   const supabase = getSupabase();
   if (!supabase) return "";

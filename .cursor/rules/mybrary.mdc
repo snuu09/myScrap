@@ -9,7 +9,7 @@ Personal scrap shelf: stick / classify / find. Live name **MyBrary**; repo folde
 
 ## Stack now
 
-Vite 8 + React 19 + TypeScript + Tailwind v4 + Lucide. Firebase Hosting project `mybrary-snuu09` (`public: dist`, SPA rewrite). Supabase email/password Auth, `public.scraps`, private `scrap-media`. Claude classify at `/api/analyze` with model **`claude-sonnet-4-5`** (assignment name `claude-sonnet-5` is not a current id).
+Vite 8 + React 19 + TypeScript + Tailwind v4 + Lucide. Firebase Hosting project `mybrary-snuu09` (`public: dist`, SPA rewrite). Supabase email/password, Google OAuth, plus 둘러보기 (anonymous Auth), `public.scraps`, private `scrap-media`. Claude classify at `/api/analyze` with model **`claude-sonnet-4-5`** (assignment name `claude-sonnet-5` is not a current id).
 
 Primary host is **Firebase Hosting**. Netlify files are a classify/dev twin, not a second product.
 

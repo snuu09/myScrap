@@ -47,13 +47,15 @@ export function Intro({ onEnter }: Props) {
             >
               {t(lang, "loginLead")}
             </h1>
-            <button
-              type="button"
-              className="pointer-events-auto min-h-12 rounded-full bg-magnet px-5 text-[0.9375rem] font-bold tracking-[-0.02em] text-magnet-ink"
-              onClick={onEnter}
-            >
-              {t(lang, "enterCta")}
-            </button>
+            <div className="pointer-events-auto">
+              <button
+                type="button"
+                className="min-h-12 rounded-full bg-magnet px-5 text-[0.9375rem] font-bold tracking-[-0.02em] text-magnet-ink"
+                onClick={onEnter}
+              >
+                {t(lang, "enterCta")}
+              </button>
+            </div>
           </div>
           {SPOTS.map((spot) => (
             <button

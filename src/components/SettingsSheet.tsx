@@ -1,7 +1,13 @@
+import { useEffect, useState, type ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
 import { X } from "lucide-react";
 import { t } from "../i18n";
 import { usePrefs, type Palette, type ThemeChoice } from "../context/Prefs";
-import { useAuth } from "../context/Auth";
+import { isBrowseUser, useAuth } from "../context/Auth";
+import { usePlan } from "../context/Plan";
+import { clearUserScraps, loadUserDbUsage, SCRAPS_CLEARED_EVENT } from "../lib/scraps";
+import { formatBytes } from "../lib/tagger";
+import { PlanUsageBlock, StorageGauge } from "./PlanUsageBlock";
 
 type Props = { open: boolean; onClose: () => void };
 
@@ -15,24 +21,97 @@ function Seg({
   onClick: () => void;
 }) {
   return (
-    <button
-      type="button"
-      aria-pressed={pressed}
-      onClick={onClick}
-      className={
-        "min-h-10 min-w-10 rounded-full px-3 text-[0.8125rem] font-semibold " +
-        (pressed ? "bg-magnet text-magnet-ink" : "bg-paper text-ink")
-      }
-    >
+    <button type="button" aria-pressed={pressed} onClick={onClick} className="settings-seg">
       {children}
     </button>
+  );
+}
+
+function SettingsSection({
+  label,
+  groupLabel,
+  children,
+}: {
+  label: string;
+  groupLabel: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="settings-section" aria-label={groupLabel}>
+      <p className="settings-section-label">{label}</p>
+      <div className="settings-seg-track" role="group" aria-label={groupLabel}>
+        {children}
+      </div>
+    </section>
   );
 }
 
 export function SettingsSheet({ open, onClose }: Props) {
   const { lang, theme, palette, setLang, setTheme, setPalette } = usePrefs();
   const { user, signOut } = useAuth();
+  const { setScrapsForUsage, setUsageSnapshot, scrapCount, usageBytes, storageLimit } = usePlan();
+  const navigate = useNavigate();
+  const [resetting, setResetting] = useState(false);
+  const [usageLoading, setUsageLoading] = useState(false);
+  const [dbCount, setDbCount] = useState(scrapCount);
+  const [dbBytes, setDbBytes] = useState(usageBytes);
+
+  useEffect(() => {
+    if (!open || !user) return;
+    let cancelled = false;
+    setDbCount(scrapCount);
+    setDbBytes(usageBytes);
+    setUsageLoading(true);
+    void loadUserDbUsage(user)
+      .then(({ count, bytes }) => {
+        if (cancelled) return;
+        setDbCount(count);
+        setDbBytes(bytes);
+        setUsageSnapshot({ count, bytes });
+      })
+      .catch(() => {
+        /* keep Plan snapshot */
+      })
+      .finally(() => {
+        if (!cancelled) setUsageLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // Only refetch when the sheet opens for this user
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- open/user gate
+  }, [open, user]);
+
   if (!open) return null;
+
+  const sessionLabel = user
+    ? isBrowseUser(user)
+      ? t(lang, "browse")
+      : user.email || "—"
+    : "";
+
+  const hasData = dbCount > 0 || dbBytes > 0;
+
+  async function resetDb() {
+    if (!user || resetting || !hasData) return;
+    if (!window.confirm(t(lang, "dbResetConfirm"))) return;
+    setResetting(true);
+    try {
+      await clearUserScraps(user);
+      setScrapsForUsage([]);
+      setUsageSnapshot({ count: 0, bytes: 0 });
+      setDbCount(0);
+      setDbBytes(0);
+      window.dispatchEvent(new Event(SCRAPS_CLEARED_EVENT));
+      window.alert(t(lang, "dbResetDone"));
+      onClose();
+      navigate("/");
+    } catch {
+      window.alert(t(lang, "syncError"));
+    } finally {
+      setResetting(false);
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-30 bg-[color-mix(in_srgb,var(--color-ink)_24%,transparent)]" onClick={onClose}>
@@ -40,66 +119,102 @@ export function SettingsSheet({ open, onClose }: Props) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="settings-title"
-        className="absolute top-[60px] right-[var(--gutter,clamp(16px,4vw,40px))] flex w-[min(22rem,calc(100vw-24px))] flex-col gap-3.5 rounded-[32px] border border-paper-line bg-login-wall p-3.5 shadow-[var(--shadow-sheet)]"
+        className="absolute top-[60px] right-[var(--gutter,clamp(16px,4vw,40px))] flex max-h-[calc(100dvh-80px)] w-[min(22rem,calc(100vw-24px))] flex-col gap-3 overflow-y-auto rounded-[32px] border border-paper-line bg-login-wall p-3.5 shadow-[var(--shadow-sheet)]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between">
-          <h2 id="settings-title" className="m-0 text-[1.0625rem] font-bold">
+        <div className="mb-0 flex items-center justify-between">
+          <h2 id="settings-title" className="m-0 min-w-0 flex-1 text-[1.0625rem] font-bold">
             {t(lang, "settings")}
           </h2>
-          <button type="button" className="grid size-12 place-items-center" onClick={onClose} aria-label={t(lang, "close")}>
+          <button type="button" className="grid size-12 shrink-0 place-items-center" onClick={onClose} aria-label={t(lang, "close")}>
             <X className="size-[22px]" strokeWidth={1.8} />
           </button>
         </div>
-        <div>
-          <p className="mb-2 mt-0 text-[0.8125rem] text-muted">{t(lang, "langSwitch")}</p>
-          <div className="flex gap-1.5" role="group" aria-label={t(lang, "langSwitch")}>
-            <Seg pressed={lang === "ko"} onClick={() => setLang("ko")}>
-              KO
-            </Seg>
-            <Seg pressed={lang === "en"} onClick={() => setLang("en")}>
-              EN
-            </Seg>
-          </div>
-        </div>
-        <div>
-          <p className="mb-2 mt-0 text-[0.8125rem] text-muted">{t(lang, "paletteSwitch")}</p>
-          <div className="flex gap-1.5" role="group">
-            <Seg pressed={palette === "kitchen"} onClick={() => setPalette("kitchen" as Palette)}>
-              {t(lang, "paletteKitchen")}
-            </Seg>
-            <Seg pressed={palette === "basalt"} onClick={() => setPalette("basalt")}>
-              {t(lang, "paletteBasalt")}
-            </Seg>
-          </div>
-        </div>
-        <div>
-          <p className="mb-2 mt-0 text-[0.8125rem] text-muted">{t(lang, "themeSwitch")}</p>
-          <div className="flex gap-1.5" role="group">
-            {(["light", "system", "dark"] as ThemeChoice[]).map((choice) => (
-              <Seg key={choice} pressed={theme === choice} onClick={() => setTheme(choice)}>
-                {t(
-                  lang,
-                  choice === "light" ? "themeLight" : choice === "dark" ? "themeDark" : "themeSystem",
-                )}
-              </Seg>
-            ))}
-          </div>
-        </div>
+
         {user ? (
-          <p className="m-0 truncate text-[0.8125rem] text-muted">{user.email}</p>
+          <p className="settings-session-chip">
+            {t(lang, "sessionIn")}
+            <strong>{sessionLabel}</strong>
+          </p>
         ) : null}
+
         {user ? (
-          <button
-            type="button"
-            className="min-h-12 rounded-full border border-paper-line text-[0.9375rem] font-bold"
-            onClick={async () => {
-              await signOut();
-              onClose();
-            }}
-          >
-            {t(lang, "logout")}
-          </button>
+          <section className="settings-section" aria-label={t(lang, "planLabel")}>
+            <p className="settings-section-label">{t(lang, "planLabel")}</p>
+            <div className="settings-session-chip">
+              <PlanUsageBlock showAdsNote />
+            </div>
+          </section>
+        ) : null}
+
+        <SettingsSection label={t(lang, "langSwitch")} groupLabel={t(lang, "langSwitch")}>
+          <Seg pressed={lang === "ko"} onClick={() => setLang("ko")}>
+            KO
+          </Seg>
+          <Seg pressed={lang === "en"} onClick={() => setLang("en")}>
+            EN
+          </Seg>
+        </SettingsSection>
+
+        <SettingsSection label={t(lang, "paletteSwitch")} groupLabel={t(lang, "paletteSwitch")}>
+          <Seg pressed={palette === "kitchen"} onClick={() => setPalette("kitchen" as Palette)}>
+            {t(lang, "paletteKitchen")}
+          </Seg>
+          <Seg pressed={palette === "basalt"} onClick={() => setPalette("basalt")}>
+            {t(lang, "paletteBasalt")}
+          </Seg>
+        </SettingsSection>
+
+        <SettingsSection label={t(lang, "themeSwitch")} groupLabel={t(lang, "themeSwitch")}>
+          {(["light", "system", "dark"] as ThemeChoice[]).map((choice) => (
+            <Seg key={choice} pressed={theme === choice} onClick={() => setTheme(choice)}>
+              {t(lang, choice === "light" ? "themeLight" : choice === "dark" ? "themeDark" : "themeSystem")}
+            </Seg>
+          ))}
+        </SettingsSection>
+
+        {user ? (
+          <>
+            <section className="settings-section" aria-label={t(lang, "dbUsageLabel")}>
+              <p className="settings-section-label">{t(lang, "dbUsageLabel")}</p>
+              <div className="settings-db-panel">
+                {usageLoading ? (
+                  <p className="settings-db-hint">{t(lang, "dbUsageLoading")}</p>
+                ) : (
+                  <>
+                    <p className="settings-db-summary">
+                      {t(lang, "dbUsageSummary", {
+                        count: dbCount,
+                        bytes: formatBytes(dbBytes),
+                      })}
+                    </p>
+                    <StorageGauge usageBytes={dbBytes} storageLimit={storageLimit} />
+                    <p className={"settings-db-hint" + (hasData ? "" : " settings-db-hint--ok")}>
+                      {hasData ? t(lang, "dbUsageHasData") : t(lang, "dbUsageEmpty")}
+                    </p>
+                  </>
+                )}
+                <button
+                  type="button"
+                  className="settings-btn-reset"
+                  disabled={resetting || usageLoading || !hasData}
+                  onClick={() => void resetDb()}
+                >
+                  {t(lang, "dbReset")}
+                </button>
+              </div>
+            </section>
+            <button
+              type="button"
+              className="settings-btn-leave"
+              onClick={async () => {
+                await signOut();
+                onClose();
+              }}
+            >
+              {t(lang, "logout")}
+            </button>
+          </>
         ) : null}
       </div>
     </div>

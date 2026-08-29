@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Menu, LogIn } from "lucide-react";
+import { BarChart3, Menu, LogIn } from "lucide-react";
 import { t } from "../i18n";
 import { usePrefs } from "../context/Prefs";
 import { useAuth } from "../context/Auth";
@@ -29,7 +29,15 @@ export function Header({ onEnter, onSettings }: Props) {
             <LogIn className="mr-1.5 size-4" strokeWidth={1.8} />
             {t(lang, "enter")}
           </button>
-        ) : null}
+        ) : (
+          <Link
+            to="/dashboard"
+            className="inline-flex min-h-10 items-center gap-1.5 rounded-full bg-paper px-3 text-[0.8125rem] font-semibold text-ink no-underline"
+          >
+            <BarChart3 className="size-4" strokeWidth={1.8} />
+            {t(lang, "dashboard")}
+          </Link>
+        )}
         <button
           type="button"
           onClick={onSettings}

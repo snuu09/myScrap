@@ -8,10 +8,10 @@ alwaysApply: false
 
 Tokens live in [`src/index.css`](src/index.css) `@theme`. Face is SUIT. Magnet default `#e56f0a`; 현무암 swaps the magnet only (`data-palette="basalt"`). Kitchen wall stays porcelain peach / night kitchen.
 
-Palettes shipped: **기본** and **현무암**. Do not add header **AI** / celadon in this client unless PRODUCT asks. Do not revive Apple / Google / 둘러보기 on the auth sheet.
+Palettes shipped: **기본** and **현무암**. Do not add header **AI** / celadon in this client unless PRODUCT asks. Do not revive Apple. Auth sheet follows **Auth Ladder** on login, and **Auth Recovery** on find / reset (header back icon → brief → email → primary → feedback → **또는** → Google). Use `auth-back-btn`, `auth-btn-*`, `auth-link-*` from [`src/index.css`](src/index.css). Full rules: [DESIGN.md](DESIGN.md) Auth sheet hierarchy.
 
-Routes: `/` intro or shelf, `/terms`, `/privacy`. Intro still: `public/assets/intro-hero.jpg`, full-bleed under the header. Hero + **책장을 연다** on the photo. No 견본 on the still.
+Routes: `/` intro or shelf, `/terms`, `/privacy`. Intro still: `public/assets/intro-hero.jpg`, full-bleed under the header. Hero **책장을 연다** only (opens auth sheet). No 견본 on the still.
 
-After session: search and list above, Stick dock below, classify draft in the dock. Email sheet is white (light) / night enamel (dark), 32px radius.
+After session: search and list above, Stick dock below, classify draft in the dock. Email sheet is white (light) / night enamel (dark), 32px radius. Settings sheet follows **Settings Ladder** (session chip → language → palette → theme → Leave) in [DESIGN.md](DESIGN.md).
 
 Copy: stick / peel / 나가기. No em-dashes. Empty operator fields: 표시 예정. Honor `prefers-reduced-motion`. Binding visuals: [DESIGN.md](DESIGN.md).

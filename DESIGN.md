@@ -248,7 +248,7 @@ Header: brand plus a settings disc. Language, **기본** / **현무암**, and li
 
 **The Two Magnets Rule.** Default magnet is hallabong tangerine. 현무암 swaps that accent to Jeju basalt charcoal. Do not retint enamel, paper, or the kitchen wall when testing basalt. Sample photo SVGs must read `--magnet` (or the matching hex) at paint time; do not bake `#e56f0a`. The 견본 tag is hairline ink, not danger orange.
 
-**The Stick Dock Rule.** After the door opens, Stick is a bottom dock on 기본 and 현무암. Search and the recency list sit above it. Classify draft sits above the field, still in the dock. Intro has no dock. Do not put the composer back above the list.
+**The Stick Dock Rule.** After the door opens, Stick is a **fixed floating composer** over the shelf (ChatGPT-style), not part of the legal Footer. Shelf route hides Footer; intro/legal/dashboard keep Footer. Composer is a tall rounded paper pill (`composer-chat`): auto-grow textarea, + attach and magnet send circle in a bottom bar. Classify draft stacks **above** the pill inside the float. Soft enamel fade sits behind the float. Do not put the composer back above the list or glue it to the footer chrome.
 
 **The AI Comparison Rule.** Celadon editorial is not shipped. Do not add header **AI** in this client unless PRODUCT asks. It must not become a purple chat or zinc-blue SaaS skin.
 
@@ -337,8 +337,8 @@ Slight clipping rotation (±0.45deg) on every third scrap. That is the fridge, n
 
 ## Components
 
-- **Auth stack:** Email and password in the header 로그인 sheet (32px radius). 48px controls, 15px label. Light sheet is `--login-wall` white. No Apple, Google, or 둘러보기 in this SPA.
-- **Settings sheet:** One 40px disc in the header opens a 14px paper card (`role="dialog"`). After the title, the session chip (who is in) sits at the top when a session exists. Then language, palette, appearance, and Leave. Escape, outside click, and the close disc dismiss it. Do not open it together with the 로그인 sheet. Not a purple modal and not a sidebar.
+- **Auth stack:** Email and password in the header 로그인 sheet (32px radius). 48px controls, 15px label. Light sheet is `--login-wall` white. Inline validation under fields. Vertical order follows **The Auth Ladder Rule** (fields → primary → feedback → divider → Google → browse → toggle → find links). **Google로 계속** is tertiary (1px outline). **둘러보기** is secondary (2px magnet outline) on the sheet only. **회원가입** label (not 가입). No Apple. Reusable classes: `auth-btn-*`, `auth-link-*`, `auth-divider`, `auth-callout`, `auth-feedback-*` in [`src/index.css`](src/index.css).
+- **Settings sheet:** 32px radius login-wall sheet (same chrome as auth). Follow **The Settings Ladder Rule**. Reusable classes: `settings-section-*`, `settings-seg-*`, `settings-session-chip`, `settings-btn-leave` in [`src/index.css`](src/index.css). Do not open together with the 로그인 sheet.
 - **Palette switch:** Pill track, 40px cells. 기본 (tangerine swatch) and 현무암 (basalt swatch). Lives in the settings sheet. Default is tangerine.
 - **Theme switch:** Light, system, and dark magnets in a pill track, 40px cells, 18px glyphs. Also in the settings sheet.
 - **Composer:** Bottom dock after entry. 24px shell; 22px +; 15px field; Stick 48px / 14px. Focus ring follows the 24px shell, not a square on the textarea and not a pill.
@@ -351,6 +351,56 @@ Slight clipping rotation (±0.45deg) on every third scrap. That is the fridge, n
 - **Footer:** policy links (caption; privacy magnet/bold) then identity (micro). Empty operator fields read 표시 예정.
 
 States required: hover, focus-visible, disabled (Stick), loading (OG skeleton), error (OG fallback copy), empty ("항목이 없습니다." / English equivalent), pressed (`:active` scale), enter/exit for views.
+
+### Auth sheet hierarchy
+
+Binding for [`src/components/AuthSheet.tsx`](src/components/AuthSheet.tsx). One magnet-fill primary per screen.
+
+**The Auth Ladder Rule.** Login / sign up (`in` | `up`): (1) fields, (2) primary submit, (3) success or error feedback directly under primary, (4) caption divider **또는** / **or**, (5) Google tertiary, (6) browse secondary, (7) ghost toggle (회원가입 ↔ 로그인), (8) ghost utility links (아이디 찾기 · 비밀번호 찾기). New password (`newPassword`): fields, primary save, feedback. No divider or OAuth on that screen.
+
+**The Auth Recovery Rule.** 아이디 찾기 (`findId`) and 비밀번호 찾기 (`resetPassword`) share one layout. (1) sheet header: **auth-back-btn** (48px enamel square with ArrowLeft, aria **로그인으로**), title, close, (2) **Brief** block: lead then Google callout, (3) email field, (4) primary, (5) feedback under primary, (6) divider **또는** / **or**, (7) Google tertiary. No **로그인으로** text link. Back icon returns to login; X closes the sheet. No browse, no sign-up toggle on these screens. New password uses the same back control.
+
+**The Recovery Brief Rule.** Lead is one ui line in ink-soft. Callout sits below lead with enamel fill and paper-line border so it reads as a notice, not an input. Body copy stays ink-soft at caption size. Only the **Google로 계속** phrase is magnet bold inside the sentence. Do not stack two magnet-fill buttons without the divider between email submit and Google.
+
+**The Auth Button Tier Rule.**
+
+| Tier | Height | Shape | Border | Font | Color |
+| --- | --- | --- | --- | --- | --- |
+| Primary | 48px | pill | none | 15px bold | bg magnet, text magnet-ink |
+| Secondary | 48px | pill | 2px magnet | 15px bold | bg paper, text ink |
+| Tertiary | 48px | pill | 1px paper-line | 15px semibold | bg paper, text ink |
+| Ghost | min 40px hit | text | none | 13px caption | magnet (toggle) or ink-soft (utility / back) |
+
+Disabled opacity 0.6. Pressed scale 0.98.
+
+**The Auth Copy Rule.**
+
+| Role | Token | Color |
+| --- | --- | --- |
+| Sheet title | title 17px bold | ink |
+| Field label | caption 13px | muted |
+| Field hint / inline error | micro 12px | muted / danger |
+| Lead (find screens) | ui 15px | ink-soft |
+| Google hint callout | caption 13px on enamel | ink-soft body; **Google로 계속** phrase magnet bold inline |
+| Success feedback | caption 13px | ok |
+| Error feedback | caption 13px | danger |
+| Divider | caption 13px | muted |
+
+12px is for hints and timestamps only. Leads use 15px for AA readability.
+
+### Settings sheet hierarchy
+
+Binding for [`src/components/SettingsSheet.tsx`](src/components/SettingsSheet.tsx).
+
+**The Settings Ladder Rule.** (1) sheet title and close (same header row as auth), (2) **session chip** when a session exists, (3) **plan block** (tier name, trial D-day, storage used/limit bar, ad note, operator upgrade hint), (4) language, (5) palette, (6) appearance (theme), (7) **저장 사용량** panel (Supabase scrap count + media bytes + gauge; empty state says reset not needed) with **DB 초기화** danger-outline (disabled when empty; own scraps + media only; profiles stay), (8) **Leave** full-width tertiary when signed in. No auth fields. Escape and backdrop close the sheet.
+
+**The Settings Section Rule.** Each block: caption label (13px muted) then control row. Section gap 12px (`gap-3`). Labels use `settings-section-label`.
+
+**The Settings Seg Rule.** Language, palette, and theme share one pattern: pill **track** (enamel fill, paper-line border, 4px inset padding) with **40px** segment cells, caption 13px semibold. Selected cell: magnet fill, magnet-ink text. Unselected: transparent on track, ink text. All three switches use the same track shape (no mixed circle-only vs pill-only styles).
+
+**The Settings Leave Rule.** **나가기** is one full-width **tertiary** button (48px, 1px paper-line, paper fill, 15px semibold ink). It sits below all preference rows with `mt-1` separation. Not magnet fill.
+
+**The Settings Session Rule.** When signed in, show `settings-session-chip` directly under the header: enamel/paper pill, caption size, ink-soft label plus ink value (email or **둘러보기** for anonymous browse). Truncate long emails.
 
 ## Motion & interaction
 
@@ -400,7 +450,19 @@ Binding against [ROADMAP.md](ROADMAP.md) Phase 4. Header stays brand + 로그인
 
 **The Demo Is The Product Rule.** Intro is a full-bleed library still (`public/assets/intro-hero.jpg`) filling below the header. Hero and **책장을 연다** sit on the photo. No 견본 / Sample on the still. Stick, classify, and find sit as hotspots on the matching objects: titles always visible, two short beats on hover or tap. Do not invent customers, download counts, testimonials, or AI claims. Do not build a purple SaaS landing, a phone farm of fake UI, or CSS widgets that impersonate the composer.
 
-**The Day Magnet Rule.** 일자별 is not in this SPA. If it returns, it is a filter on the recency list, not a calendar product and not a second home.
+**The Day Magnet Rule.** 일자별 is a filter on the recency list, not a calendar product and not a second home. Type chips and **일자별** share one chip row inside **list-tools**; toggling opens a month panel under the chips (18px radius, paper). Selected day uses magnet fill. Prev/next month, Escape closes. Day + type + search are AND. Do not persist day in localStorage.
+
+**The List Tools Rule.** Search, type chips, and day chip live in one **list-tools** paper panel (18px radius, scrap shadow). Label is caption/muted. Search is a 48px capsule. Chips are 34px enamel pills; active chip is magnet fill. Clear-filters link sits in the panel header when any filter is on. Ad slot and list body are separate sections below.
+
+**The Classify Draft Rule.** Classify-then-save lives in the floating Stick dock, **above** the composer pill. The outer `.classify-draft` panel reuses list-tools chrome (18px, paper, scrap shadow) with max-height scroll when tall. Cancel is auth utility ghost; Save is auth primary (48px magnet). Do not place the draft in shelf-door above list-tools.
+
+**The Detail Page Rule.** Row tap navigates to [`/scrap/:id`](src/pages/ScrapDetail.tsx). Full page in the app chrome (Header/Footer), not an auth/settings sheet. Back link **책장으로**. Prev/next over newest-first shelf list; Arrow keys and Escape return to shelf. Peel confirms then deletes and returns home. Use dashboard-door / dashboard-panel paper language — never login-wall floating sheet.
+
+**The Ad Slot Rule.** When `showAds` is true (free / standard tiers), one AdMob banner (`AdSlot` via `adsbygoogle`) sits below **list-tools** and above the recency list. Env: `VITE_ADMOB_PUBLISHER_ID` (ca-pub-…) and `VITE_ADMOB_BANNER_SLOT`. Premium and admin hide it. Browser SPAs use the AdSense tag; native Android/iOS shells can overlay native AdMob separately.
+
+**The Dashboard Rule.** Route `/dashboard`, header caption **통계** / Stats when signed in. Centered **dashboard-door** column max 40rem with **dashboard-panel** paper cards (same tokens as list-tools): plan via `PlanUsageBlock` (tier, D-day, **trial end date**, storage text + linear gauge), type/tag chips, recent 10 timeline, top-7 days. Empty sections use compact shelf-empty. Link back to shelf. Not a second home.
+
+**The Plan Usage Rule.** Settings and Dashboard share [`PlanUsageBlock`](src/components/PlanUsageBlock.tsx): tier name, trial D-day, local end date (`YYYY-MM-DD`), storage used/limit + 8px magnet progress bar (`StorageGauge`). Unlimited tiers omit the bar. Settings may show an ads note.
 
 **The Korean Footer Rule.** Intro and app show operator identity plus 이용약관 plus 개인정보처리방침. Privacy is easier to spot than the other links (bold or magnet). Placeholders until real operator data. Do not invent a 사업자등록번호 or 통신판매업 신고번호.
 
@@ -409,7 +471,7 @@ Binding against [ROADMAP.md](ROADMAP.md) Phase 4. Header stays brand + 로그인
 - Sticky compact header: brand, 로그인, settings (KO/EN, palette, theme live in the settings sheet).
 - Hero uses `--text-display-hero` (clamp 2–3rem) once, overlaid top-left on the still with the magnet-fill CTA. A thin peach enamel gradient under the type. No glass blur. No kicker.
 - The still is full-bleed under the header (`object-fit: cover`). No 4:3 card, no scrap radius. Titles sit on the catalog card, the linen book, and the holdings. The body is two short beats on hover or tap. No three-card stack. One job at a time.
-- Primary CTA copy stays personal (**책장을 연다**). No 둘러보기 on the intro.
+- Primary CTA copy stays personal (**책장을 연다**). **둘러보기** lives in the 로그인 sheet as a magnet-outline pill, not beside the hero CTA.
 - Ground: porcelain peach / night kitchen, kitchen glow allowed. Not a white marketing slab and not toner.
 
 ### Header auth
@@ -419,9 +481,9 @@ Binding against [ROADMAP.md](ROADMAP.md) Phase 4. Header stays brand + 로그인
 - Escape and click-outside close it. One Job: close the sheet before intro hands off to the app. Do not stack with settings.
 - After session: chip + 나가기 in the settings sheet. Leave from the app returns to intro.
 
-### 일자별 calendar
+### 일자별 filter
 
-Not in this SPA. If it returns: chip next to type chips, paper panel under the tools, local `createdAt` day, magnet for the selected day. Do not build a scheduling calendar.
+Shipped in [`src/components/DayFilter.tsx`](src/components/DayFilter.tsx). Chip next to type chips, paper panel under the tools, local `createdAt` day, magnet for the selected day. Not a scheduling calendar.
 
 ### Korean footer
 
