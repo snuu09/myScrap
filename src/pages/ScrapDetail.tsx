@@ -7,9 +7,8 @@ import {
   BellOff,
   BookOpen,
   BookOpenCheck,
-  ChevronLeft,
-  ChevronRight,
   ExternalLink,
+  Library,
   Share2,
 } from "lucide-react";
 import { t, typeLabel } from "../i18n";
@@ -17,6 +16,7 @@ import { usePrefs } from "../context/Prefs";
 import { useAuth } from "../context/Auth";
 import { usePlan } from "../context/Plan";
 import { RemindSheet } from "../components/RemindSheet";
+import { AuthWaiting } from "../components/AuthWaiting";
 import { deleteScrap, loadScraps, saveScrap } from "../lib/scraps";
 import { fetchOgPreview } from "../lib/og";
 import { useDialog } from "../lib/dialog";
@@ -50,6 +50,17 @@ function NeighborPreview({ scrap, label, onClick, disabled }: { scrap: Scrap | n
         ) : null}
       </span>
     </button>
+  );
+}
+
+function BackToShelf() {
+  const { lang } = usePrefs();
+  return (
+    <IconTip label={t(lang, "backToShelf")}>
+      <Link to="/" className="auth-back-btn no-underline" aria-label={t(lang, "backToShelf")}>
+        <Library className="size-[22px]" strokeWidth={1.8} />
+      </Link>
+    </IconTip>
   );
 }
 
@@ -129,16 +140,16 @@ export function ScrapDetail() {
   if (!user) return <Navigate to="/" replace />;
 
   if (!ready) {
-    return <p className="px-[var(--gutter)] py-8 text-muted">{t(lang, "authWorking")}</p>;
+    return <AuthWaiting />;
   }
 
   if (!scrap) {
     return (
       <div className="dashboard-door">
         <p className="shelf-empty-title">{t(lang, "noMatches")}</p>
-        <Link to="/" className="auth-link-toggle mt-3 inline-flex min-h-10 no-underline">
-          {t(lang, "backToShelf")}
-        </Link>
+        <div className="mt-3">
+          <BackToShelf />
+        </div>
       </div>
     );
   }
@@ -200,24 +211,7 @@ export function ScrapDetail() {
   return (
     <div className="dashboard-door">
       <div className="dashboard-head">
-        <Link to="/" className="auth-link-toggle min-h-10 no-underline">
-          {t(lang, "backToShelf")}
-        </Link>
-      </div>
-
-      <div className="neighbor-row">
-        <NeighborPreview
-          scrap={prev}
-          label={t(lang, "prevScrap")}
-          disabled={!prev}
-          onClick={() => prev && navigate(`/scrap/${prev.id}`)}
-        />
-        <NeighborPreview
-          scrap={next}
-          label={t(lang, "nextScrap")}
-          disabled={!next}
-          onClick={() => next && navigate(`/scrap/${next.id}`)}
-        />
+        <BackToShelf />
       </div>
 
       {error ? <p className="m-0 text-[0.8125rem] text-danger">{error}</p> : null}
@@ -310,22 +304,27 @@ export function ScrapDetail() {
             </button>
           ))}
         </p>
-        <div className="mt-2 flex items-center gap-2 max-[720px]:justify-between">
-          <IconTip label={t(lang, "prevScrap")}>
-            <button type="button" className="auth-back-btn" disabled={!prev} aria-label={t(lang, "prevScrap")} onClick={() => prev && navigate(`/scrap/${prev.id}`)}>
-              <ChevronLeft className="size-[22px]" strokeWidth={1.8} />
-            </button>
-          </IconTip>
+        <div className="mt-2 flex justify-center">
           <button type="button" className="settings-btn-leave" onClick={() => void peel()}>
             {t(lang, "deleteItem")}
           </button>
-          <IconTip label={t(lang, "nextScrap")}>
-            <button type="button" className="auth-back-btn" disabled={!next} aria-label={t(lang, "nextScrap")} onClick={() => next && navigate(`/scrap/${next.id}`)}>
-              <ChevronRight className="size-[22px]" strokeWidth={1.8} />
-            </button>
-          </IconTip>
         </div>
       </article>
+
+      <div className="neighbor-row neighbor-row--below">
+        <NeighborPreview
+          scrap={prev}
+          label={t(lang, "prevScrap")}
+          disabled={!prev}
+          onClick={() => prev && navigate(`/scrap/${prev.id}`)}
+        />
+        <NeighborPreview
+          scrap={next}
+          label={t(lang, "nextScrap")}
+          disabled={!next}
+          onClick={() => next && navigate(`/scrap/${next.id}`)}
+        />
+      </div>
 
       <RemindSheet
         open={remindOpen}

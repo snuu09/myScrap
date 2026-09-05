@@ -120,6 +120,14 @@ export function AuthSheet({ open, onClose }: Props) {
     clearRecoveryPending();
   }
 
+  function authMessage(code: string | null) {
+    if (!code) return t(lang, "authError");
+    if (code === "timeout") return t(lang, "authTimeout");
+    if (code === "google_disabled") return t(lang, "authGoogleDisabled");
+    if (code === "config") return t(lang, "authNeedConfig");
+    return t(lang, "authError");
+  }
+
   async function onSubmit(ev: FormEvent) {
     ev.preventDefault();
     setMessage("");
@@ -134,16 +142,19 @@ export function AuthSheet({ open, onClose }: Props) {
         return;
       }
       startBusy("submit");
-      const result =
-        mode === "findId"
-          ? await requestLoginReminder(email.trim())
-          : await requestPasswordReset(email.trim());
-      endBusy();
-      if (result.error) {
-        setMessage(t(lang, "authError"));
-        return;
+      try {
+        const result =
+          mode === "findId"
+            ? await requestLoginReminder(email.trim())
+            : await requestPasswordReset(email.trim());
+        if (result.error) {
+          setMessage(authMessage(result.error));
+          return;
+        }
+        setSuccess(t(lang, "recoverySent"));
+      } finally {
+        endBusy();
       }
-      setSuccess(t(lang, "recoverySent"));
       return;
     }
 
@@ -159,14 +170,17 @@ export function AuthSheet({ open, onClose }: Props) {
         return;
       }
       startBusy("submit");
-      const result = await updatePassword(password);
-      endBusy();
-      if (result.error) {
-        setMessage(t(lang, "authError"));
-        return;
+      try {
+        const result = await updatePassword(password);
+        if (result.error) {
+          setMessage(authMessage(result.error));
+          return;
+        }
+        clearRecoveryPending();
+        onClose();
+      } finally {
+        endBusy();
       }
-      clearRecoveryPending();
-      onClose();
       return;
     }
 
@@ -187,27 +201,30 @@ export function AuthSheet({ open, onClose }: Props) {
       return;
     }
     startBusy("submit");
-    if (mode === "up") {
-      const result = await signUp(email.trim(), password);
-      endBusy();
-      if (result.error) {
-        setMessage(t(lang, "authError"));
+    try {
+      if (mode === "up") {
+        const result = await signUp(email.trim(), password);
+        if (result.error) {
+          setMessage(authMessage(result.error));
+          return;
+        }
+        if (result.needsConfirm) {
+          setSuccess("");
+          setMessage(t(lang, "signUpOk"));
+          return;
+        }
+        onClose();
         return;
       }
-      if (result.needsConfirm) {
-        setMessage(t(lang, "signUpOk"));
+      const result = await signIn(email.trim(), password);
+      if (result.error) {
+        setMessage(authMessage(result.error));
         return;
       }
       onClose();
-      return;
+    } finally {
+      endBusy();
     }
-    const result = await signIn(email.trim(), password);
-    endBusy();
-    if (result.error) {
-      setMessage(t(lang, "authError"));
-      return;
-    }
-    onClose();
   }
 
   async function onGoogle() {
@@ -220,8 +237,11 @@ export function AuthSheet({ open, onClose }: Props) {
     }
     startBusy("google");
     const result = await signInWithGoogle();
-    endBusy();
-    if (result.error) setMessage(t(lang, "authError"));
+    // Keep spinner until the browser leaves for Google; only unlock on error.
+    if (result.error) {
+      endBusy();
+      setMessage(authMessage(result.error));
+    }
   }
 
   async function onBrowse() {
@@ -233,13 +253,16 @@ export function AuthSheet({ open, onClose }: Props) {
       return;
     }
     startBusy("browse");
-    const result = await browse();
-    endBusy();
-    if (result.error) {
-      setMessage(t(lang, "authError"));
-      return;
+    try {
+      const result = await browse();
+      if (result.error) {
+        setMessage(authMessage(result.error));
+        return;
+      }
+      onClose();
+    } finally {
+      endBusy();
     }
-    onClose();
   }
 
   const inputClass = (invalid: boolean) =>

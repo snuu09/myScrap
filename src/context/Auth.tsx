@@ -1,8 +1,24 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { AuthChangeEvent, Session, User } from "@supabase/supabase-js";
-import { getSupabase, isGoogleAuthEnabled, isSupabaseConfigured } from "../lib/supabase";
+import { getSupabase, isSupabaseConfigured } from "../lib/supabase";
 
 export { isBrowseUser } from "../lib/guest";
+
+const AUTH_TIMEOUT_MS = 25_000;
+
+async function withTimeout<T>(promise: Promise<T>, ms = AUTH_TIMEOUT_MS): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((_, reject) => {
+        timer = setTimeout(() => reject(new Error("timeout")), ms);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
 
 type AuthState = {
   configured: boolean;
@@ -22,6 +38,16 @@ type AuthState = {
 };
 
 const AuthContext = createContext<AuthState | null>(null);
+
+function mapAuthError(error: { message: string; code?: string } | null): string | null {
+  if (!error) return null;
+  const msg = error.message || "";
+  const code = error.code || "";
+  if (/provider is not enabled|validation_failed|unsupported provider/i.test(msg + code)) {
+    return "google_disabled";
+  }
+  return msg || "auth_error";
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const configured = isSupabaseConfigured();
@@ -62,71 +88,116 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async signIn(email, password) {
         const supabase = getSupabase();
         if (!supabase) return { error: "config" };
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        return { error: error ? error.message : null };
+        try {
+          const { error } = await withTimeout(supabase.auth.signInWithPassword({ email, password }));
+          return { error: error ? error.message : null };
+        } catch (err) {
+          return { error: err instanceof Error && err.message === "timeout" ? "timeout" : "auth_error" };
+        }
       },
       async signUp(email, password) {
         const supabase = getSupabase();
         if (!supabase) return { error: "config", needsConfirm: false };
-        const { data, error } = await supabase.auth.signUp({ email, password });
-        if (error) return { error: error.message, needsConfirm: false };
-        return { error: null, needsConfirm: !data.session };
+        try {
+          const { data, error } = await withTimeout(supabase.auth.signUp({ email, password }));
+          if (error) return { error: error.message, needsConfirm: false };
+          return { error: null, needsConfirm: !data.session };
+        } catch (err) {
+          return {
+            error: err instanceof Error && err.message === "timeout" ? "timeout" : "auth_error",
+            needsConfirm: false,
+          };
+        }
       },
       async signInWithGoogle() {
         const supabase = getSupabase();
         if (!supabase) return { error: "config" };
-        if (!(await isGoogleAuthEnabled())) return { error: "google_disabled" };
-        const { error } = await supabase.auth.signInWithOAuth({
-          provider: "google",
-          options: { redirectTo: window.location.origin },
-        });
-        return { error: error ? error.message : null };
+        try {
+          const { error } = await withTimeout(
+            supabase.auth.signInWithOAuth({
+              provider: "google",
+              options: { redirectTo: window.location.origin },
+            }),
+            AUTH_TIMEOUT_MS,
+          );
+          return { error: mapAuthError(error) };
+        } catch (err) {
+          return { error: err instanceof Error && err.message === "timeout" ? "timeout" : "auth_error" };
+        }
       },
       async requestLoginReminder(email) {
         const supabase = getSupabase();
         if (!supabase) return { error: "config" };
-        const { error } = await supabase.auth.signInWithOtp({
-          email,
-          options: { shouldCreateUser: false, emailRedirectTo: window.location.origin },
-        });
-        return { error: error ? error.message : null };
+        try {
+          const { error } = await withTimeout(
+            supabase.auth.signInWithOtp({
+              email,
+              options: { shouldCreateUser: false, emailRedirectTo: window.location.origin },
+            }),
+          );
+          return { error: error ? error.message : null };
+        } catch (err) {
+          return { error: err instanceof Error && err.message === "timeout" ? "timeout" : "auth_error" };
+        }
       },
       async requestPasswordReset(email) {
         const supabase = getSupabase();
         if (!supabase) return { error: "config" };
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: window.location.origin,
-        });
-        return { error: error ? error.message : null };
+        try {
+          const { error } = await withTimeout(
+            supabase.auth.resetPasswordForEmail(email, {
+              redirectTo: window.location.origin,
+            }),
+          );
+          return { error: error ? error.message : null };
+        } catch (err) {
+          return { error: err instanceof Error && err.message === "timeout" ? "timeout" : "auth_error" };
+        }
       },
       async updatePassword(password) {
         const supabase = getSupabase();
         if (!supabase) return { error: "config" };
-        const { error } = await supabase.auth.updateUser({ password });
-        if (!error) setRecoveryPending(false);
-        return { error: error ? error.message : null };
+        try {
+          const { error } = await withTimeout(supabase.auth.updateUser({ password }));
+          if (!error) setRecoveryPending(false);
+          return { error: error ? error.message : null };
+        } catch (err) {
+          return { error: err instanceof Error && err.message === "timeout" ? "timeout" : "auth_error" };
+        }
       },
       async browse() {
         const supabase = getSupabase();
         if (!supabase) return { error: "config" };
-        const anon = await supabase.auth.signInAnonymously();
-        if (!anon.error) return { error: null };
-        const disabled =
-          anon.error.code === "anonymous_provider_disabled" ||
-          /anonymous sign-ins are disabled/i.test(anon.error.message);
-        if (!disabled) return { error: anon.error.message };
-        const email = `${crypto.randomUUID()}@guest.mybrary.test`;
-        const password = `${crypto.randomUUID()}Aa1!`;
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { data: { browse: true } },
-        });
-        return { error: error ? error.message : null };
+        try {
+          const anon = await withTimeout(supabase.auth.signInAnonymously());
+          if (!anon.error) return { error: null };
+          const disabled =
+            anon.error.code === "anonymous_provider_disabled" ||
+            /anonymous sign-ins are disabled/i.test(anon.error.message);
+          if (!disabled) return { error: anon.error.message };
+          const email = `${crypto.randomUUID()}@guest.mybrary.test`;
+          const password = `${crypto.randomUUID()}Aa1!`;
+          const { error } = await withTimeout(
+            supabase.auth.signUp({
+              email,
+              password,
+              options: { data: { browse: true } },
+            }),
+          );
+          return { error: error ? error.message : null };
+        } catch (err) {
+          return { error: err instanceof Error && err.message === "timeout" ? "timeout" : "auth_error" };
+        }
       },
       async signOut() {
         const supabase = getSupabase();
-        if (supabase) await supabase.auth.signOut();
+        if (supabase) {
+          try {
+            await withTimeout(supabase.auth.signOut(), 15_000);
+          } catch {
+            /* still clear local recovery flag */
+          }
+        }
         setRecoveryPending(false);
       },
     }),

@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { X } from "lucide-react";
+import { Bookmark, X } from "lucide-react";
 import { t, typeLabel } from "../i18n";
 import { usePrefs } from "../context/Prefs";
 import { useDialog } from "../lib/dialog";
@@ -149,7 +149,9 @@ export function ScrapList({
                       <div className="min-w-0 flex-1">
                         <p className="scrap-card-title">
                           {unread ? <span className="scrap-unread-dot" aria-hidden /> : null}
-                          {item.bookmarked ? <span className="scrap-bookmark-mark" aria-hidden>★</span> : null}
+                          {item.bookmarked ? (
+                            <Bookmark className="scrap-bookmark-mark" aria-hidden strokeWidth={2} />
+                          ) : null}
                           {item.title || item.og?.title || t(lang, "untitled")}
                         </p>
                         <p className="scrap-card-meta">
