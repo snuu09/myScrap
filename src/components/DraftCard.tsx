@@ -12,11 +12,17 @@ type Props = {
   onCancel: () => void;
 };
 
-export function AnalyzeSkeleton() {
+export function AnalyzeSkeleton({ filename, size }: { filename?: string; size?: number }) {
   const { lang } = usePrefs();
   return (
     <div className="classify-draft-skeleton" aria-busy="true">
-      <p className="list-tools-label">{t(lang, "analyzing")}</p>
+      <p className="list-tools-label">{t(lang, filename ? "uploadingFile" : "analyzing")}</p>
+      {filename ? (
+        <p className="scrap-card-file m-0">
+          {filename}
+          {size ? ` · ${formatBytes(size)}` : ""}
+        </p>
+      ) : null}
       <div className="classify-draft-skeleton-bar w-2/5" />
       <div className="classify-draft-skeleton-bar w-4/5" />
       <div className="classify-draft-skeleton-block" />
@@ -69,7 +75,9 @@ export function DraftCard({ draft, onChange, onSave, onCancel }: Props) {
   const thumb = og?.image || (draft.dataUrl && (draft.type === "image" || draft.mime.startsWith("image/")) ? draft.dataUrl : "");
   const showMedia = Boolean(thumb) || Boolean(og && (og.siteName || og.description));
 
-  if (draft.analyzing && !thumb) return <AnalyzeSkeleton />;
+  if (draft.analyzing && !thumb) {
+    return <AnalyzeSkeleton filename={draft.filename} size={draft.size} />;
+  }
 
   return (
     <form
@@ -80,10 +88,17 @@ export function DraftCard({ draft, onChange, onSave, onCancel }: Props) {
       }}
     >
       <div className="list-tools-head">
-        <p className="list-tools-label">{draft.analyzing ? t(lang, "analyzing") : t(lang, "classifyTitle")}</p>
+        <p className="list-tools-label">
+          {draft.analyzing ? t(lang, draft.filename ? "uploadingFile" : "analyzing") : t(lang, "classifyTitle")}
+        </p>
       </div>
       {draft.analyzing ? (
         <>
+          {draft.filename ? (
+            <p className="scrap-card-file m-0">
+              {draft.filename} · {formatBytes(draft.size)}
+            </p>
+          ) : null}
           <div className="classify-draft-skeleton-bar w-2/5" />
           <div className="classify-draft-skeleton-bar w-4/5" />
         </>

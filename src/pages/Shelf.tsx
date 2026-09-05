@@ -19,7 +19,7 @@ import {
   SCRAPS_CHANGED_EVENT,
   SCRAPS_CLEARED_EVENT,
 } from "../lib/scraps";
-import { GuestQuotaError, guestNoticeSeen, markGuestNoticeSeen } from "../lib/localScraps";
+import { GuestQuotaError, GUEST_FILE_LIMIT, guestNoticeSeen, markGuestNoticeSeen } from "../lib/localScraps";
 import { filterScraps } from "../lib/scrapFilters";
 import { useDialog } from "../lib/dialog";
 import { getSupabase } from "../lib/supabase";
@@ -291,7 +291,9 @@ export function Shelf({ onEnter }: Props) {
     if (await busyGuard()) return;
     const file = Array.from(list)[0];
     if (!file) return;
-    const blocked = uploadBlockedReason(file.size);
+    // Guest oversize sticks as metadata only (0 media bytes); attachLocalMedia skips the blob.
+    const guestMetaOnly = guest && file.size > GUEST_FILE_LIMIT;
+    const blocked = uploadBlockedReason(guestMetaOnly ? 0 : file.size);
     if (blocked) {
       await alert(blocked);
       return;
@@ -320,7 +322,10 @@ export function Shelf({ onEnter }: Props) {
       next.dataUrl = uploaded.dataUrl || localPreview;
       next.storedMedia = uploaded.storedMedia;
       setDraft({ ...next });
-      if (uploaded.skipped) setError(t("guestMediaSkipped"));
+      if (uploaded.skipped) {
+        setError(t("guestMediaSkipped"));
+        await alert(t("guestMediaSkipped"));
+      }
       const ai = await requestAnalyze({
         kind: "file",
         mediaPath: uploaded.mediaPath,
@@ -346,6 +351,7 @@ export function Shelf({ onEnter }: Props) {
       if (localPreview) URL.revokeObjectURL(localPreview);
       setDraft((cur) => (cur && cur.id === next.id ? { ...cur, analyzing: false, error: "upload", dataUrl: "" } : cur));
       setError(t("errorFile"));
+      await alert(t("errorFile"));
     }
   }
 

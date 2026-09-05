@@ -112,15 +112,18 @@ export function DayFilterPanel({ scraps, dayFilter, open, onOpenChange, onDayCha
   return (
     <div className="day-filter-panel">
       <div className="day-filter-nav">
-        <button
-          type="button"
-          className="auth-back-btn !size-10"
-          onClick={() => shiftMonth(-1)}
-          disabled={!canPrev}
-          aria-label={t(lang, "monthPrev")}
-        >
-          <ChevronLeft className="size-5" strokeWidth={1.8} />
-        </button>
+        {canPrev ? (
+          <button
+            type="button"
+            className="auth-back-btn !size-10"
+            onClick={() => shiftMonth(-1)}
+            aria-label={t(lang, "monthPrev")}
+          >
+            <ChevronLeft className="size-5" strokeWidth={1.8} />
+          </button>
+        ) : (
+          <span className="size-10 shrink-0" aria-hidden />
+        )}
         <div className="day-filter-month-wrap">
           <p className="day-filter-month">{monthLabel}</p>
           {showToday ? (
@@ -129,15 +132,18 @@ export function DayFilterPanel({ scraps, dayFilter, open, onOpenChange, onDayCha
             </button>
           ) : null}
         </div>
-        <button
-          type="button"
-          className="auth-back-btn !size-10"
-          onClick={() => shiftMonth(1)}
-          disabled={!canNext}
-          aria-label={t(lang, "monthNext")}
-        >
-          <ChevronRight className="size-5" strokeWidth={1.8} />
-        </button>
+        {canNext ? (
+          <button
+            type="button"
+            className="auth-back-btn !size-10"
+            onClick={() => shiftMonth(1)}
+            aria-label={t(lang, "monthNext")}
+          >
+            <ChevronRight className="size-5" strokeWidth={1.8} />
+          </button>
+        ) : (
+          <span className="size-10 shrink-0" aria-hidden />
+        )}
       </div>
       <div className="day-filter-weekdays">
         {weekdays.map((w) => (

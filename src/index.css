@@ -817,11 +817,6 @@ body {
     text-decoration: underline;
   }
 
-  .day-filter-nav .auth-back-btn:disabled {
-    opacity: 0.35;
-    cursor: default;
-  }
-
   .day-filter-weekdays {
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
