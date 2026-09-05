@@ -176,6 +176,14 @@ export function formatBytes(n: number) {
   return (size / (1024 * 1024)).toFixed(1) + " MB";
 }
 
+/** Image / video / audio scraps can show an inline player or thumbnail from dataUrl. */
+export function mediaKindOf(type: string, mime = ""): "image" | "video" | "audio" | null {
+  if (type === "image" || mime.startsWith("image/")) return "image";
+  if (type === "video" || mime.startsWith("video/")) return "video";
+  if (type === "audio" || mime.startsWith("audio/")) return "audio";
+  return null;
+}
+
 export function uid() {
   if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
   return "s" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);

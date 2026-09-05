@@ -105,12 +105,13 @@ async function signedUrl(path: string | null) {
 }
 
 function needsSignedMedia(scrap: Scrap) {
-  if (scrap.type !== "image" || !scrap.mediaPath) return false;
-  if (scrap.og?.image) return false;
+  if (!scrap.mediaPath) return false;
+  // OG image is enough for link cards; otherwise rehydrate any stored blob (image/video/audio/doc).
+  if (scrap.type === "image" && scrap.og?.image) return false;
   return true;
 }
 
-/** Batch-sign image media paths and fill `dataUrl` (session-cached). */
+/** Batch-sign media paths and fill `dataUrl` (session-cached). */
 export async function hydrateSignedMedia(scraps: Scrap[]): Promise<Scrap[]> {
   const supabase = getSupabase();
   if (!supabase || !scraps.length) return scraps;
@@ -318,6 +319,14 @@ async function uploadResumable(path: string, file: File, onProgress?: (ratio: nu
   });
 }
 
+export async function removeMedia(user: User, mediaPath: string) {
+  const path = String(mediaPath || "").trim();
+  if (!path || isBrowseUser(user)) return;
+  const supabase = getSupabase();
+  if (!supabase) return;
+  await supabase.storage.from(BUCKET).remove([path]);
+}
+
 export async function saveScrap(user: User, scrap: Scrap) {
   if (isBrowseUser(user)) {
     saveLocalScrap(scrap);
@@ -336,9 +345,7 @@ export async function deleteScrap(user: User, scrap: Scrap) {
   }
   const supabase = getSupabase();
   if (!supabase) throw new Error("config");
-  if (scrap.mediaPath) {
-    await supabase.storage.from(BUCKET).remove([scrap.mediaPath]);
-  }
+  await removeMedia(user, scrap.mediaPath);
   const { error } = await supabase.from("scraps").delete().eq("id", scrap.id).eq("user_id", user.id);
   if (error) throw error;
 }

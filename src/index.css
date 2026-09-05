@@ -74,9 +74,9 @@ html[data-look="library"] {
   --color-kitchen-hi: #f3ebe0;
   --color-manila: #d4b47a;
   --shadow-sheet: 0 16px 36px rgb(44 38 31 / 0.1);
-  --shadow-scrap: 0 8px 22px rgb(44 38 31 / 0.08), 2px 0 0 rgb(44 38 31 / 0.06);
-  --radius-sm: 12px;
-  --radius-md: 14px;
+  --shadow-scrap: 0 10px 20px rgb(44 38 31 / 0.1), 0 1px 0 rgb(255 255 255 / 0.35) inset;
+  --radius-sm: 10px;
+  --radius-md: 12px;
 }
 
 html[data-theme="dark"][data-look="library"] {
@@ -91,12 +91,79 @@ html[data-theme="dark"][data-look="library"] {
   --color-login-wall: #29251f;
   --color-kitchen-hi: #1e1c19;
   --shadow-sheet: 0 16px 36px rgb(0 0 0 / 0.34);
-  --shadow-scrap: 0 8px 22px rgb(0 0 0 / 0.26), 2px 0 0 rgb(255 255 255 / 0.04);
+  --shadow-scrap: 0 10px 22px rgb(0 0 0 / 0.32), 0 1px 0 rgb(255 255 255 / 0.04) inset;
 }
 
+/* Binding spine + paper face (no 3D bookcase mesh). */
 html[data-look="library"] .scrap-card {
-  border-left: 3px solid color-mix(in srgb, var(--color-ink) 18%, var(--color-paper-line));
+  --scrap-tilt: 0deg;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  border: 1px solid color-mix(in srgb, var(--color-paper-line) 88%, var(--color-ink));
+  border-left: 0;
   box-shadow: var(--shadow-scrap);
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--color-ink) 22%, var(--color-manila)) 0,
+      color-mix(in srgb, var(--color-ink) 22%, var(--color-manila)) 7px,
+      color-mix(in srgb, var(--color-paper) 70%, var(--color-manila)) 7px,
+      color-mix(in srgb, var(--color-paper) 70%, var(--color-manila)) 9px,
+      var(--color-paper) 9px
+    );
+}
+
+html[data-look="library"] .scrap-list > .scrap-card:nth-child(3n + 2),
+html[data-look="library"] .scrap-list > .scrap-card:nth-child(3n) {
+  --scrap-tilt: 0deg;
+}
+
+html[data-look="library"] .scrap-list--list {
+  gap: 1.35rem;
+  padding: 0.45rem 0.2rem 0.9rem;
+  background: color-mix(in srgb, var(--color-enamel-deep) 58%, transparent);
+  border-radius: var(--radius-md);
+}
+
+html[data-look="library"] .scrap-list--list .scrap-card {
+  position: relative;
+  margin-bottom: 0.35rem;
+}
+
+html[data-look="library"] .scrap-list--list .scrap-card::after {
+  content: "";
+  position: absolute;
+  left: -1px;
+  right: -1px;
+  bottom: -0.55rem;
+  height: 0.42rem;
+  border-radius: 1px 1px 3px 3px;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--color-manila) 72%, var(--color-enamel-ink)),
+    color-mix(in srgb, var(--color-ink) 32%, var(--color-manila))
+  );
+  box-shadow: 0 2px 5px rgb(44 38 31 / 0.12);
+  pointer-events: none;
+}
+
+html[data-theme="dark"][data-look="library"] .scrap-list--list .scrap-card::after {
+  box-shadow: 0 2px 5px rgb(0 0 0 / 0.28);
+}
+
+html[data-look="library"] .scrap-list--gallery .scrap-card-media-frame {
+  aspect-ratio: 3 / 4;
+  min-height: 11rem;
+}
+
+html[data-look="library"] .scrap-list--gallery .scrap-card-hit {
+  min-height: 11rem;
+}
+
+@media (hover: hover) {
+  html[data-look="library"] .scrap-card:hover {
+    transform: translateY(-2px);
+  }
 }
 
 .shelf-reveal {
@@ -942,51 +1009,19 @@ body {
     grid-template-columns: 1fr;
   }
 
-  .scrap-list--grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.75rem;
-  }
-
   .scrap-list--gallery {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.5rem;
   }
 
   @media (min-width: 720px) {
-    .scrap-list--grid {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-
     .scrap-list--gallery {
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
   }
 
-  .scrap-list--grid .scrap-card,
   .scrap-list--gallery .scrap-card {
     --scrap-tilt: 0deg;
-  }
-
-  .scrap-list--grid .scrap-card-media-frame {
-    min-height: 7rem;
-    max-height: 9rem;
-  }
-
-  .scrap-list--grid .scrap-card-body {
-    gap: 0.25rem;
-    padding: 0.75rem;
-  }
-
-  .scrap-list--grid .scrap-card-title {
-    display: -webkit-box;
-    overflow: hidden;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    font-size: 0.9375rem;
-  }
-
-  .scrap-list--grid .scrap-card-meta {
-    font-size: 0.6875rem;
   }
 
   .scrap-list--gallery .scrap-card-hit {
@@ -1116,6 +1151,27 @@ body {
   }
 
   .scrap-card-media.is-loaded {
+    opacity: 1;
+  }
+
+  .scrap-card-media-frame--audio,
+  .draft-media-frame--audio {
+    min-height: auto;
+    max-height: none;
+    padding: 0.75rem 1rem;
+    background: var(--color-enamel);
+  }
+
+  .scrap-card-audio,
+  .draft-media-audio {
+    display: block;
+    width: 100%;
+    opacity: 0;
+    transition: opacity 160ms var(--ease-out);
+  }
+
+  .scrap-card-audio.is-loaded,
+  .draft-media-audio.is-loaded {
     opacity: 1;
   }
 

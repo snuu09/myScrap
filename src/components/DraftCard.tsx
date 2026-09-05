@@ -3,7 +3,7 @@ import { t, typeLabel, detectedLabel } from "../i18n";
 import { usePrefs } from "../context/Prefs";
 import { SiteIcon } from "./SiteIcon";
 import type { Scrap } from "../lib/types";
-import { formatBytes } from "../lib/tagger";
+import { formatBytes, mediaKindOf } from "../lib/tagger";
 
 type Props = {
   draft: Scrap;
@@ -46,8 +46,16 @@ export function AnalyzeSkeleton({
   );
 }
 
-function DraftMedia({ src, siteName, domain, favicon, description }: {
+function DraftMedia({
+  src,
+  kind = "image",
+  siteName,
+  domain,
+  favicon,
+  description,
+}: {
   src: string;
+  kind?: "image" | "video" | "audio";
   siteName?: string;
   domain?: string;
   favicon?: string;
@@ -69,18 +77,39 @@ function DraftMedia({ src, siteName, domain, favicon, description }: {
           {description ? <p className="og-card-desc">{description}</p> : null}
         </div>
       ) : null}
-      <div className="draft-media-frame">
-        {!loaded && !failed ? <div className="draft-media-skeleton" aria-hidden /> : null}
-        {src && !failed ? (
-          <img
-            src={src}
-            alt=""
-            className={"draft-media-img" + (loaded ? " is-loaded" : "")}
-            onLoad={() => setLoaded(true)}
-            onError={() => setFailed(true)}
-          />
-        ) : null}
-      </div>
+      {src && !failed ? (
+        <div className={"draft-media-frame" + (kind === "audio" ? " draft-media-frame--audio" : "")}>
+          {!loaded ? <div className="draft-media-skeleton" aria-hidden /> : null}
+          {kind === "video" ? (
+            <video
+              src={src}
+              className={"draft-media-img" + (loaded ? " is-loaded" : "")}
+              controls
+              playsInline
+              preload="metadata"
+              onLoadedData={() => setLoaded(true)}
+              onError={() => setFailed(true)}
+            />
+          ) : kind === "audio" ? (
+            <audio
+              src={src}
+              className={"draft-media-audio" + (loaded ? " is-loaded" : "")}
+              controls
+              preload="metadata"
+              onLoadedData={() => setLoaded(true)}
+              onError={() => setFailed(true)}
+            />
+          ) : (
+            <img
+              src={src}
+              alt=""
+              className={"draft-media-img" + (loaded ? " is-loaded" : "")}
+              onLoad={() => setLoaded(true)}
+              onError={() => setFailed(true)}
+            />
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -88,7 +117,12 @@ function DraftMedia({ src, siteName, domain, favicon, description }: {
 export function DraftCard({ draft, uploadRatio = null, onChange, onSave, onCancel }: Props) {
   const { lang } = usePrefs();
   const og = draft.og;
-  const thumb = og?.image || (draft.dataUrl && (draft.type === "image" || draft.mime.startsWith("image/")) ? draft.dataUrl : "");
+  const mediaKind = mediaKindOf(draft.type, draft.mime);
+  const thumb =
+    og?.image ||
+    (draft.dataUrl && (mediaKind === "image" || mediaKind === "video" || mediaKind === "audio")
+      ? draft.dataUrl
+      : "");
   const showMedia = Boolean(thumb) || Boolean(og && (og.siteName || og.description));
   const pct =
     uploadRatio != null && Number.isFinite(uploadRatio)
@@ -172,6 +206,7 @@ export function DraftCard({ draft, uploadRatio = null, onChange, onSave, onCance
       {showMedia ? (
         <DraftMedia
           src={thumb}
+          kind={og?.image ? "image" : mediaKind || "image"}
           siteName={og?.siteName}
           domain={draft.domain}
           favicon={og?.favicon}

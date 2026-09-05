@@ -4,7 +4,7 @@ import type { Lang } from "../i18n";
 export type ThemeChoice = "light" | "dark" | "system";
 export type Palette = "kitchen" | "basalt";
 export type Look = "fridge" | "library";
-export type ShelfLayout = "list" | "grid" | "gallery";
+export type ShelfLayout = "list" | "gallery";
 
 type Prefs = {
   lang: Lang;
@@ -52,17 +52,17 @@ function readPalette(): Palette {
 
 function readLook(): Look {
   try {
-    if (localStorage.getItem("mybrary.look") === "library") return "library";
+    if (localStorage.getItem("mybrary.look") === "fridge") return "fridge";
   } catch {
     /* ignore */
   }
-  return "fridge";
+  return "library";
 }
 
 function readShelfLayout(): ShelfLayout {
   try {
     const stored = localStorage.getItem("mybrary.shelfLayout");
-    if (stored === "grid" || stored === "gallery" || stored === "list") return stored;
+    if (stored === "gallery") return "gallery";
   } catch {
     /* ignore */
   }
@@ -126,7 +126,7 @@ export function PrefsProvider({ children }: { children: ReactNode }) {
         setPaletteState(next);
       },
       setLook(next) {
-        if (next === "library") localStorage.setItem("mybrary.look", next);
+        if (next === "fridge") localStorage.setItem("mybrary.look", next);
         else localStorage.removeItem("mybrary.look");
         setLookState(next);
       },

@@ -28,7 +28,7 @@ Today (shipped):
 
 - First visit: intro on porcelain peach / night kitchen. Hero plus stick / classify / find hotspots. Header **로그인** opens the auth sheet on a **chooser** (Google / email / 둘러보기); email path keeps Auth Ladder fields, **회원가입** confirm password, and Auth Recovery. Intro hero keeps **책장을 연다** only. Settings stay a sheet (language, Look fridge|library, palette, theme, Leave).
 - A saved session skips intro and opens the door (`ShelfReveal` once per session). Leave returns to intro.
-- After entry: recency list and search; Stick is a **floating** compact composer (not in the legal Footer). Composer has a + menu with scrim (clipboard, camera on mobile, photo pick, file attach) and drag-and-drop. Classify draft appears **above** the composer pill, with a skeleton while Claude (or the MIME fallback) runs; URL scraps also fetch OG. List metadata paints before image signed URLs hydrate in batch. Header **통계** opens the scrap dashboard. **일자별** chip filters the list by local day. Type chips omit zero-count types. Shelf layout toggle: **리스트 / 그리드 / 갤러리** (device preference). Row tap opens **`/scrap/:id`** detail (Library back icon, edit title/memo/tags, share only when URL exists, bookmark, read, remind, tags → `/?q=`, neighbor previews **below** peel). Bookmarked rows show a corner ribbon. Look **책장** swaps scrap/peel copy to page / take-off-shelf wording. Free and standard tiers see an ad slot below list-tools.
+- After entry: recency list and search; Stick is a **floating** compact composer (not in the legal Footer). Composer has a + menu with scrim (clipboard, camera on mobile, photo pick, file attach) and drag-and-drop. Classify draft appears **above** the composer pill, with a skeleton while Claude (or the MIME fallback) runs; URL scraps also fetch OG. List metadata paints before image signed URLs hydrate in batch. Header **통계** opens the scrap dashboard. **일자별** chip filters the list by local day. Type chips omit zero-count types. Shelf layout toggle: **리스트 / 갤러리** (device preference). Row tap opens **`/scrap/:id`** detail (Library back icon, edit title/memo/tags, share only when URL exists, bookmark, read, remind, tags → `/?q=`, neighbor previews **below** peel). Bookmarked rows show a corner ribbon. Look **책장** (default) swaps scrap/peel copy to page / take-off-shelf wording. Free and standard tiers see an ad slot below list-tools.
 - Footer on intro and app: 이용약관, 개인정보처리방침, operator placeholders (표시 예정 until filled).
 - Empty list copy: "항목이 없습니다."
 - List order: newest first.
@@ -45,14 +45,14 @@ Confirmed from brief and implemented in the Vite SPA:
 - Responsive React UI; header, main, footer.
 - i18n: Korean, English.
 - Auto-tag pasted/dropped content by type: text, image, video, audio, link, document extension (Claude at `/api/analyze`, MIME/URL fallback).
-- Classify-then-save draft (type, tags, memo, preview) before the item hits the recency list.
+- Classify-then-save draft (type, tags, memo, preview) before the item hits the recency list. Account file drafts upload to Storage for Claude, then remove that object if the draft is cancelled.
 - A new Stick, paste, or drop replaces an open classify draft.
 - Image: show the image when a signed URL exists.
 - + menu: clipboard, camera (mobile), photo, file.
 - Placeholder: "붙여넣기 할 내용이나 파일을 첨부해주세요."
 - Drag-and-drop analyzes dropped files.
 - Recency-sorted tagged list; empty state; scroll-to-top FAB.
-- Header color theme: 기본 (tangerine magnet), 현무암 (basalt magnet). Look fridge|library remaps enamel tokens. Language, Look, palette, appearance, and Leave sit in a header settings sheet.
+- Header color theme: 기본 (tangerine magnet), 현무암 (basalt magnet). Look fridge|library (default library) remaps enamel tokens. Language, Look, palette, appearance, and Leave sit in a header settings sheet.
 - Type chips, search, and **일자별** day filter (AND). Zero-count type chips are hidden. Peel from the list or detail page. Detail actions: open link, share (URL only), edit (title/memo/tags), bookmark, read/unread, remind (foreground Notification once). List bookmark is a corner ribbon; unread stays a magnet dot.
 - Plan tiers (policy only, no payment): free (14-day trial, 100MB, ads), standard (1GB, ads), premium/admin (unlimited, no ads). Settings shows tier, trial D-day, storage bar (layout reserved while loading). Upload blocked after trial or over quota. Settings **DB 초기화** clears that account’s scraps and media only (profiles stay); for 둘러보기 it clears this device instead.
 - Supabase: email/password Auth, **Google**, **둘러보기** (anonymous Auth), `scraps` (engagement + og) + `profiles` + private media bucket. Claude classify via `/api/analyze` (MIME fallback if the function is down). URL OG via `og-preview`.

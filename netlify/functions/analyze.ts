@@ -21,13 +21,56 @@ function extOf(name: string) {
   return m ? m[1] : "";
 }
 
+const DOC_EXT: Record<string, true> = {
+  pdf: true,
+  doc: true,
+  docx: true,
+  ppt: true,
+  pptx: true,
+  xls: true,
+  xlsx: true,
+  txt: true,
+  md: true,
+  rtf: true,
+  csv: true,
+  pages: true,
+  key: true,
+  numbers: true,
+  hwp: true,
+  hwpx: true,
+  odt: true,
+  ods: true,
+  odp: true,
+  epub: true,
+};
+
 function typeFromMime(mime: string, filename: string) {
   const m = String(mime || "").toLowerCase();
   const ext = extOf(filename);
   if (m.startsWith("image/")) return "image";
   if (m.startsWith("video/")) return "video";
   if (m.startsWith("audio/")) return "audio";
-  if (m.startsWith("text/") || ext === "pdf" || ext === "doc" || ext === "docx") return "document";
+  if (m === "application/pdf" || DOC_EXT[ext]) return "document";
+  if (
+    m.includes("officedocument") ||
+    m.includes("msword") ||
+    m.includes("ms-excel") ||
+    m.includes("ms-powerpoint") ||
+    m.includes("haansoft") ||
+    m === "text/plain" ||
+    m === "text/markdown" ||
+    m === "text/csv" ||
+    m === "application/rtf" ||
+    m === "application/epub+zip" ||
+    m.startsWith("text/")
+  ) {
+    return "document";
+  }
+  if (["png", "jpg", "jpeg", "gif", "webp", "avif", "heic", "heif", "svg", "bmp"].includes(ext)) {
+    return "image";
+  }
+  if (["mp4", "webm", "mov", "m4v", "ogv"].includes(ext)) return "video";
+  if (["mp3", "wav", "m4a", "ogg", "aac", "flac", "opus"].includes(ext)) return "audio";
   return "document";
 }
 

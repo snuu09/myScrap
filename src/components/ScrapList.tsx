@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bookmark, LayoutGrid, LayoutList, PanelsTopLeft, X } from "lucide-react";
+import { Bookmark, LayoutList, PanelsTopLeft, X } from "lucide-react";
 import { typeLabel } from "../i18n";
 import { usePrefs, type ShelfLayout } from "../context/Prefs";
 import { useDialog } from "../lib/dialog";
@@ -12,13 +12,12 @@ import { ScrapListSkeleton } from "./ScrapListSkeleton";
 import { ScrapMedia } from "./ScrapMedia";
 import type { Scrap, ScrapType } from "../lib/types";
 import { formatWhen } from "../lib/time";
-import { formatBytes } from "../lib/tagger";
+import { formatBytes, mediaKindOf } from "../lib/tagger";
 
 const TYPES: ScrapType[] = ["text", "image", "video", "audio", "link", "document"];
 
-const LAYOUTS: { id: ShelfLayout; icon: typeof LayoutList; labelKey: "layoutList" | "layoutGrid" | "layoutGallery" }[] = [
+const LAYOUTS: { id: ShelfLayout; icon: typeof LayoutList; labelKey: "layoutList" | "layoutGallery" }[] = [
   { id: "list", icon: LayoutList, labelKey: "layoutList" },
-  { id: "grid", icon: LayoutGrid, labelKey: "layoutGrid" },
   { id: "gallery", icon: PanelsTopLeft, labelKey: "layoutGallery" },
 ];
 
@@ -179,7 +178,10 @@ export function ScrapList({
         ) : (
           <ul className={"scrap-list scrap-list--" + shelfLayout}>
             {visible.map((item) => {
-              const thumb = item.og?.image || (item.dataUrl && item.type === "image" ? item.dataUrl : "");
+              const mediaKind = mediaKindOf(item.type, item.mime);
+              const thumb =
+                item.og?.image ||
+                (item.dataUrl && (mediaKind === "image" || mediaKind === "video") ? item.dataUrl : "");
               const unread = !item.readAt;
               const title = item.title || item.og?.title || t("untitled");
               return (
@@ -199,7 +201,12 @@ export function ScrapList({
                   ) : null}
                   <button type="button" className="scrap-card-hit" onClick={() => navigate(`/scrap/${item.id}`)}>
                     {thumb ? (
-                      <ScrapMedia key={thumb} src={thumb} />
+                      <ScrapMedia
+                        key={thumb}
+                        src={thumb}
+                        kind={item.og?.image ? "image" : mediaKind || "image"}
+                        controls={false}
+                      />
                     ) : shelfLayout === "gallery" ? (
                       <div className="scrap-card-media-frame scrap-card-media-frame--placeholder" aria-hidden>
                         <span className="scrap-card-placeholder-type">{typeLabel(lang, item.type)}</span>

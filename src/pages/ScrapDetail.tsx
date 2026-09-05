@@ -27,7 +27,7 @@ import { useT } from "../lib/useT";
 import { SiteIcon } from "../components/SiteIcon";
 import { IconTip } from "../components/IconTip";
 import { formatWhen } from "../lib/time";
-import { formatBytes } from "../lib/tagger";
+import { formatBytes, mediaKindOf } from "../lib/tagger";
 import type { Scrap } from "../lib/types";
 
 function NeighborPreview({ scrap, label, onClick, disabled }: { scrap: Scrap | null; label: string; onClick: () => void; disabled: boolean }) {
@@ -263,7 +263,12 @@ export function ScrapDetail() {
     }
   }
 
-  const thumb = item.og?.image || (item.dataUrl && item.type === "image" ? item.dataUrl : "");
+  const mediaKind = mediaKindOf(item.type, item.mime);
+  const thumb =
+    item.og?.image ||
+    (item.dataUrl && (mediaKind === "image" || mediaKind === "video" || mediaKind === "audio")
+      ? item.dataUrl
+      : "");
   const read = Boolean(item.readAt);
   const dueRemind = item.remindAt && item.remindAt <= Date.now();
 
@@ -306,6 +311,19 @@ export function ScrapDetail() {
             {item.url ? (
               <IconTip label={t("openLink")}>
                 <a href={item.url} className="detail-action" target="_blank" rel="noreferrer" aria-label={t("openLink")}>
+                  <ExternalLink className="size-5" strokeWidth={1.8} />
+                </a>
+              </IconTip>
+            ) : item.dataUrl && !mediaKind ? (
+              <IconTip label={t("openFile")}>
+                <a
+                  href={item.dataUrl}
+                  className="detail-action"
+                  target="_blank"
+                  rel="noreferrer"
+                  download={item.filename || undefined}
+                  aria-label={t("openFile")}
+                >
                   <ExternalLink className="size-5" strokeWidth={1.8} />
                 </a>
               </IconTip>
@@ -366,7 +384,13 @@ export function ScrapDetail() {
           </p>
         ) : null}
         {thumb ? (
-          <ScrapMedia key={thumb} src={thumb} className="detail-media-img" frameClassName="detail-media-frame" />
+          <ScrapMedia
+            key={thumb}
+            src={thumb}
+            kind={item.og?.image ? "image" : mediaKind || "image"}
+            className="detail-media-img"
+            frameClassName="detail-media-frame"
+          />
         ) : null}
         {item.og?.description ? <p className="m-0 text-[0.9375rem] text-ink-soft">{item.og.description}</p> : null}
         {item.text && item.type !== "image" ? (

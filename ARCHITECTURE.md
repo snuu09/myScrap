@@ -50,7 +50,7 @@ flowchart TB
 | --- | --- | --- |
 | View | [`src/pages/`](src/pages/), [`src/components/`](src/components/), [`src/index.css`](src/index.css) | Intro, shelf, legal, DESIGN tokens |
 | App | [`src/App.tsx`](src/App.tsx) | Routes, sheets, session gate |
-| Prefs | [`src/context/Prefs.tsx`](src/context/Prefs.tsx) | Language, Look (fridge\|library), theme, palette on this device |
+| Prefs | [`src/context/Prefs.tsx`](src/context/Prefs.tsx) | Language, Look (fridge\|library, default library), theme, palette, shelf layout (list\|gallery) on this device |
 | Auth | [`src/context/Auth.tsx`](src/context/Auth.tsx), [`src/lib/supabase.ts`](src/lib/supabase.ts) | Email / password, Google, 둘러보기, find/reset email flows |
 | Plan | [`src/context/Plan.tsx`](src/context/Plan.tsx), [`src/lib/plans.ts`](src/lib/plans.ts), [`src/lib/profiles.ts`](src/lib/profiles.ts) | Tier limits, trial, storage usage, ad flag, upload gates |
 | Filters | [`src/lib/scrapFilters.ts`](src/lib/scrapFilters.ts) | Shared query/type/day filter and dashboard aggregates |
@@ -62,7 +62,7 @@ flowchart TB
 ## Data flow
 
 1. **Entry.** Intro is public. **책장을 연다** opens email sign in / sign up. A session paints the shelf.
-2. **Capture.** Paste/drop/`+`. Files upload first. `/api/analyze` gets the user JWT. Images may go to Claude vision. Failure uses the local tagger.
+2. **Capture.** Paste/drop/`+`. Account files upload to `scrap-media` first so `/api/analyze` (user JWT) can classify; images may use Claude vision. Failure uses the local tagger. Discarding the classify draft removes any pending Storage object. Guest media stays on-device.
 3. **Save.** Upsert the scrap row. List is newest first, RLS `auth.uid() = user_id`. `PlanProvider` sums stored-media bytes for quota; free trial ends at `profiles.trial_ends_at`.
 4. **Filter.** Shelf holds query, type, and optional local day. `filterScraps` drives list, detail prev/next, and dashboard stats.
 5. **Leave.** Sign out returns to intro. Account scraps are not kept in `localStorage`.

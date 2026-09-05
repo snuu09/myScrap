@@ -110,6 +110,12 @@ export function StickDock({ value, onChange, onSubmitText, onFiles, dropping, di
     setMenu(true);
   }
 
+  /** Snapshot before clearing input value; FileList is live and empties after value="". */
+  function emitFiles(list: FileList | null) {
+    if (!list?.length) return;
+    onFiles(Array.from(list));
+  }
+
   return (
     <>
       {menu ? (
@@ -171,8 +177,8 @@ export function StickDock({ value, onChange, onSubmitText, onFiles, dropping, di
                       role="menuitem"
                       className="composer-chat-menu-item hidden max-[720px]:flex"
                       onClick={() => {
-                        setMenu(false);
                         cameraRef.current?.click();
+                        setMenu(false);
                       }}
                     >
                       <Camera className="size-4" /> {t(lang, "camera")}
@@ -182,8 +188,8 @@ export function StickDock({ value, onChange, onSubmitText, onFiles, dropping, di
                       role="menuitem"
                       className="composer-chat-menu-item"
                       onClick={() => {
-                        setMenu(false);
                         photoRef.current?.click();
+                        setMenu(false);
                       }}
                     >
                       <ImageIcon className="size-4" /> {t(lang, "photo")}
@@ -193,8 +199,8 @@ export function StickDock({ value, onChange, onSubmitText, onFiles, dropping, di
                       role="menuitem"
                       className="composer-chat-menu-item"
                       onClick={() => {
-                        setMenu(false);
                         fileRef.current?.click();
+                        setMenu(false);
                       }}
                     >
                       <FileUp className="size-4" /> {t(lang, "file")}
@@ -234,37 +240,40 @@ export function StickDock({ value, onChange, onSubmitText, onFiles, dropping, di
               </IconTip>
             </div>
           </div>
+          <input
+            ref={photoRef}
+            className="sr-only"
+            type="file"
+            accept="image/*"
+            tabIndex={-1}
+            onChange={(e) => {
+              emitFiles(e.target.files);
+              e.target.value = "";
+            }}
+          />
+          <input
+            ref={fileRef}
+            className="sr-only"
+            type="file"
+            tabIndex={-1}
+            onChange={(e) => {
+              emitFiles(e.target.files);
+              e.target.value = "";
+            }}
+          />
+          <input
+            ref={cameraRef}
+            className="sr-only"
+            type="file"
+            accept="image/*"
+            capture="environment"
+            tabIndex={-1}
+            onChange={(e) => {
+              emitFiles(e.target.files);
+              e.target.value = "";
+            }}
+          />
         </div>
-        <input
-          ref={photoRef}
-          className="hidden"
-          type="file"
-          accept="image/*"
-          onChange={(e) => {
-            if (e.target.files) onFiles(e.target.files);
-            e.target.value = "";
-          }}
-        />
-        <input
-          ref={fileRef}
-          className="hidden"
-          type="file"
-          onChange={(e) => {
-            if (e.target.files) onFiles(e.target.files);
-            e.target.value = "";
-          }}
-        />
-        <input
-          ref={cameraRef}
-          className="hidden"
-          type="file"
-          accept="image/*"
-          capture="environment"
-          onChange={(e) => {
-            if (e.target.files) onFiles(e.target.files);
-            e.target.value = "";
-          }}
-        />
       </div>
     </>
   );

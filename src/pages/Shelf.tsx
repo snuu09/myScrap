@@ -14,6 +14,7 @@ import {
   deleteScrap,
   hydrateSignedMedia,
   loadScraps,
+  removeMedia,
   saveScrap,
   uploadMedia,
   SCRAPS_CHANGED_EVENT,
@@ -289,8 +290,9 @@ export function Shelf({ onEnter }: Props) {
 
   async function startFromFiles(list: FileList | File[]) {
     if (!user) return;
+    const files = Array.from(list);
     if (await busyGuard()) return;
-    const file = Array.from(list)[0];
+    const file = files[0];
     if (!file) return;
     // Guest oversize sticks as metadata only (0 media bytes); attachLocalMedia skips the blob.
     const guestMetaOnly = guest && file.size > GUEST_FILE_LIMIT;
@@ -301,7 +303,14 @@ export function Shelf({ onEnter }: Props) {
     }
     if (needsGuestNotice(() => void startFromFiles([file]))) return;
     const hint = analyzeFile(file);
-    const localPreview = file.type.startsWith("image/") ? URL.createObjectURL(file) : "";
+    const wantsBlob =
+      hint.type === "image" ||
+      hint.type === "video" ||
+      hint.type === "audio" ||
+      file.type.startsWith("image/") ||
+      file.type.startsWith("video/") ||
+      file.type.startsWith("audio/");
+    const localPreview = wantsBlob ? URL.createObjectURL(file) : "";
     const next = blankScrap({
       type: hint.type,
       tags: hint.tags,
@@ -354,7 +363,15 @@ export function Shelf({ onEnter }: Props) {
     } catch (err) {
       if (localPreview) URL.revokeObjectURL(localPreview);
       setUploadRatio(null);
-      setDraft((cur) => (cur && cur.id === next.id ? { ...cur, analyzing: false, error: "upload", dataUrl: "" } : cur));
+      const orphanPath = next.mediaPath;
+      setDraft((cur) => (cur && cur.id === next.id ? { ...cur, analyzing: false, error: "upload", dataUrl: "", mediaPath: "" } : cur));
+      if (orphanPath) {
+        try {
+          await removeMedia(user, orphanPath);
+        } catch {
+          /* best-effort */
+        }
+      }
       const detail = err instanceof Error && err.message ? err.message : "";
       const message = detail && detail !== "upload" ? `${t("errorFile")} (${detail})` : t("errorFile");
       setError(message);
@@ -381,6 +398,23 @@ export function Shelf({ onEnter }: Props) {
       const message = err instanceof GuestQuotaError ? t("guestQuotaMsg") : t("syncError");
       setError(message);
       await alert(message);
+    }
+  }
+
+  /** Drop an unsaved draft and remove any Storage object uploaded for Claude classify. */
+  async function discardDraft() {
+    if (!draft) return;
+    if (!(await confirm(t("leaveDraftConfirm")))) return;
+    const doomed = draft;
+    setUploadRatio(null);
+    setDraft(null);
+    if (doomed.dataUrl.startsWith("blob:")) URL.revokeObjectURL(doomed.dataUrl);
+    if (user && doomed.mediaPath) {
+      try {
+        await removeMedia(user, doomed.mediaPath);
+      } catch {
+        /* draft is already closed; orphan cleanup can wait for a later peel/clear */
+      }
     }
   }
 
@@ -468,14 +502,7 @@ export function Shelf({ onEnter }: Props) {
               uploadRatio={uploadRatio}
               onChange={(patch) => setDraft((cur) => (cur ? { ...cur, ...patch } : cur))}
               onSave={() => void persist()}
-              onCancel={() => {
-                void (async () => {
-                  if (!(await confirm(t("leaveDraftConfirm")))) return;
-                  if (draft.dataUrl.startsWith("blob:")) URL.revokeObjectURL(draft.dataUrl);
-                  setUploadRatio(null);
-                  setDraft(null);
-                })();
-              }}
+              onCancel={() => void discardDraft()}
             />
           ) : null
         }
