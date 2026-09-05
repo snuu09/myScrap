@@ -62,7 +62,9 @@ flowchart TB
 ## Data flow
 
 1. **Entry.** Intro is public. **책장을 연다** opens email sign in / sign up. A session paints the shelf.
-2. **Capture.** Paste/drop/`+`. Account files upload to `scrap-media` first so `/api/analyze` (user JWT) can classify; images may use Claude vision. Failure uses the local tagger. Discarding the classify draft removes any pending Storage object. Guest media stays on-device.
+2. **Capture.** Paste/drop/`+`. Account files upload to `scrap-media` first so `/api/analyze` (user JWT) can classify with Claude (`summary` + `analysis`, language from prefs); images may use vision. Failure uses the local tagger. Discarding the classify draft removes any pending Storage object. Guest media stays on-device. Detail **AI 분석** re-runs the same endpoint and stores summary in `body` / analysis in `preview_text`.
+
+**Deploy Claude on Firebase:** Blaze plan, `functions/.env` with non-empty `ANTHROPIC_API_KEY`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, then `npx firebase-tools deploy --only functions,hosting --project mybrary-snuu09`. Confirm `POST /api/analyze` returns JSON (or 401), not Hosting HTML 404.
 3. **Save.** Upsert the scrap row. List is newest first, RLS `auth.uid() = user_id`. `PlanProvider` sums stored-media bytes for quota; free trial ends at `profiles.trial_ends_at`.
 4. **Filter.** Shelf holds query, type, and optional local day. `filterScraps` drives list, detail prev/next, and dashboard stats.
 5. **Leave.** Sign out returns to intro. Account scraps are not kept in `localStorage`.

@@ -1,6 +1,7 @@
 import type { AnalyzeResult, ScrapType } from "./types";
 import { analyzeFile, analyzeText } from "./tagger";
 import { getAccessToken } from "./scraps";
+import type { Lang } from "../i18n";
 
 type Payload = {
   kind: "text" | "file";
@@ -8,6 +9,7 @@ type Payload = {
   mediaPath?: string;
   mime?: string;
   filename?: string;
+  lang?: Lang;
 };
 
 export async function requestAnalyze(payload: Payload): Promise<AnalyzeResult> {
@@ -20,6 +22,8 @@ export async function requestAnalyze(payload: Payload): Promise<AnalyzeResult> {
         tags: hit.tags,
         title: hit.title,
         body: hit.body,
+        summary: hit.body,
+        analysis: "",
         url: hit.url,
         domain: hit.domain,
         fallback: true,
@@ -35,6 +39,8 @@ export async function requestAnalyze(payload: Payload): Promise<AnalyzeResult> {
       tags: hit.tags,
       title: hit.title,
       body: hit.body,
+      summary: hit.body,
+      analysis: "",
       fallback: true,
     };
   };
@@ -49,12 +55,22 @@ export async function requestAnalyze(payload: Payload): Promise<AnalyzeResult> {
         "Content-Type": "application/json",
         Authorization: "Bearer " + token,
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        ...payload,
+        lang: payload.lang === "en" ? "en" : "ko",
+      }),
     });
     if (!res.ok) return fallback();
     const data = (await res.json()) as AnalyzeResult;
     if (!data || !data.type) return fallback();
-    return data;
+    const summary = String(data.summary || data.body || "").slice(0, 400);
+    const analysis = String(data.analysis || "").slice(0, 800);
+    return {
+      ...data,
+      body: String(data.body || summary).slice(0, 400),
+      summary,
+      analysis,
+    };
   } catch {
     return fallback();
   }

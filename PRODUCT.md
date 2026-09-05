@@ -45,7 +45,7 @@ Confirmed from brief and implemented in the Vite SPA:
 - Responsive React UI; header, main, footer.
 - i18n: Korean, English.
 - Auto-tag pasted/dropped content by type: text, image, video, audio, link, document extension (Claude at `/api/analyze`, MIME/URL fallback).
-- Classify-then-save draft (type, tags, memo, preview) before the item hits the recency list. Account file drafts upload to Storage for Claude, then remove that object if the draft is cancelled.
+- Classify-then-save draft (type, tags, Claude summary/analysis, memo, preview) before the item hits the recency list. Account file drafts upload to Storage for Claude, then remove that object if the draft is cancelled. Detail **AI 분석** re-runs classify and persists summary/analysis.
 - A new Stick, paste, or drop replaces an open classify draft.
 - Image: show the image when a signed URL exists.
 - + menu: clipboard, camera (mobile), photo, file.

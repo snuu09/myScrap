@@ -42,6 +42,8 @@ export type AnalyzeResult = {
   tags: string[];
   title: string;
   body: string;
+  summary?: string;
+  analysis?: string;
   url?: string;
   domain?: string;
   fallback?: boolean;

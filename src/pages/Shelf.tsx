@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ArrowUp } from "lucide-react";
 import { useT } from "../lib/useT";
+import { usePrefs } from "../context/Prefs";
 import { isBrowseUser, useAuth } from "../context/Auth";
 import { usePlan } from "../context/Plan";
 import { DraftCard } from "../components/DraftCard";
@@ -65,6 +66,7 @@ type Props = { onEnter?: () => void };
 
 export function Shelf({ onEnter }: Props) {
   const t = useT();
+  const { lang } = usePrefs();
   const { user } = useAuth();
   const { setScrapsForUsage, canUpload, canStick } = usePlan();
   const { alert, confirm } = useDialog();
@@ -264,7 +266,7 @@ export function Shelf({ onEnter }: Props) {
     });
     setDraft(next);
     setComposer("");
-    const ai = await requestAnalyze({ kind: "text", text });
+    const ai = await requestAnalyze({ kind: "text", text, lang });
     const url = ai.url || hint.url || "";
     let ogPatch: Pick<Scrap, "og" | "ogStatus"> = { og: null, ogStatus: "" };
     if (url) {
@@ -279,7 +281,8 @@ export function Shelf({ onEnter }: Props) {
             type: ai.type,
             tags: ai.tags,
             title: ai.title || ogPatch.og?.title || cur.title,
-            text: ai.body || cur.text,
+            text: ai.summary || ai.body || cur.text,
+            previewText: ai.analysis || "",
             url: url || cur.url,
             domain: ai.domain || cur.domain,
             ...ogPatch,
@@ -339,6 +342,7 @@ export function Shelf({ onEnter }: Props) {
         mediaPath: uploaded.mediaPath,
         mime: hint.mime,
         filename: hint.filename,
+        lang,
       });
       setDraft((cur) =>
         cur && cur.id === next.id
@@ -348,7 +352,8 @@ export function Shelf({ onEnter }: Props) {
               type: ai.type,
               tags: ai.tags,
               title: ai.title || cur.title,
-              text: ai.body || cur.text,
+              text: ai.summary || ai.body || cur.text,
+              previewText: ai.analysis || "",
               storedMedia: uploaded.storedMedia,
               mediaPath: uploaded.mediaPath,
               dataUrl: uploaded.dataUrl || cur.dataUrl,

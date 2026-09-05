@@ -74,6 +74,19 @@ function typeFromMime(mime: string, filename: string) {
   return "document";
 }
 
+function systemPrompt(lang: string) {
+  const language = lang === "en" ? "English" : "Korean";
+  return (
+    "You classify personal scraps for MyBrary, a private shelf. Reply with JSON only: " +
+    '{"type":"text|image|video|audio|link|document","tags":["..."],"title":"...","body":"...","summary":"...","analysis":"...","url":"","domain":""}. ' +
+    "type is the primary kind. tags are short lowercase labels including the type. title is a short shelf label. " +
+    "body is a one-line description. summary is 1-2 sentences. analysis is 2-4 sentences about what it contains and why it is worth keeping. " +
+    "Write title, body, summary, and analysis in " +
+    language +
+    ". No markdown. No extra keys."
+  );
+}
+
 export default async (req: Request) => {
   if (req.method !== "POST") return json({ error: "method" }, 405);
 
@@ -97,6 +110,7 @@ export default async (req: Request) => {
     mediaPath?: string;
     mime?: string;
     filename?: string;
+    lang?: string;
   };
   try {
     payload = await req.json();
@@ -113,12 +127,7 @@ export default async (req: Request) => {
   const filename = payload.filename || "";
   const mime = payload.mime || "";
   const text = String(payload.text || "").slice(0, 8000);
-
-  const system =
-    "You classify personal scraps for MyBrary, a private shelf. Reply with JSON only: " +
-    '{"type":"text|image|video|audio|link|document","tags":["..."],"title":"...","body":"...","url":"","domain":""}. ' +
-    "type is the primary kind. tags are short lowercase labels including the type. title is a short shelf label. " +
-    "body is a one-line description. No markdown. No extra keys.";
+  const lang = payload.lang === "en" ? "en" : "ko";
 
   const content: Anthropic.MessageCreateParams["messages"][0]["content"] = [];
 
@@ -142,7 +151,7 @@ export default async (req: Request) => {
     content.push({
       type: "text",
       text:
-        "Classify this file. filename=" +
+        "Classify and analyze this file. filename=" +
         filename +
         " mime=" +
         mime +
@@ -152,15 +161,15 @@ export default async (req: Request) => {
   } else {
     content.push({
       type: "text",
-      text: "Classify this paste:\n" + (text || "(empty)"),
+      text: "Classify and analyze this paste:\n" + (text || "(empty)"),
     });
   }
 
   try {
     const message = await client.messages.create({
       model: MODEL,
-      max_tokens: 400,
-      system,
+      max_tokens: 700,
+      system: systemPrompt(lang),
       messages: [{ role: "user", content }],
     });
     const raw = message.content
@@ -174,16 +183,22 @@ export default async (req: Request) => {
       tags?: string[];
       title?: string;
       body?: string;
+      summary?: string;
+      analysis?: string;
       url?: string;
       domain?: string;
     };
     const type = parsed.type || typeFromMime(mime, filename);
     const tags = Array.isArray(parsed.tags) && parsed.tags.length ? parsed.tags.map(String) : [type];
+    const summary = String(parsed.summary || parsed.body || text || "").slice(0, 400);
+    const analysis = String(parsed.analysis || "").slice(0, 800);
     return json({
       type,
       tags,
       title: String(parsed.title || filename || "").slice(0, 80),
-      body: String(parsed.body || text || "").slice(0, 400),
+      body: String(parsed.body || summary || text || "").slice(0, 400),
+      summary,
+      analysis,
       url: String(parsed.url || ""),
       domain: String(parsed.domain || ""),
     });

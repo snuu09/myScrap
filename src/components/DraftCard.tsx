@@ -187,6 +187,18 @@ export function DraftCard({ draft, uploadRatio = null, onChange, onSave, onCance
           {draft.filename} · {formatBytes(draft.size)}
         </p>
       ) : null}
+      {!draft.analyzing && draft.text ? (
+        <div className="draft-ai-block">
+          <p className="list-tools-label">{t(lang, "aiSummary")}</p>
+          <p className="draft-ai-text">{draft.text}</p>
+        </div>
+      ) : null}
+      {!draft.analyzing && draft.previewText ? (
+        <div className="draft-ai-block">
+          <p className="list-tools-label">{t(lang, "aiAnalysis")}</p>
+          <p className="draft-ai-text">{draft.previewText}</p>
+        </div>
+      ) : null}
       <textarea
         value={draft.memo}
         onChange={(e) => onChange({ memo: e.target.value })}

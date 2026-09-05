@@ -11,6 +11,7 @@ import {
   Library,
   Pencil,
   Share2,
+  Sparkles,
   X,
 } from "lucide-react";
 import { typeLabel } from "../i18n";
@@ -20,6 +21,7 @@ import { usePlan } from "../context/Plan";
 import { RemindSheet } from "../components/RemindSheet";
 import { AuthWaiting } from "../components/AuthWaiting";
 import { ScrapMedia } from "../components/ScrapMedia";
+import { requestAnalyze } from "../lib/analyze";
 import { deleteScrap, hydrateSignedMedia, loadScraps, saveScrap } from "../lib/scraps";
 import { fetchOgPreview } from "../lib/og";
 import { useDialog } from "../lib/dialog";
@@ -247,6 +249,48 @@ export function ScrapDetail() {
     }
   }
 
+  async function runAiAnalyze() {
+    if (!user || busy) return;
+    setBusy(true);
+    setError("");
+    try {
+      const blob = [item.title, item.memo, item.text, item.previewText, item.url].filter(Boolean).join("\n");
+      const ai =
+        item.mediaPath
+          ? await requestAnalyze({
+              kind: "file",
+              mediaPath: item.mediaPath,
+              mime: item.mime,
+              filename: item.filename,
+              lang,
+            })
+          : await requestAnalyze({ kind: "text", text: blob || item.title || item.filename, lang });
+      if (ai.fallback) {
+        await alert(t("aiAnalyzeFailed"));
+        return;
+      }
+      const next: Scrap = {
+        ...item,
+        type: ai.type || item.type,
+        tags: ai.tags?.length ? ai.tags : item.tags,
+        title: item.title.trim() ? item.title : ai.title || item.title,
+        text: ai.summary || ai.body || item.text,
+        previewText: ai.analysis || item.previewText,
+        updatedAt: Date.now(),
+      };
+      await saveScrap(user, next);
+      setScraps((list) => {
+        const updated = list.map((row) => (row.id === next.id ? next : row));
+        setScrapsForUsage(updated);
+        return updated;
+      });
+    } catch {
+      await alert(t("aiAnalyzeFailed"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function share() {
     if (!item.url) return;
     const title = item.title || t("untitled");
@@ -306,6 +350,17 @@ export function ScrapDetail() {
             <IconTip label={t("editItem")}>
               <button type="button" className="detail-action" aria-label={t("editItem")} disabled={busy} onClick={beginEdit}>
                 <Pencil className="size-5" strokeWidth={1.8} />
+              </button>
+            </IconTip>
+            <IconTip label={busy ? t("aiAnalyzing") : t("aiAnalyze")}>
+              <button
+                type="button"
+                className="detail-action"
+                aria-label={busy ? t("aiAnalyzing") : t("aiAnalyze")}
+                disabled={busy}
+                onClick={() => void runAiAnalyze()}
+              >
+                <Sparkles className="size-5" strokeWidth={1.8} />
               </button>
             </IconTip>
             {item.url ? (
@@ -393,8 +448,17 @@ export function ScrapDetail() {
           />
         ) : null}
         {item.og?.description ? <p className="m-0 text-[0.9375rem] text-ink-soft">{item.og.description}</p> : null}
-        {item.text && item.type !== "image" ? (
-          <p className="m-0 whitespace-pre-wrap text-[0.9375rem] text-ink-soft">{item.text}</p>
+        {item.text ? (
+          <div className="detail-ai-block">
+            <p className="list-tools-label">{t("aiSummary")}</p>
+            <p className="detail-ai-text">{item.text}</p>
+          </div>
+        ) : null}
+        {item.previewText ? (
+          <div className="detail-ai-block">
+            <p className="list-tools-label">{t("aiAnalysis")}</p>
+            <p className="detail-ai-text">{item.previewText}</p>
+          </div>
         ) : null}
         {item.filename ? (
           <p className="scrap-card-file">

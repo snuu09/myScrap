@@ -90,7 +90,7 @@ npm run build
 ### 백엔드 · Auth
 
 1. Supabase Auth에서 Email, Google, Anonymous 활성화. 마이그레이션 순서: [20260820140000_scraps_media_realtime.sql](supabase/migrations/20260820140000_scraps_media_realtime.sql) → [20260829143000_profiles_plans.sql](supabase/migrations/20260829143000_profiles_plans.sql) → [20260905100000_scrap_engagement.sql](supabase/migrations/20260905100000_scrap_engagement.sql). Redirect URL에 위 Hosting 도메인 추가. 등급/관리자 수동 설정은 [supabase/README.md](supabase/README.md).
-2. 분류: [functions/src/index.ts](functions/src/index.ts), Hosting rewrite `/api/analyze`. 2세대 Functions는 Blaze 필요. 미배포 시 클라이언트 MIME/URL 폴백. Blaze면 `functions/.env`에 `ANTHROPIC_API_KEY`, `SUPABASE_URL`, `SUPABASE_ANON_KEY` 후 `npx -y firebase-tools@latest deploy --only functions,hosting`.
+2. 분류: [functions/src/index.ts](functions/src/index.ts), Hosting rewrite `/api/analyze`. 응답에 `summary`·`analysis` 포함. 2세대 Functions는 Blaze 필요. 미배포 시 클라이언트 MIME/URL 폴백. Blaze면 `functions/.env`에 `ANTHROPIC_API_KEY`, `SUPABASE_URL`, `SUPABASE_ANON_KEY` 후 `npx -y firebase-tools@latest deploy --only functions,hosting`. 배포 후 `POST /api/analyze`가 HTML 404가 아니라 JSON/401인지 확인.
 3. 모델 ID는 `claude-sonnet-4-5` (과제명의 `claude-sonnet-5`는 현재 id가 아님).
 
 Netlify는 선택: `npm run build`, publish `dist`, 동일 Vite 키 + 사이트 env의 `ANTHROPIC_API_KEY`. Netlify 분석 함수는 [netlify/functions/analyze.ts](netlify/functions/analyze.ts).

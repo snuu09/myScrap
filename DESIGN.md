@@ -420,7 +420,7 @@ These rules are binding for intro, header auth, capture, draft, list, menu, and 
 
 ### View changes
 
-- **Open the door (intro → app):** `ShelfReveal` splits enamel panels for 220–320ms once per session (`sessionStorage`). Returning sessions and `prefers-reduced-motion` swap instantly. Direct `/dashboard` skips the reveal.
+- **Open the door (intro → app):** `ShelfReveal` opens enamel panels like a book (~100ms hold + ~720ms `rotateY` hinge, once per session via `sessionStorage`). Returning sessions and `prefers-reduced-motion` swap instantly. Direct `/dashboard` skips the reveal.
 - **Leave (app → intro):** reverse. Draft, lightbox, + menu, and header sheets dismiss first. Scraps clear after the app view has exited.
 - **Draft:** classify-then-save panel uses the same sheet motion. Editing a saved scrap reuses the open panel (no second enter). Cancel and save wait for the exit before removing DOM.
 - **+ menu:** pop from the plus control (140ms). Click outside, Escape, or picking an item closes it.
