@@ -298,6 +298,11 @@ export function ScrapDetail() {
         </p>
         {!editing ? (
           <div className="detail-actions detail-actions--in-card">
+            <IconTip label={t("editItem")}>
+              <button type="button" className="detail-action" aria-label={t("editItem")} disabled={busy} onClick={beginEdit}>
+                <Pencil className="size-5" strokeWidth={1.8} />
+              </button>
+            </IconTip>
             {item.url ? (
               <IconTip label={t("openLink")}>
                 <a href={item.url} className="detail-action" target="_blank" rel="noreferrer" aria-label={t("openLink")}>
@@ -312,9 +317,9 @@ export function ScrapDetail() {
                 </button>
               </IconTip>
             ) : null}
-            <IconTip label={t("editItem")}>
-              <button type="button" className="detail-action" aria-label={t("editItem")} disabled={busy} onClick={beginEdit}>
-                <Pencil className="size-5" strokeWidth={1.8} />
+            <IconTip label={t("deleteItem")}>
+              <button type="button" className="detail-action" aria-label={t("deleteItem")} disabled={busy} onClick={() => void peel()}>
+                <X className="size-5" strokeWidth={1.8} />
               </button>
             </IconTip>
             <IconTip label={t("bookmark")}>
@@ -435,11 +440,6 @@ export function ScrapDetail() {
                 </button>
               ))}
             </p>
-            <div className="mt-2 flex justify-center">
-              <button type="button" className="settings-btn-leave" onClick={() => void peel()}>
-                {t("deleteItem")}
-              </button>
-            </div>
           </>
         )}
       </article>
