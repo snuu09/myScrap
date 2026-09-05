@@ -1959,8 +1959,9 @@ body {
     transition: opacity 120ms var(--ease-out), transform 120ms var(--ease-out);
   }
 
+  /* focus-visible only: mouse click must not leave the tip stuck after layout switch */
   .icon-tip:hover::after,
-  .icon-tip:focus-within::after {
+  .icon-tip:has(:focus-visible)::after {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
   }
@@ -1972,7 +1973,7 @@ body {
   }
 
   .icon-tip--below:hover::after,
-  .icon-tip--below:focus-within::after {
+  .icon-tip--below:has(:focus-visible)::after {
     transform: translateX(-50%) translateY(0);
   }
 
