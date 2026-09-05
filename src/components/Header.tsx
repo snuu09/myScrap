@@ -14,7 +14,7 @@ export function Header({ onEnter, onSettings }: Props) {
   const { user } = useAuth();
 
   return (
-    <header className="sticky top-0 z-20 flex min-h-[60px] items-center justify-between gap-3 px-[var(--gutter,clamp(16px,4vw,40px))] py-2.5">
+    <header className="sticky top-0 z-30 flex min-h-[60px] items-center justify-between gap-3 border-b border-paper-line/60 bg-enamel px-[var(--gutter,clamp(16px,4vw,40px))] py-2.5 pt-[max(0.625rem,env(safe-area-inset-top))]">
       <Link to="/" className="flex items-center gap-2.5 text-ink no-underline">
         <img src="/assets/favicon.svg" width={22} height={22} alt="" className="size-[22px] rounded-[6px]" />
         <span className="text-[1.125rem] font-extrabold tracking-[-0.03em]">{t(lang, "appName")}</span>

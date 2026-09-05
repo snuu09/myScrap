@@ -66,6 +66,7 @@ const ko: Dict = {
   legalUpdated: "이 문서는 서비스가 실제로 하는 일만 적습니다.",
   placeholder: "붙여넣기 할 내용이나 파일을 첨부해주세요.",
   empty: "항목이 없습니다.",
+  shelfLoading: "책장을 불러오는 중",
   emptyHint: "링크, 사진, 메모, 파일을 꽂은 뒤 미리 보고 저장하세요.",
   addMenu: "추가",
   clipboard: "클립보드",
@@ -127,6 +128,10 @@ const ko: Dict = {
   lightboxClose: "닫기",
   filterByDay: "일자별",
   clearFilters: "조건 지우기",
+  layoutList: "리스트",
+  layoutGrid: "그리드",
+  layoutGallery: "갤러리",
+  layoutSwitch: "보기 방식",
   prevScrap: "이전 조각",
   nextScrap: "다음 조각",
   dashboard: "통계",
@@ -201,6 +206,8 @@ const ko: Dict = {
   remindWhen: "날짜와 시간",
   remindSave: "알림 저장",
   remindClear: "알림 끄기",
+  editItem: "수정",
+  addTag: "태그 추가",
 };
 
 const en: Dict = {
@@ -267,6 +274,7 @@ const en: Dict = {
   legalUpdated: "This page only describes what the service actually does.",
   placeholder: "Paste something or attach a file.",
   empty: "Nothing here yet.",
+  shelfLoading: "Loading your shelf",
   emptyHint: "Shelve a link, photo, note, or file, preview it, then save.",
   addMenu: "Add",
   clipboard: "Clipboard",
@@ -328,6 +336,10 @@ const en: Dict = {
   lightboxClose: "Close",
   filterByDay: "By day",
   clearFilters: "Clear filters",
+  layoutList: "List",
+  layoutGrid: "Grid",
+  layoutGallery: "Gallery",
+  layoutSwitch: "Layout",
   prevScrap: "Previous scrap",
   nextScrap: "Next scrap",
   dashboard: "Stats",
@@ -402,18 +414,95 @@ const en: Dict = {
   remindWhen: "Date and time",
   remindSave: "Save reminder",
   remindClear: "Clear reminder",
+  editItem: "Edit",
+  addTag: "Add tag",
+};
+
+/** Unit nouns when Look = library (fridge keeps base dict). */
+const koLibrary: Dict = {
+  footerNoteCloud: "꽂은 페이지는 계정에 저장됩니다.",
+  searchLabel: "페이지 찾기",
+  noMatches: "이 조건에 맞는 페이지가 없습니다.",
+  peelConfirm: "이 페이지를 책장에서 뺄까요?",
+  deleteItem: "책장에서 빼기",
+  prevScrap: "이전 페이지",
+  nextScrap: "다음 페이지",
+  dashboardTitle: "페이지 통계",
+  statsTimeline: "최근 꽂은 페이지",
+  scrapDetail: "페이지 상세",
+  dbResetConfirm: "이 계정의 페이지를 모두 지울까요? 등급 정보는 유지됩니다.",
+  dbResetDone: "페이지를 모두 지웠습니다.",
+  dbUsageSummary: "페이지 {count}개 · {bytes}",
+  dbUsageEmpty: "지울 페이지가 없습니다. 초기화가 필요하지 않습니다.",
+  dbUsageHasData: "초기화하면 위 페이지와 파일이 삭제됩니다.",
+  guestNoticeLead: "둘러보기로 꽂은 페이지는 계정이 아니라 이 브라우저에 저장됩니다.",
+  guestNoticePointAccount: "계정을 만들면 이 기기의 페이지를 옮길 수 있습니다.",
+  guestBanner: "둘러보기 페이지는 이 기기에만 저장됩니다.",
+  guestQuotaMsg: "이 기기 저장 공간이 찼습니다. 페이지를 빼거나 계정을 만들어 주세요.",
+  guestResume: "이 기기에 둘러보기 페이지 {n}개가 있습니다. 둘러보기로 들어오면 이어서 봅니다.",
+  guestResetConfirm: "이 기기에 저장된 페이지를 모두 지울까요?",
+  guestMigrateTitle: "이 기기의 페이지를 옮길까요?",
+  guestMigrateLead: "둘러보기로 꽂은 페이지 {n}개가 이 기기에 있습니다. 계정으로 옮기면 다른 기기에서도 보입니다.",
+  guestMigrateDone: "페이지 {n}개를 계정으로 옮겼습니다.",
+  guestMigratePartial: "페이지 {moved}개를 옮겼고 {left}개는 이 기기에 남았습니다.",
+  shareLocalOnly: "이 기기 페이지라 외부 링크로 공유할 수 없습니다.",
+  remindLead: "지정한 시각에 이 페이지를 떠올리도록 표시합니다. 앱이 열려 있을 때 동작합니다.",
+  bookmark: "책갈피",
+  editItem: "수정",
+  addTag: "태그 추가",
+};
+
+const enLibrary: Dict = {
+  footerNoteCloud: "Filed pages stay with your account.",
+  searchLabel: "Find pages",
+  noMatches: "No pages match these filters.",
+  peelConfirm: "Take this page off the shelf?",
+  deleteItem: "Take off the shelf",
+  prevScrap: "Previous page",
+  nextScrap: "Next page",
+  dashboardTitle: "Page stats",
+  statsTimeline: "Recent pages",
+  scrapDetail: "Page detail",
+  dbResetConfirm: "Delete all pages for this account? Your plan tier stays.",
+  dbResetDone: "All pages were deleted.",
+  dbUsageSummary: "{count} pages · {bytes}",
+  dbUsageEmpty: "No pages to clear. Reset is not needed.",
+  dbUsageHasData: "Reset deletes the pages and files above.",
+  guestNoticeLead: "Browse pages are saved in this browser, not your account.",
+  guestNoticePointAccount: "Create an account and you can move this device's pages over.",
+  guestBanner: "Browse pages stay on this device only.",
+  guestQuotaMsg: "This device is out of room. Take a few pages off or create an account.",
+  guestResume: "This device holds {n} browse pages. Browse again to pick them up.",
+  guestResetConfirm: "Delete every page saved on this device?",
+  guestMigrateTitle: "Move this device's pages?",
+  guestMigrateLead: "{n} pages from browsing sit on this device. Move them to your account to see them anywhere.",
+  guestMigrateDone: "Moved {n} pages to your account.",
+  guestMigratePartial: "Moved {moved} pages. {left} stayed on this device.",
+  shareLocalOnly: "This page lives on this device, so there is no external link to share.",
+  remindLead: "We surface this page at the time you pick while the app is open.",
+  bookmark: "Bookmark",
+  editItem: "Edit",
+  addTag: "Add tag",
 };
 
 const tables: Record<Lang, Dict> = { ko, en };
+const libraryTables: Record<Lang, Dict> = { ko: koLibrary, en: enLibrary };
 
-export function t(lang: Lang, key: string, vars?: Record<string, string | number>) {
-  let value = tables[lang][key] || tables.ko[key] || key;
-  if (vars) {
-    Object.entries(vars).forEach(([k, v]) => {
-      value = value.replace("{" + k + "}", String(v));
-    });
-  }
-  return value;
+export type LookVocab = "fridge" | "library";
+
+function applyVars(value: string, vars?: Record<string, string | number>) {
+  if (!vars) return value;
+  let next = value;
+  Object.entries(vars).forEach(([k, v]) => {
+    next = next.replace("{" + k + "}", String(v));
+  });
+  return next;
+}
+
+export function t(lang: Lang, key: string, vars?: Record<string, string | number>, look?: LookVocab) {
+  const fromLibrary = look === "library" ? libraryTables[lang][key] || libraryTables.ko[key] : "";
+  const value = fromLibrary || tables[lang][key] || tables.ko[key] || key;
+  return applyVars(value, vars);
 }
 
 export function typeLabel(lang: Lang, type: string) {

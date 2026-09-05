@@ -16,7 +16,7 @@ import { Shelf } from "./pages/Shelf";
 import { Dashboard } from "./pages/Dashboard";
 import { ScrapDetail } from "./pages/ScrapDetail";
 import { Legal } from "./pages/Legal";
-import { loadScraps } from "./lib/scraps";
+import { hydrateSignedMedia, loadScraps } from "./lib/scraps";
 import { guestMigrateAsked, hasLocalScraps } from "./lib/localScraps";
 import type { Scrap } from "./lib/types";
 import { DialogProvider } from "./lib/dialog";
@@ -106,9 +106,16 @@ function DashboardPage() {
   useEffect(() => {
     if (!user) return;
     void loadScraps(user)
-      .then((next) => {
+      .then(async (next) => {
         setScraps(next);
         setScrapsForUsage(next);
+        try {
+          const hydrated = await hydrateSignedMedia(next);
+          setScraps(hydrated);
+          setScrapsForUsage(hydrated);
+        } catch {
+          /* keep metadata-only list */
+        }
       })
       .catch(() => setScraps([]));
   }, [user, setScrapsForUsage]);

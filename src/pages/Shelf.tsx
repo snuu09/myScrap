@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ArrowUp } from "lucide-react";
-import { t } from "../i18n";
-import { usePrefs } from "../context/Prefs";
+import { useT } from "../lib/useT";
 import { isBrowseUser, useAuth } from "../context/Auth";
 import { usePlan } from "../context/Plan";
 import { DraftCard } from "../components/DraftCard";
@@ -13,6 +12,7 @@ import { requestAnalyze } from "../lib/analyze";
 import { fetchOgPreview } from "../lib/og";
 import {
   deleteScrap,
+  hydrateSignedMedia,
   loadScraps,
   saveScrap,
   uploadMedia,
@@ -63,7 +63,7 @@ function blankScrap(partial: Partial<Scrap>): Scrap {
 type Props = { onEnter?: () => void };
 
 export function Shelf({ onEnter }: Props) {
-  const { lang } = usePrefs();
+  const t = useT();
   const { user } = useAuth();
   const { setScrapsForUsage, canUpload, canStick } = usePlan();
   const { alert, confirm } = useDialog();
@@ -72,6 +72,7 @@ export function Shelf({ onEnter }: Props) {
   const pendingWrite = useRef<(() => void) | null>(null);
   const [noticeOpen, setNoticeOpen] = useState(false);
   const [scraps, setScraps] = useState<Scrap[]>([]);
+  const [listReady, setListReady] = useState(false);
   const [draft, setDraft] = useState<Scrap | null>(null);
   const [composer, setComposer] = useState("");
   const [query, setQuery] = useState("");
@@ -100,12 +101,24 @@ export function Shelf({ onEnter }: Props) {
       const next = await loadScraps(user);
       setScraps(next);
       setScrapsForUsage(next);
+      setListReady(true);
+      void hydrateSignedMedia(next)
+        .then((hydrated) => {
+          setScraps(hydrated);
+          setScrapsForUsage(hydrated);
+        })
+        .catch(() => {
+          /* keep metadata-only list */
+        });
     } catch {
-      setError(t(lang, "syncError"));
+      setError(t("syncError"));
+      setListReady(true);
     }
-  }, [user, lang, setScrapsForUsage]);
+  }, [user, t, setScrapsForUsage]);
 
   useEffect(() => {
+    setListReady(false);
+    setScraps([]);
     void refresh();
   }, [refresh]);
 
@@ -130,8 +143,8 @@ export function Shelf({ onEnter }: Props) {
     };
     if (Notification.permission === "granted") {
       fresh.forEach((item) => {
-        new Notification(item.title || t(lang, "untitled"), {
-          body: t(lang, "remind"),
+        new Notification(item.title || t("untitled"), {
+          body: t("remind"),
           tag: "mybrary-remind-" + item.id,
         });
       });
@@ -143,8 +156,8 @@ export function Shelf({ onEnter }: Props) {
           return;
         }
         fresh.forEach((item) => {
-          new Notification(item.title || t(lang, "untitled"), {
-            body: t(lang, "remind"),
+          new Notification(item.title || t("untitled"), {
+            body: t("remind"),
             tag: "mybrary-remind-" + item.id,
           });
         });
@@ -153,7 +166,7 @@ export function Shelf({ onEnter }: Props) {
     } else {
       mark();
     }
-  }, [scraps, lang]);
+  }, [scraps, t]);
 
   useEffect(() => {
     function onCleared() {
@@ -181,17 +194,17 @@ export function Shelf({ onEnter }: Props) {
   }, []);
 
   function stickBlockedReason() {
-    if (!getSupabase()) return t(lang, "syncError");
+    if (!getSupabase()) return t("syncError");
     const stick = canStick();
-    if (!stick.ok) return t(lang, "trialExpiredMsg");
+    if (!stick.ok) return t("trialExpiredMsg");
     return "";
   }
 
   function uploadBlockedReason(addingBytes: number) {
     const gate = canUpload(addingBytes);
     if (gate.ok) return "";
-    if (gate.reason === "trialExpired") return t(lang, "trialExpiredMsg");
-    return t(lang, guest ? "guestQuotaMsg" : "quotaExceededMsg");
+    if (gate.reason === "trialExpired") return t("trialExpiredMsg");
+    return t(guest ? "guestQuotaMsg" : "quotaExceededMsg");
   }
 
   /** Guests learn where their scraps live before the first localStorage write. */
@@ -226,7 +239,7 @@ export function Shelf({ onEnter }: Props) {
 
   async function busyGuard() {
     if (draft) {
-      await alert(t(lang, "draftBusy"));
+      await alert(t("draftBusy"));
       return true;
     }
     if (await guardStick()) return true;
@@ -307,7 +320,7 @@ export function Shelf({ onEnter }: Props) {
       next.dataUrl = uploaded.dataUrl || localPreview;
       next.storedMedia = uploaded.storedMedia;
       setDraft({ ...next });
-      if (uploaded.skipped) setError(t(lang, "guestMediaSkipped"));
+      if (uploaded.skipped) setError(t("guestMediaSkipped"));
       const ai = await requestAnalyze({
         kind: "file",
         mediaPath: uploaded.mediaPath,
@@ -332,15 +345,15 @@ export function Shelf({ onEnter }: Props) {
     } catch {
       if (localPreview) URL.revokeObjectURL(localPreview);
       setDraft((cur) => (cur && cur.id === next.id ? { ...cur, analyzing: false, error: "upload", dataUrl: "" } : cur));
-      setError(t(lang, "errorFile"));
+      setError(t("errorFile"));
     }
   }
 
   async function persist() {
     if (!user || !draft || draft.analyzing) return;
     if (!getSupabase()) {
-      setError(t(lang, "syncError"));
-      await alert(t(lang, "syncError"));
+      setError(t("syncError"));
+      await alert(t("syncError"));
       return;
     }
     if (needsGuestNotice(() => void persist())) return;
@@ -352,7 +365,7 @@ export function Shelf({ onEnter }: Props) {
       setDraft(null);
       await refresh();
     } catch (err) {
-      const message = err instanceof GuestQuotaError ? t(lang, "guestQuotaMsg") : t(lang, "syncError");
+      const message = err instanceof GuestQuotaError ? t("guestQuotaMsg") : t("syncError");
       setError(message);
       await alert(message);
     }
@@ -364,7 +377,7 @@ export function Shelf({ onEnter }: Props) {
       await deleteScrap(user, item);
       await refresh();
     } catch {
-      setError(t(lang, "syncError"));
+      setError(t("syncError"));
     }
   }
 
@@ -389,7 +402,7 @@ export function Shelf({ onEnter }: Props) {
         e.preventDefault();
         setDropping(false);
         if (stickDisabled) {
-          void alert(stickBlockedReason() || t(lang, "trialExpiredMsg"));
+          void alert(stickBlockedReason() || t("trialExpiredMsg"));
           return;
         }
         if (e.dataTransfer.files.length) void startFromFiles(e.dataTransfer.files);
@@ -402,10 +415,10 @@ export function Shelf({ onEnter }: Props) {
       <div className="flex-1">
         {guest ? (
           <p className="mx-auto flex max-w-[40rem] flex-wrap items-center gap-x-2 gap-y-1 px-[var(--gutter)] pt-3 text-[0.8125rem] text-ink-soft">
-            {t(lang, "guestBanner")}
+            {t("guestBanner")}
             {onEnter ? (
               <button type="button" className="auth-link-utility" onClick={onEnter}>
-                {t(lang, "guestBannerCta")}
+                {t("guestBannerCta")}
               </button>
             ) : null}
           </p>
@@ -414,6 +427,7 @@ export function Shelf({ onEnter }: Props) {
         <ScrapList
           scraps={scraps}
           visible={visible}
+          loading={!listReady}
           query={query}
           typeFilter={typeFilter}
           dayFilter={dayFilter}
@@ -442,7 +456,7 @@ export function Shelf({ onEnter }: Props) {
               onSave={() => void persist()}
               onCancel={() => {
                 void (async () => {
-                  if (!(await confirm(t(lang, "leaveDraftConfirm")))) return;
+                  if (!(await confirm(t("leaveDraftConfirm")))) return;
                   if (draft.dataUrl.startsWith("blob:")) URL.revokeObjectURL(draft.dataUrl);
                   setDraft(null);
                 })();
@@ -455,7 +469,7 @@ export function Shelf({ onEnter }: Props) {
         <button
           type="button"
           className="fixed right-[var(--gutter)] bottom-[calc(6.5rem+env(safe-area-inset-bottom))] z-20 grid size-12 place-items-center rounded-full bg-magnet text-magnet-ink shadow-[0_10px_22px_rgb(208_102_18/0.26)]"
-          aria-label={t(lang, "scrollTop")}
+          aria-label={t("scrollTop")}
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
         >
           <ArrowUp className="size-[22px]" strokeWidth={1.8} />

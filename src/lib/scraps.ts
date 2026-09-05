@@ -70,12 +70,92 @@ export function mediaObjectPath(userId: string, scrap: Scrap) {
   return userId + "/" + scrap.id + "/media." + extFor(scrap);
 }
 
+type SignedCacheEntry = { url: string; expiresAt: number };
+
+const signedUrlCache = new Map<string, SignedCacheEntry>();
+const CACHE_SLACK_MS = 5 * 60 * 1000;
+
+function cachedSignedUrl(path: string) {
+  const hit = signedUrlCache.get(path);
+  if (!hit) return "";
+  if (hit.expiresAt - Date.now() < CACHE_SLACK_MS) {
+    signedUrlCache.delete(path);
+    return "";
+  }
+  return hit.url;
+}
+
+function rememberSignedUrl(path: string, url: string) {
+  if (!path || !url) return;
+  signedUrlCache.set(path, { url, expiresAt: Date.now() + SIGNED_TTL * 1000 });
+}
+
 async function signedUrl(path: string | null) {
   const supabase = getSupabase();
   if (!supabase || !path) return "";
+  const cached = cachedSignedUrl(path);
+  if (cached) return cached;
   const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, SIGNED_TTL);
   if (error || !data?.signedUrl) return "";
+  rememberSignedUrl(path, data.signedUrl);
   return data.signedUrl;
+}
+
+function needsSignedMedia(scrap: Scrap) {
+  if (scrap.type !== "image" || !scrap.mediaPath) return false;
+  if (scrap.og?.image) return false;
+  return true;
+}
+
+/** Batch-sign image media paths and fill `dataUrl` (session-cached). */
+export async function hydrateSignedMedia(scraps: Scrap[]): Promise<Scrap[]> {
+  const supabase = getSupabase();
+  if (!supabase || !scraps.length) return scraps;
+
+  const pathById = new Map<string, string>();
+  const paths: string[] = [];
+  const urlByPath = new Map<string, string>();
+
+  for (const scrap of scraps) {
+    if (!needsSignedMedia(scrap)) continue;
+    const path = scrap.mediaPath;
+    const cached = cachedSignedUrl(path);
+    if (cached) {
+      urlByPath.set(path, cached);
+      continue;
+    }
+    if (!pathById.has(scrap.id)) {
+      pathById.set(scrap.id, path);
+      if (!paths.includes(path)) paths.push(path);
+    }
+  }
+
+  if (paths.length) {
+    const { data, error } = await supabase.storage.from(BUCKET).createSignedUrls(paths, SIGNED_TTL);
+    if (!error && data) {
+      for (const row of data) {
+        if (!row?.path || !row.signedUrl || row.error) continue;
+        rememberSignedUrl(row.path, row.signedUrl);
+        urlByPath.set(row.path, row.signedUrl);
+      }
+    } else {
+      await Promise.all(
+        paths.map(async (path) => {
+          const url = await signedUrl(path);
+          if (url) urlByPath.set(path, url);
+        }),
+      );
+    }
+  }
+
+  if (!urlByPath.size) return scraps;
+
+  return scraps.map((scrap) => {
+    if (!needsSignedMedia(scrap)) return scrap;
+    const url = urlByPath.get(scrap.mediaPath);
+    if (!url) return scrap;
+    return { ...scrap, dataUrl: url, storedMedia: true };
+  });
 }
 
 function toRow(userId: string, scrap: Scrap): Row {
@@ -111,8 +191,8 @@ function toRow(userId: string, scrap: Scrap): Row {
   };
 }
 
-async function fromRow(row: Row): Promise<Scrap> {
-  const dataUrl = await signedUrl(row.media_path);
+function fromRow(row: Row): Scrap {
+  const mediaPath = row.media_path || "";
   return {
     id: row.id,
     createdAt: Date.parse(row.created_at) || Date.now(),
@@ -126,14 +206,14 @@ async function fromRow(row: Row): Promise<Scrap> {
     mime: row.mime || "",
     extension: row.extension || "",
     size: Number(row.size) || 0,
-    dataUrl,
+    dataUrl: "",
     previewText: row.preview_text || "",
     sample: !!row.sample,
-    storedMedia: !!row.stored_media && !!dataUrl,
+    storedMedia: !!row.stored_media && !!mediaPath,
     domain: row.domain || "",
     error: row.error || "",
     memo: row.memo || "",
-    mediaPath: row.media_path || "",
+    mediaPath,
     bookmarked: !!row.bookmarked,
     readAt: row.read_at ? Date.parse(row.read_at) || null : null,
     remindAt: row.remind_at ? Date.parse(row.remind_at) || null : null,
@@ -152,9 +232,7 @@ export async function loadScraps(user: User): Promise<Scrap[]> {
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
   if (error) throw error;
-  const list: Scrap[] = [];
-  for (const row of (data || []) as Row[]) list.push(await fromRow(row));
-  return list;
+  return ((data || []) as Row[]).map(fromRow);
 }
 
 export async function uploadMedia(user: User, scrap: Scrap, file: File) {

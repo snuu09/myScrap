@@ -51,7 +51,7 @@ function AuthDivider({ lang }: { lang: "ko" | "en" }) {
 }
 
 export function AuthSheet({ open, onClose }: Props) {
-  const { lang } = usePrefs();
+  const { lang, look } = usePrefs();
   const {
     configured,
     recoveryPending,
@@ -356,7 +356,7 @@ export function AuthSheet({ open, onClose }: Props) {
 
         {isChooser ? (
           <div className="flex flex-col gap-2">
-            {localCount > 0 ? <p className="auth-callout">{t(lang, "guestResume", { n: localCount })}</p> : null}
+            {localCount > 0 ? <p className="auth-callout">{t(lang, "guestResume", { n: localCount }, look)}</p> : null}
             <button
               type="button"
               disabled={busy}

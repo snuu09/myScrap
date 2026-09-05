@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { X } from "lucide-react";
-import { t } from "../i18n";
-import { usePrefs } from "../context/Prefs";
+import { useT } from "../lib/useT";
 import { useAuth } from "../context/Auth";
 import { usePlan } from "../context/Plan";
 import { migrateLocalScraps } from "../lib/guestMigrate";
@@ -12,7 +11,7 @@ import { useDialog } from "../lib/dialog";
 type Props = { open: boolean; onClose: () => void };
 
 export function GuestMigrateSheet({ open, onClose }: Props) {
-  const { lang } = usePrefs();
+  const t = useT();
   const { user } = useAuth();
   const { canUpload } = usePlan();
   const { alert } = useDialog();
@@ -41,17 +40,17 @@ export function GuestMigrateSheet({ open, onClose }: Props) {
       markGuestMigrateAsked();
       window.dispatchEvent(new Event(SCRAPS_CHANGED_EVENT));
       if (result.moved && !result.left) {
-        await alert(t(lang, "guestMigrateDone", { n: result.moved }));
+        await alert(t("guestMigrateDone", { n: result.moved }));
         onClose();
         return;
       }
       if (result.moved) {
-        setMessage(t(lang, "guestMigratePartial", { moved: result.moved, left: result.left }));
+        setMessage(t("guestMigratePartial", { moved: result.moved, left: result.left }));
         return;
       }
-      setMessage(t(lang, "guestMigrateFailed"));
+      setMessage(t("guestMigrateFailed"));
     } catch {
-      setMessage(t(lang, "guestMigrateFailed"));
+      setMessage(t("guestMigrateFailed"));
     } finally {
       setBusy(false);
     }
@@ -71,25 +70,25 @@ export function GuestMigrateSheet({ open, onClose }: Props) {
       >
         <div className="mb-2 flex items-center justify-between gap-1">
           <h2 id="guest-migrate-title" className="m-0 min-w-0 flex-1 text-[1.0625rem] font-bold">
-            {t(lang, "guestMigrateTitle")}
+            {t("guestMigrateTitle")}
           </h2>
           <button
             type="button"
             className="grid size-12 shrink-0 place-items-center"
             disabled={busy}
             onClick={keepLocal}
-            aria-label={t(lang, "close")}
+            aria-label={t("close")}
           >
             <X className="size-[22px]" strokeWidth={1.8} />
           </button>
         </div>
-        <p className="auth-lead">{t(lang, "guestMigrateLead", { n: count })}</p>
+        <p className="auth-lead">{t("guestMigrateLead", { n: count })}</p>
         <div className="mt-3 flex flex-col gap-2">
           <button type="button" className="auth-btn-primary" disabled={busy} onClick={() => void move()}>
-            {busy ? t(lang, "guestMigrateWorking") : t(lang, "guestMigrateMove")}
+            {busy ? t("guestMigrateWorking") : t("guestMigrateMove")}
           </button>
           <button type="button" className="auth-btn-secondary" disabled={busy} onClick={keepLocal}>
-            {t(lang, "guestMigrateKeep")}
+            {t("guestMigrateKeep")}
           </button>
           {message ? <p className="auth-feedback-error">{message}</p> : null}
         </div>

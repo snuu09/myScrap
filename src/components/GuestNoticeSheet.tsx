@@ -1,6 +1,5 @@
 import { X } from "lucide-react";
-import { t } from "../i18n";
-import { usePrefs } from "../context/Prefs";
+import { useT } from "../lib/useT";
 
 type Props = { open: boolean; onConfirm: () => void; onCancel: () => void };
 
@@ -12,7 +11,7 @@ const POINTS = [
 ] as const;
 
 export function GuestNoticeSheet({ open, onConfirm, onCancel }: Props) {
-  const { lang } = usePrefs();
+  const t = useT();
   if (!open) return null;
 
   return (
@@ -29,29 +28,29 @@ export function GuestNoticeSheet({ open, onConfirm, onCancel }: Props) {
       >
         <div className="mb-2 flex items-center justify-between gap-1">
           <h2 id="guest-notice-title" className="m-0 min-w-0 flex-1 text-[1.0625rem] font-bold">
-            {t(lang, "guestNoticeTitle")}
+            {t("guestNoticeTitle")}
           </h2>
           <button
             type="button"
             className="grid size-12 shrink-0 place-items-center"
             onClick={onCancel}
-            aria-label={t(lang, "close")}
+            aria-label={t("close")}
           >
             <X className="size-[22px]" strokeWidth={1.8} />
           </button>
         </div>
-        <p className="auth-lead">{t(lang, "guestNoticeLead")}</p>
+        <p className="auth-lead">{t("guestNoticeLead")}</p>
         <ul className="my-3 grid list-disc gap-1.5 pl-5 text-[0.8125rem] leading-snug text-ink-soft">
           {POINTS.map((key) => (
-            <li key={key}>{t(lang, key)}</li>
+            <li key={key}>{t(key)}</li>
           ))}
         </ul>
         <div className="flex flex-col gap-2">
           <button type="button" className="auth-btn-primary" onClick={onConfirm}>
-            {t(lang, "guestNoticeConfirm")}
+            {t("guestNoticeConfirm")}
           </button>
           <button type="button" className="auth-btn-secondary" onClick={onCancel}>
-            {t(lang, "cancel")}
+            {t("cancel")}
           </button>
         </div>
       </div>

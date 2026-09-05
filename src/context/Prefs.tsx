@@ -4,16 +4,19 @@ import type { Lang } from "../i18n";
 export type ThemeChoice = "light" | "dark" | "system";
 export type Palette = "kitchen" | "basalt";
 export type Look = "fridge" | "library";
+export type ShelfLayout = "list" | "grid" | "gallery";
 
 type Prefs = {
   lang: Lang;
   theme: ThemeChoice;
   palette: Palette;
   look: Look;
+  shelfLayout: ShelfLayout;
   setLang: (lang: Lang) => void;
   setTheme: (theme: ThemeChoice) => void;
   setPalette: (palette: Palette) => void;
   setLook: (look: Look) => void;
+  setShelfLayout: (layout: ShelfLayout) => void;
 };
 
 const PrefsContext = createContext<Prefs | null>(null);
@@ -56,6 +59,16 @@ function readLook(): Look {
   return "fridge";
 }
 
+function readShelfLayout(): ShelfLayout {
+  try {
+    const stored = localStorage.getItem("mybrary.shelfLayout");
+    if (stored === "grid" || stored === "gallery" || stored === "list") return stored;
+  } catch {
+    /* ignore */
+  }
+  return "list";
+}
+
 function applyChrome(theme: ThemeChoice, palette: Palette, look: Look, lang: Lang) {
   const dark =
     theme === "dark" ||
@@ -77,6 +90,7 @@ export function PrefsProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<ThemeChoice>(readTheme);
   const [palette, setPaletteState] = useState<Palette>(readPalette);
   const [look, setLookState] = useState<Look>(readLook);
+  const [shelfLayout, setShelfLayoutState] = useState<ShelfLayout>(readShelfLayout);
 
   useEffect(() => {
     applyChrome(theme, palette, look, lang);
@@ -96,6 +110,7 @@ export function PrefsProvider({ children }: { children: ReactNode }) {
       theme,
       palette,
       look,
+      shelfLayout,
       setLang(next) {
         localStorage.setItem("mybrary.lang", next);
         setLangState(next);
@@ -115,8 +130,13 @@ export function PrefsProvider({ children }: { children: ReactNode }) {
         else localStorage.removeItem("mybrary.look");
         setLookState(next);
       },
+      setShelfLayout(next) {
+        if (next === "list") localStorage.removeItem("mybrary.shelfLayout");
+        else localStorage.setItem("mybrary.shelfLayout", next);
+        setShelfLayoutState(next);
+      },
     }),
-    [lang, theme, palette, look],
+    [lang, theme, palette, look, shelfLayout],
   );
 
   return <PrefsContext.Provider value={value}>{children}</PrefsContext.Provider>;

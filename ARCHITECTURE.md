@@ -55,7 +55,7 @@ flowchart TB
 | Plan | [`src/context/Plan.tsx`](src/context/Plan.tsx), [`src/lib/plans.ts`](src/lib/plans.ts), [`src/lib/profiles.ts`](src/lib/profiles.ts) | Tier limits, trial, storage usage, ad flag, upload gates |
 | Filters | [`src/lib/scrapFilters.ts`](src/lib/scrapFilters.ts) | Shared query/type/day filter and dashboard aggregates |
 | Classify | [`functions/src/index.ts`](functions/src/index.ts), [`netlify/functions/analyze.ts`](netlify/functions/analyze.ts), [`src/lib/tagger.ts`](src/lib/tagger.ts) | Claude with JWT; MIME/URL fallback |
-| Persist | [`src/lib/scraps.ts`](src/lib/scraps.ts) | `public.scraps` (incl. engagement + `og`) + `public.profiles` + `scrap-media/{userId}/{scrapId}/` |
+| Persist | [`src/lib/scraps.ts`](src/lib/scraps.ts) | `public.scraps` (incl. engagement + `og`) + `public.profiles` + `scrap-media/{userId}/{scrapId}/`. Shelf paints metadata first; image `media_path` values get batch `createSignedUrls` via `hydrateSignedMedia` (session-cached). |
 | Guest store | [`src/lib/guest.ts`](src/lib/guest.ts), [`src/lib/localScraps.ts`](src/lib/localScraps.ts), [`src/lib/guestMigrate.ts`](src/lib/guestMigrate.ts) | 둘러보기 scraps in `localStorage` on this device, plus the move-to-account path |
 | OG | [`src/lib/og.ts`](src/lib/og.ts), [`supabase/functions/og-preview`](supabase/functions/og-preview) | URL preview after classify; Detail lazy backfill |
 

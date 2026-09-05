@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { X } from "lucide-react";
-import { t } from "../i18n";
-import { usePrefs } from "../context/Prefs";
+import { useT } from "../lib/useT";
 
 type Props = {
   open: boolean;
@@ -18,7 +17,7 @@ function toLocalInput(ms: number | null) {
 }
 
 export function RemindSheet({ open, initial, onSave, onClose }: Props) {
-  const { lang } = usePrefs();
+  const t = useT();
   const [value, setValue] = useState(() => toLocalInput(initial));
 
   if (!open) return null;
@@ -37,15 +36,15 @@ export function RemindSheet({ open, initial, onSave, onClose }: Props) {
       >
         <div className="mb-2 flex items-center justify-between gap-1">
           <h2 id="remind-title" className="m-0 text-[1.0625rem] font-bold">
-            {t(lang, "remindTitle")}
+            {t("remindTitle")}
           </h2>
-          <button type="button" className="grid size-12 place-items-center" onClick={onClose} aria-label={t(lang, "close")}>
+          <button type="button" className="grid size-12 place-items-center" onClick={onClose} aria-label={t("close")}>
             <X className="size-[22px]" strokeWidth={1.8} />
           </button>
         </div>
-        <p className="auth-lead">{t(lang, "remindLead")}</p>
+        <p className="auth-lead">{t("remindLead")}</p>
         <label className="mt-3 grid gap-1 text-[0.8125rem] text-muted">
-          {t(lang, "remindWhen")}
+          {t("remindWhen")}
           <input
             type="datetime-local"
             value={value}
@@ -66,7 +65,7 @@ export function RemindSheet({ open, initial, onSave, onClose }: Props) {
               onSave(Number.isFinite(ms) ? ms : null);
             }}
           >
-            {t(lang, "remindSave")}
+            {t("remindSave")}
           </button>
           <button
             type="button"
@@ -76,7 +75,7 @@ export function RemindSheet({ open, initial, onSave, onClose }: Props) {
               onSave(null);
             }}
           >
-            {t(lang, "remindClear")}
+            {t("remindClear")}
           </button>
         </div>
       </div>
