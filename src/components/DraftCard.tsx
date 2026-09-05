@@ -7,16 +7,32 @@ import { formatBytes } from "../lib/tagger";
 
 type Props = {
   draft: Scrap;
+  uploadRatio?: number | null;
   onChange: (patch: Partial<Scrap>) => void;
   onSave: () => void;
   onCancel: () => void;
 };
 
-export function AnalyzeSkeleton({ filename, size }: { filename?: string; size?: number }) {
+export function AnalyzeSkeleton({
+  filename,
+  size,
+  uploadRatio,
+}: {
+  filename?: string;
+  size?: number;
+  uploadRatio?: number | null;
+}) {
   const { lang } = usePrefs();
+  const pct =
+    uploadRatio != null && Number.isFinite(uploadRatio)
+      ? ` · ${Math.min(100, Math.max(0, Math.round(uploadRatio * 100)))}%`
+      : "";
   return (
     <div className="classify-draft-skeleton" aria-busy="true">
-      <p className="list-tools-label">{t(lang, filename ? "uploadingFile" : "analyzing")}</p>
+      <p className="list-tools-label">
+        {t(lang, filename ? "uploadingFile" : "analyzing")}
+        {pct}
+      </p>
       {filename ? (
         <p className="scrap-card-file m-0">
           {filename}
@@ -69,14 +85,18 @@ function DraftMedia({ src, siteName, domain, favicon, description }: {
   );
 }
 
-export function DraftCard({ draft, onChange, onSave, onCancel }: Props) {
+export function DraftCard({ draft, uploadRatio = null, onChange, onSave, onCancel }: Props) {
   const { lang } = usePrefs();
   const og = draft.og;
   const thumb = og?.image || (draft.dataUrl && (draft.type === "image" || draft.mime.startsWith("image/")) ? draft.dataUrl : "");
   const showMedia = Boolean(thumb) || Boolean(og && (og.siteName || og.description));
+  const pct =
+    uploadRatio != null && Number.isFinite(uploadRatio)
+      ? ` · ${Math.min(100, Math.max(0, Math.round(uploadRatio * 100)))}%`
+      : "";
 
   if (draft.analyzing && !thumb) {
-    return <AnalyzeSkeleton filename={draft.filename} size={draft.size} />;
+    return <AnalyzeSkeleton filename={draft.filename} size={draft.size} uploadRatio={uploadRatio} />;
   }
 
   return (
@@ -89,7 +109,9 @@ export function DraftCard({ draft, onChange, onSave, onCancel }: Props) {
     >
       <div className="list-tools-head">
         <p className="list-tools-label">
-          {draft.analyzing ? t(lang, draft.filename ? "uploadingFile" : "analyzing") : t(lang, "classifyTitle")}
+          {draft.analyzing
+            ? `${t(lang, draft.filename ? "uploadingFile" : "analyzing")}${pct}`
+            : t(lang, "classifyTitle")}
         </p>
       </div>
       {draft.analyzing ? (

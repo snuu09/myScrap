@@ -1,4 +1,5 @@
 import type { User } from "@supabase/supabase-js";
+import * as tus from "tus-js-client";
 import { getSupabase } from "./supabase";
 import { isBrowseUser } from "./guest";
 import {
@@ -13,6 +14,8 @@ import type { Scrap } from "./types";
 
 const BUCKET = "scrap-media";
 const SIGNED_TTL = 60 * 60;
+/** Standard multipart upload is unreliable above this; use TUS instead. */
+const RESUMABLE_BYTES = 6 * 1024 * 1024;
 
 type Row = {
   id: string;
@@ -235,18 +238,84 @@ export async function loadScraps(user: User): Promise<Scrap[]> {
   return ((data || []) as Row[]).map(fromRow);
 }
 
-export async function uploadMedia(user: User, scrap: Scrap, file: File) {
+export async function uploadMedia(
+  user: User,
+  scrap: Scrap,
+  file: File,
+  onProgress?: (ratio: number) => void,
+) {
   if (isBrowseUser(user)) return attachLocalMedia(file);
   const supabase = getSupabase();
   if (!supabase) throw new Error("config");
   const path = mediaObjectPath(user.id, scrap);
-  const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
-    upsert: true,
-    contentType: file.type || "application/octet-stream",
-  });
-  if (error) throw error;
+  if (file.size > RESUMABLE_BYTES) {
+    await uploadResumable(path, file, onProgress);
+  } else {
+    const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
+      upsert: true,
+      contentType: file.type || "application/octet-stream",
+    });
+    if (error) throw error;
+    onProgress?.(1);
+  }
   const dataUrl = await signedUrl(path);
   return { mediaPath: path, dataUrl, storedMedia: !!dataUrl, skipped: false };
+}
+
+function resumableEndpoint() {
+  const base = (import.meta.env.VITE_SUPABASE_URL || "").trim();
+  const u = new URL(base);
+  const host = u.hostname.replace(/\.supabase\.co$/i, ".storage.supabase.co");
+  return `${u.protocol}//${host}/storage/v1/upload/resumable`;
+}
+
+async function uploadResumable(path: string, file: File, onProgress?: (ratio: number) => void) {
+  const supabase = getSupabase();
+  if (!supabase) throw new Error("config");
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+  const token = sessionData.session?.access_token;
+  if (sessionError || !token) throw new Error("auth");
+  const contentType = file.type || "application/octet-stream";
+  const anonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || "").trim();
+
+  await new Promise<void>((resolve, reject) => {
+    const upload = new tus.Upload(file, {
+      endpoint: resumableEndpoint(),
+      retryDelays: [0, 3000, 5000, 10000, 20000],
+      headers: {
+        authorization: `Bearer ${token}`,
+        apikey: anonKey,
+        "x-upsert": "true",
+      },
+      uploadDataDuringCreation: true,
+      removeFingerprintOnSuccess: true,
+      metadata: {
+        bucketName: BUCKET,
+        objectName: path,
+        contentType,
+        cacheControl: "3600",
+      },
+      chunkSize: RESUMABLE_BYTES,
+      onError(error) {
+        reject(error instanceof Error ? error : new Error(String(error)));
+      },
+      onProgress(bytesUploaded, bytesTotal) {
+        if (bytesTotal > 0) onProgress?.(bytesUploaded / bytesTotal);
+      },
+      onSuccess() {
+        onProgress?.(1);
+        resolve();
+      },
+    });
+
+    upload
+      .findPreviousUploads()
+      .then((previous) => {
+        if (previous.length) upload.resumeFromPreviousUpload(previous[0]);
+        upload.start();
+      })
+      .catch(reject);
+  });
 }
 
 export async function saveScrap(user: User, scrap: Scrap) {

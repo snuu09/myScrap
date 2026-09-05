@@ -74,6 +74,7 @@ export function Shelf({ onEnter }: Props) {
   const [scraps, setScraps] = useState<Scrap[]>([]);
   const [listReady, setListReady] = useState(false);
   const [draft, setDraft] = useState<Scrap | null>(null);
+  const [uploadRatio, setUploadRatio] = useState<number | null>(null);
   const [composer, setComposer] = useState("");
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<ScrapType | "all">("all");
@@ -313,8 +314,9 @@ export function Shelf({ onEnter }: Props) {
       analyzing: true,
     });
     setDraft(next);
+    setUploadRatio(0);
     try {
-      const uploaded = await uploadMedia(user, next, file);
+      const uploaded = await uploadMedia(user, next, file, (ratio) => setUploadRatio(ratio));
       if (localPreview && uploaded.dataUrl && uploaded.dataUrl !== localPreview) {
         URL.revokeObjectURL(localPreview);
       }
@@ -322,10 +324,7 @@ export function Shelf({ onEnter }: Props) {
       next.dataUrl = uploaded.dataUrl || localPreview;
       next.storedMedia = uploaded.storedMedia;
       setDraft({ ...next });
-      if (uploaded.skipped) {
-        setError(t("guestMediaSkipped"));
-        await alert(t("guestMediaSkipped"));
-      }
+      const skipped = uploaded.skipped;
       const ai = await requestAnalyze({
         kind: "file",
         mediaPath: uploaded.mediaPath,
@@ -347,11 +346,19 @@ export function Shelf({ onEnter }: Props) {
             }
           : cur,
       );
-    } catch {
+      setUploadRatio(null);
+      if (skipped) {
+        setError(t("guestMediaSkipped"));
+        await alert(t("guestMediaSkipped"));
+      }
+    } catch (err) {
       if (localPreview) URL.revokeObjectURL(localPreview);
+      setUploadRatio(null);
       setDraft((cur) => (cur && cur.id === next.id ? { ...cur, analyzing: false, error: "upload", dataUrl: "" } : cur));
-      setError(t("errorFile"));
-      await alert(t("errorFile"));
+      const detail = err instanceof Error && err.message ? err.message : "";
+      const message = detail && detail !== "upload" ? `${t("errorFile")} (${detail})` : t("errorFile");
+      setError(message);
+      await alert(message);
     }
   }
 
@@ -458,12 +465,14 @@ export function Shelf({ onEnter }: Props) {
           draft ? (
             <DraftCard
               draft={draft}
+              uploadRatio={uploadRatio}
               onChange={(patch) => setDraft((cur) => (cur ? { ...cur, ...patch } : cur))}
               onSave={() => void persist()}
               onCancel={() => {
                 void (async () => {
                   if (!(await confirm(t("leaveDraftConfirm")))) return;
                   if (draft.dataUrl.startsWith("blob:")) URL.revokeObjectURL(draft.dataUrl);
+                  setUploadRatio(null);
                   setDraft(null);
                 })();
               }}
