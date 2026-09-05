@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { X } from "lucide-react";
 import { t } from "../i18n";
-import { usePrefs, type Palette, type ThemeChoice } from "../context/Prefs";
+import { usePrefs, type Look, type Palette, type ThemeChoice } from "../context/Prefs";
 import { isBrowseUser, useAuth } from "../context/Auth";
 import { usePlan } from "../context/Plan";
 import { clearUserScraps, loadUserDbUsage, SCRAPS_CLEARED_EVENT } from "../lib/scraps";
@@ -47,7 +47,7 @@ function SettingsSection({
 }
 
 export function SettingsSheet({ open, onClose }: Props) {
-  const { lang, theme, palette, setLang, setTheme, setPalette } = usePrefs();
+  const { lang, theme, palette, look, setLang, setTheme, setPalette, setLook } = usePrefs();
   const { user, signOut } = useAuth();
   const { setScrapsForUsage, setUsageSnapshot, scrapCount, usageBytes, storageLimit } = usePlan();
   const navigate = useNavigate();
@@ -94,7 +94,7 @@ export function SettingsSheet({ open, onClose }: Props) {
 
   async function resetDb() {
     if (!user || resetting || !hasData) return;
-    if (!window.confirm(t(lang, "dbResetConfirm"))) return;
+    if (!window.confirm(t(lang, isBrowseUser(user) ? "guestResetConfirm" : "dbResetConfirm"))) return;
     setResetting(true);
     try {
       await clearUserScraps(user);
@@ -165,6 +165,15 @@ export function SettingsSheet({ open, onClose }: Props) {
           </Seg>
         </SettingsSection>
 
+        <SettingsSection label={t(lang, "lookSwitch")} groupLabel={t(lang, "lookSwitch")}>
+          <Seg pressed={look === "fridge"} onClick={() => setLook("fridge" as Look)}>
+            {t(lang, "lookFridge")}
+          </Seg>
+          <Seg pressed={look === "library"} onClick={() => setLook("library")}>
+            {t(lang, "lookLibrary")}
+          </Seg>
+        </SettingsSection>
+
         <SettingsSection label={t(lang, "themeSwitch")} groupLabel={t(lang, "themeSwitch")}>
           {(["light", "system", "dark"] as ThemeChoice[]).map((choice) => (
             <Seg key={choice} pressed={theme === choice} onClick={() => setTheme(choice)}>
@@ -177,23 +186,27 @@ export function SettingsSheet({ open, onClose }: Props) {
           <>
             <section className="settings-section" aria-label={t(lang, "dbUsageLabel")}>
               <p className="settings-section-label">{t(lang, "dbUsageLabel")}</p>
-              <div className="settings-db-panel">
-                {usageLoading ? (
-                  <p className="settings-db-hint">{t(lang, "dbUsageLoading")}</p>
-                ) : (
-                  <>
-                    <p className="settings-db-summary">
-                      {t(lang, "dbUsageSummary", {
-                        count: dbCount,
-                        bytes: formatBytes(dbBytes),
-                      })}
-                    </p>
-                    <StorageGauge usageBytes={dbBytes} storageLimit={storageLimit} />
+              <div className="settings-db-panel" aria-busy={usageLoading}>
+                <div className="settings-db-usage">
+                  <p className="settings-db-summary">
+                    {t(lang, "dbUsageSummary", {
+                      count: dbCount,
+                      bytes: formatBytes(dbBytes),
+                    })}
+                  </p>
+                  <StorageGauge usageBytes={dbBytes} storageLimit={storageLimit} />
+                  {usageLoading ? (
+                    <div className="settings-db-skeleton" aria-label={t(lang, "dbUsageLoading")}>
+                      <span className="sr-only">{t(lang, "dbUsageLoading")}</span>
+                      <div className="classify-draft-skeleton-bar w-3/5" />
+                      <div className="classify-draft-skeleton-bar w-2/5" />
+                    </div>
+                  ) : (
                     <p className={"settings-db-hint" + (hasData ? "" : " settings-db-hint--ok")}>
                       {hasData ? t(lang, "dbUsageHasData") : t(lang, "dbUsageEmpty")}
                     </p>
-                  </>
-                )}
+                  )}
+                </div>
                 <button
                   type="button"
                   className="settings-btn-reset"

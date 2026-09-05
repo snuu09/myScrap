@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko" data-theme="light" data-palette="kitchen">
+<html lang="ko" data-theme="light" data-palette="kitchen" data-look="fridge">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -25,6 +25,8 @@
           document.documentElement.style.colorScheme = dark ? "dark" : "light";
           var palette = localStorage.getItem("mybrary.palette");
           document.documentElement.setAttribute("data-palette", palette === "basalt" ? "basalt" : "kitchen");
+          var look = localStorage.getItem("mybrary.look");
+          document.documentElement.setAttribute("data-look", look === "library" ? "library" : "fridge");
           var lang = localStorage.getItem("mybrary.lang");
           if (lang === "en" || lang === "ko") document.documentElement.lang = lang;
         } catch (e) {}

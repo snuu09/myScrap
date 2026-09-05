@@ -10,6 +10,8 @@ import {
   trialExpired,
   type Profile,
 } from "../lib/plans";
+import { isBrowseUser } from "../lib/guest";
+import { GUEST_FILE_LIMIT, GUEST_TOTAL_LIMIT } from "../lib/localScraps";
 import type { Scrap } from "../lib/types";
 import { useAuth } from "./Auth";
 
@@ -56,6 +58,8 @@ export function PlanProvider({ children }: { children: ReactNode }) {
     void refreshProfile();
   }, [refreshProfile]);
 
+  const guest = isBrowseUser(user);
+
   const value = useMemo<PlanState>(
     () => ({
       profile,
@@ -70,15 +74,23 @@ export function PlanProvider({ children }: { children: ReactNode }) {
         setScrapCount(count);
         setUsageBytes(bytes);
       },
-      canUpload: (addingBytes) => canUploadBytes(profile, usageBytes, addingBytes),
-      canStick: () => canStickText(profile),
+      canUpload: (addingBytes) => {
+        if (guest) {
+          if (addingBytes > GUEST_FILE_LIMIT || usageBytes + addingBytes > GUEST_TOTAL_LIMIT) {
+            return { ok: false, reason: "quotaExceeded" };
+          }
+          return { ok: true };
+        }
+        return canUploadBytes(profile, usageBytes, addingBytes);
+      },
+      canStick: () => (guest ? { ok: true } : canStickText(profile)),
       showAds: showAdsForProfile(profile),
-      storageLimit: storageLimitBytes(profile),
-      trialExpired: trialExpired(profile),
-      trialDaysLeft: trialDaysLeft(profile),
+      storageLimit: guest ? GUEST_TOTAL_LIMIT : storageLimitBytes(profile),
+      trialExpired: guest ? false : trialExpired(profile),
+      trialDaysLeft: guest ? null : trialDaysLeft(profile),
       refreshProfile,
     }),
-    [profile, ready, usageBytes, scrapCount, refreshProfile],
+    [profile, ready, usageBytes, scrapCount, refreshProfile, guest],
   );
 
   return <PlanContext.Provider value={value}>{children}</PlanContext.Provider>;

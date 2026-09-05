@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { t } from "../i18n";
 import { usePrefs } from "../context/Prefs";
+import { localScrapCount } from "../lib/localScraps";
 
 const SPOTS = [
   { id: "sort", title: "sceneSortTitle", body: "sceneSortBody", className: "left-[7%] top-[56%] h-[38%] w-[28%] max-[720px]:left-[8%] max-[720px]:top-[58%] max-[720px]:h-[22%] max-[720px]:w-[54%]" },
@@ -13,6 +14,7 @@ type Props = { onEnter: () => void };
 export function Intro({ onEnter }: Props) {
   const { lang } = usePrefs();
   const [open, setOpen] = useState<string | null>(null);
+  const [localCount] = useState(() => localScrapCount());
 
   useEffect(() => {
     function onDoc(ev: MouseEvent) {
@@ -47,7 +49,7 @@ export function Intro({ onEnter }: Props) {
             >
               {t(lang, "loginLead")}
             </h1>
-            <div className="pointer-events-auto">
+            <div className="pointer-events-auto flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 className="min-h-12 rounded-full bg-magnet px-5 text-[0.9375rem] font-bold tracking-[-0.02em] text-magnet-ink"
@@ -55,6 +57,15 @@ export function Intro({ onEnter }: Props) {
               >
                 {t(lang, "enterCta")}
               </button>
+              {localCount > 0 ? (
+                <button
+                  type="button"
+                  className="min-h-12 rounded-full border border-paper-line bg-[color-mix(in_srgb,var(--color-paper)_80%,transparent)] px-4 text-[0.875rem] font-semibold text-ink"
+                  onClick={onEnter}
+                >
+                  {t(lang, "guestResumeCta")}
+                </button>
+              ) : null}
             </div>
           </div>
           {SPOTS.map((spot) => (

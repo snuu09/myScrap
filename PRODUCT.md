@@ -26,9 +26,9 @@ One capture surface that inspects what you pasted (text, image, video, audio, UR
 
 Today (shipped):
 
-- First visit: intro on porcelain peach / night kitchen. Hero plus stick / classify / find hotspots. Header **로그인** opens the auth sheet (Auth Ladder): email and password fields, primary **로그인** / **회원가입**, **또는** divider, **Google로 계속**, emphasized **둘러보기**, magnet toggle, then **아이디 찾기** / **비밀번호 찾기** at the bottom. Find / reset sub-screens use **Auth Recovery** (header back icon, brief, email, primary, **또는**, Google). Intro hero keeps **책장을 연다** only. Settings stay a sheet (language, palette, theme, Leave).
-- A saved session skips intro and opens the door. Leave returns to intro.
-- After entry: recency list and search; Stick is a **floating** ChatGPT-style composer (not in the legal Footer). Composer has a + menu (clipboard, camera on mobile, photo pick, file attach) and drag-and-drop. Classify draft appears **above** the composer pill, with a skeleton while Claude (or the MIME fallback) runs. Header **통계** opens the scrap dashboard. **일자별** chip filters the list by local day. Row tap opens **`/scrap/:id`** detail page with prev/next. Free and standard tiers see an ad slot below list-tools.
+- First visit: intro on porcelain peach / night kitchen. Hero plus stick / classify / find hotspots. Header **로그인** opens the auth sheet on a **chooser** (Google / email / 둘러보기); email path keeps Auth Ladder fields, **회원가입** confirm password, and Auth Recovery. Intro hero keeps **책장을 연다** only. Settings stay a sheet (language, Look fridge|library, palette, theme, Leave).
+- A saved session skips intro and opens the door (`ShelfReveal` once per session). Leave returns to intro.
+- After entry: recency list and search; Stick is a **floating** compact composer (not in the legal Footer). Composer has a + menu with scrim (clipboard, camera on mobile, photo pick, file attach) and drag-and-drop. Classify draft appears **above** the composer pill, with a skeleton while Claude (or the MIME fallback) runs; URL scraps also fetch OG. Header **통계** opens the scrap dashboard. **일자별** chip filters the list by local day. Row tap opens **`/scrap/:id`** detail (share, bookmark, read, remind, tags → `/?q=`, neighbor previews). Free and standard tiers see an ad slot below list-tools.
 - Footer on intro and app: 이용약관, 개인정보처리방침, operator placeholders (표시 예정 until filled).
 - Empty list copy: "항목이 없습니다."
 - List order: newest first.
@@ -52,12 +52,14 @@ Confirmed from brief and implemented in the Vite SPA:
 - Placeholder: "붙여넣기 할 내용이나 파일을 첨부해주세요."
 - Drag-and-drop analyzes dropped files.
 - Recency-sorted tagged list; empty state; scroll-to-top FAB.
-- Header color theme: 기본 (tangerine magnet), 현무암 (basalt magnet). Language, palette, appearance, and Leave sit in a header settings sheet.
-- Type chips, search, and **일자별** day filter (AND). Peel from the list or detail page.
-- Plan tiers (policy only, no payment): free (14-day trial, 100MB, ads), standard (1GB, ads), premium/admin (unlimited, no ads). Settings shows tier, trial D-day, storage bar. Upload blocked after trial or over quota. Settings **DB 초기화** clears that account’s scraps and media only (profiles stay).
-- Supabase: email/password Auth, **Google**, **둘러보기** (anonymous Auth), `scraps` + `profiles` + private media bucket. Claude classify via `/api/analyze` (MIME fallback if the function is down).
+- Header color theme: 기본 (tangerine magnet), 현무암 (basalt magnet). Look fridge|library remaps enamel tokens. Language, Look, palette, appearance, and Leave sit in a header settings sheet.
+- Type chips, search, and **일자별** day filter (AND). Peel from the list or detail page. Detail actions: open link, share, bookmark, read/unread, remind (foreground Notification once).
+- Plan tiers (policy only, no payment): free (14-day trial, 100MB, ads), standard (1GB, ads), premium/admin (unlimited, no ads). Settings shows tier, trial D-day, storage bar (layout reserved while loading). Upload blocked after trial or over quota. Settings **DB 초기화** clears that account’s scraps and media only (profiles stay); for 둘러보기 it clears this device instead.
+- Supabase: email/password Auth, **Google**, **둘러보기** (anonymous Auth), `scraps` (engagement + og) + `profiles` + private media bucket. Claude classify via `/api/analyze` (MIME fallback if the function is down). URL OG via `og-preview`.
+- **둘러보기 saves to this device.** Browse scraps go to `localStorage`, not `scraps`, and media stays inline as a data URL (1.5MB a file, about 4MB in total). The first local save opens a one-time notice sheet that says so. The shelf keeps a quiet banner with a 계정 만들기 link.
+- Browse data belongs to the browser, not the anonymous session: a new browse session on the same browser picks the same shelf back up, another browser or cleared history starts empty, and signing into a real account asks once whether to move the device's scraps over (per-plan quota applies; anything it cannot take stays local).
 
-[Inferred] Language, theme, and palette stay local. Scraps never write without a signed-in user (email, Google, or 둘러보기).
+[Inferred] Language, Look, theme, and palette stay local. Account scraps never write without a signed-in user (email or Google); 둘러보기 writes to this device only.
 
 See [ROADMAP.md](ROADMAP.md) and [supabase/README.md](supabase/README.md).
 

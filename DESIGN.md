@@ -237,7 +237,7 @@ Restrained palette: one Jeju tangerine plus neutrals in the same hue family. Yel
 
 ### Palettes
 
-Header: brand plus a settings disc. Language, **기본** / **현무암**, and light / system / dark live in that sheet, remembered on this device. Basalt keeps the peach kitchen wall.
+Header: brand plus a settings disc. Language, **Look** (기본 / 책장), **기본** / **현무암**, and light / system / dark live in that sheet, remembered on this device. Basalt keeps the peach kitchen wall.
 
 - **Kitchen (default):** Magnet `#e56f0a` / dark `#f4a24a`. Fridge door. Stick dock at the bottom; magnets and tilted paper stay.
 - **Jeju basalt:** Magnet `#3a3936` / dark `#c8c6c1`. Replaces the orange only. Ground stays porcelain peach / night kitchen. Same bottom Stick dock as kitchen.
@@ -248,7 +248,9 @@ Header: brand plus a settings disc. Language, **기본** / **현무암**, and li
 
 **The Two Magnets Rule.** Default magnet is hallabong tangerine. 현무암 swaps that accent to Jeju basalt charcoal. Do not retint enamel, paper, or the kitchen wall when testing basalt. Sample photo SVGs must read `--magnet` (or the matching hex) at paint time; do not bake `#e56f0a`. The 견본 tag is hairline ink, not danger orange.
 
-**The Stick Dock Rule.** After the door opens, Stick is a **fixed floating composer** over the shelf (ChatGPT-style), not part of the legal Footer. Shelf route hides Footer; intro/legal/dashboard keep Footer. Composer is a tall rounded paper pill (`composer-chat`): auto-grow textarea, + attach and magnet send circle in a bottom bar. Classify draft stacks **above** the pill inside the float. Soft enamel fade sits behind the float. Do not put the composer back above the list or glue it to the footer chrome.
+**The Look Axis Rule.** A third prefs axis `data-look` = `fridge` | `library` (default fridge). Library remaps the same CSS tokens (`--color-enamel`, `--color-paper`, shadows) toward a warmer shelf tone. It does not replace palette (magnets) or invent a second component kit. No 3D bookcase mesh; at most a soft binding edge on cards.
+
+**The Stick Dock Rule.** After the door opens, Stick is a **fixed floating composer** over the shelf (ChatGPT-style), not part of the legal Footer. Shelf route hides Footer; intro/legal/dashboard keep Footer. Default layout is one compact row `[+][textarea][send]` (`composer-chat-row`); the field grows downward on focus or multiline (cap 160px) with the bar pinned under it. **+** opens an attached menu with ink 40% viewport scrim; ESC / scrim closes it. Opening Auth or Settings dispatches `mybrary:close-overlays` so only one job is open. Classify draft stacks **above** the pill inside the float. Soft enamel fade sits behind the float. Do not put the composer back above the list or glue it to the footer chrome.
 
 **The AI Comparison Rule.** Celadon editorial is not shipped. Do not add header **AI** in this client unless PRODUCT asks. It must not become a purple chat or zinc-blue SaaS skin.
 
@@ -356,7 +358,7 @@ States required: hover, focus-visible, disabled (Stick), loading (OG skeleton), 
 
 Binding for [`src/components/AuthSheet.tsx`](src/components/AuthSheet.tsx). One magnet-fill primary per screen.
 
-**The Auth Ladder Rule.** Login / sign up (`in` | `up`): (1) fields, (2) primary submit, (3) success or error feedback directly under primary, (4) caption divider **또는** / **or**, (5) Google tertiary, (6) browse secondary, (7) ghost toggle (회원가입 ↔ 로그인), (8) ghost utility links (아이디 찾기 · 비밀번호 찾기). New password (`newPassword`): fields, primary save, feedback. No divider or OAuth on that screen.
+**The Auth Ladder Rule.** Sheet opens on **chooser**: Google / email sign-in / browse (same `auth-btn-*` heights). Email path (`in` | `up`): (1) fields (signup adds confirm password), (2) primary submit, (3) success or error feedback directly under primary, (4) caption divider **또는** / **or**, (5) Google tertiary, (6) browse secondary when relevant, (7) ghost toggle (회원가입 ↔ 로그인), (8) ghost utility links (아이디 찾기 · 비밀번호 찾기). New password (`newPassword`): fields, primary save, feedback. No divider or OAuth on that screen.
 
 **The Auth Recovery Rule.** 아이디 찾기 (`findId`) and 비밀번호 찾기 (`resetPassword`) share one layout. (1) sheet header: **auth-back-btn** (48px enamel square with ArrowLeft, aria **로그인으로**), title, close, (2) **Brief** block: lead then Google callout, (3) email field, (4) primary, (5) feedback under primary, (6) divider **또는** / **or**, (7) Google tertiary. No **로그인으로** text link. Back icon returns to login; X closes the sheet. No browse, no sign-up toggle on these screens. New password uses the same back control.
 
@@ -402,6 +404,8 @@ Binding for [`src/components/SettingsSheet.tsx`](src/components/SettingsSheet.ts
 
 **The Settings Session Rule.** When signed in, show `settings-session-chip` directly under the header: enamel/paper pill, caption size, ink-soft label plus ink value (email or **둘러보기** for anonymous browse). Truncate long emails.
 
+**The Guest Storage Notice Rule.** The two browse dialogs ([`GuestNoticeSheet`](src/components/GuestNoticeSheet.tsx), [`GuestMigrateSheet`](src/components/GuestMigrateSheet.tsx)) are the only **centered** overlays: same 32px `--login-wall` panel and ink 24% scrim as the header sheets, but centered because they interrupt a save rather than answer a header tap. Title, `auth-lead` line, disc list of device limits in ink-soft caption, then primary above secondary. They fire once per device (`mybrary.guest.notice`, `mybrary.guest.migrateAsked`), never on every save. On the shelf, browse mode keeps one quiet caption line above the list (ink-soft, `auth-link-utility` for 계정 만들기), not a colored alert bar.
+
 ## Motion & interaction
 
 These rules are binding for intro, header auth, capture, draft, list, menu, and legal routes. Duration and easing belong in [`src/index.css`](src/index.css) (`--ease-out` `cubic-bezier(0.16, 1, 0.3, 1)`). Prefer `--dur-fast` 140ms, `--dur-mid` 220ms, `--dur-slow` 320ms when adding motion.
@@ -416,7 +420,7 @@ These rules are binding for intro, header auth, capture, draft, list, menu, and 
 
 ### View changes
 
-- **Open the door (intro → app):** current sheet exits down and fades (140ms in-ease). Capture view enters from 14px below (220ms out-ease). Settings Leave and footer Empty appear with the app. A returning session skips this and swaps instantly.
+- **Open the door (intro → app):** `ShelfReveal` splits enamel panels for 220–320ms once per session (`sessionStorage`). Returning sessions and `prefers-reduced-motion` swap instantly. Direct `/dashboard` skips the reveal.
 - **Leave (app → intro):** reverse. Draft, lightbox, + menu, and header sheets dismiss first. Scraps clear after the app view has exited.
 - **Draft:** classify-then-save panel uses the same sheet motion. Editing a saved scrap reuses the open panel (no second enter). Cancel and save wait for the exit before removing DOM.
 - **+ menu:** pop from the plus control (140ms). Click outside, Escape, or picking an item closes it.

@@ -17,8 +17,9 @@
 - 이메일 / Google / **둘러보기**(익명) 로그인, 아이디·비밀번호 찾기
 - ChatGPT 스타일 **플로팅 입력창** (법적 Footer와 분리), 분류 드래프트는 입력창 위
 - Supabase `scraps` + 비공개 `scrap-media`에 계정별 저장 (RLS)
+- **둘러보기는 이 기기 localStorage에 저장** (파일 1.5MB, 합계 약 4MB). 첫 저장 때 1회 안내, 계정 로그인 시 옮길지 물어봄
 - 회원 등급(무료 체험·중간·고급·관리자): 용량·광고·체험 정책 (결제 없음, 운영자 수동 변경)
-- 설정: 언어·팔레트·테마, 저장 사용량, **DB 초기화**(내 조각·미디어만)
+- 설정: 언어·Look(기본/책장)·팔레트·테마, 저장 사용량, **DB 초기화**(내 조각·미디어만)
 - KO / EN, 기본(한라봉)·현무암 팔레트, light / system / dark
 
 ### 문서 · 라이브
@@ -59,17 +60,18 @@ npm run build
 
 ## 사용 흐름
 
-1. 인트로 **책장을 연다** 또는 헤더 **로그인**: 이메일, Google, 회원가입, 찾기/재설정, 시트의 **둘러보기**. env가 비면 설정 안내가 나옵니다.
-2. 책장에서 플로팅 Stick으로 붙여넣기·드롭·**+**. 분류는 함수가 살아 있으면 Claude, 아니면 MIME/URL. 드래프트는 입력 알약 위에 뜹니다.
+1. 인트로 **책장을 연다** 또는 헤더 **로그인**: chooser(Google / 이메일 / 둘러보기), 회원가입 확인 비밀번호, 찾기/재설정. env가 비면 설정 안내가 나옵니다.
+2. 책장에서 플로팅 Stick(한 줄 compact)으로 붙여넣기·드롭·**+**(스크림). 분류는 함수가 살아 있으면 Claude, 아니면 MIME/URL. URL은 OG도 붙입니다. 드래프트는 입력 알약 위에 뜹니다.
 3. 태그 확인 후 저장 → Supabase. 최신순 목록. 검색·유형·**일자별**은 AND. 행 탭 → `/scrap/:id`. 헤더 **통계** → `/dashboard`.
-4. 등급·체험·용량은 설정에서 확인. **DB 초기화**는 그 계정의 조각·미디어만 지웁니다. 언어·테마·팔레트는 이 기기에만. **나가기**로 인트로.
+4. 등급·체험·용량은 설정에서 확인. **DB 초기화**는 그 계정의 조각·미디어만 지웁니다. 언어·Look·테마·팔레트는 이 기기에만. **나가기**로 인트로.
+5. **둘러보기**는 계정이 아니라 이 브라우저(`mybrary.guest.*`)에 저장합니다. 첫 저장 전에 안내 시트가 한 번 뜨고, 같은 브라우저로 다시 둘러보기하면 그 조각을 이어서 봅니다. 다른 브라우저·시크릿·기록 삭제는 복구 경로가 없습니다. 이메일·Google로 로그인하면 이 기기의 조각을 계정으로 옮길지 한 번 물어봅니다.
 
 ## 배포 (Firebase Hosting)
 
 라이브: [https://mybrary-snuu09.web.app](https://mybrary-snuu09.web.app) · [https://mybrary-snuu09.firebaseapp.com](https://mybrary-snuu09.firebaseapp.com)
 
 1. `.env`에 Vite 키를 넣고 `npm run deploy:hosting` (`dist` 빌드 후 Hosting). AdMob은 선택.
-2. Supabase Auth에서 Email, Google, Anonymous 활성화. 마이그레이션 순서: [20260820140000_scraps_media_realtime.sql](supabase/migrations/20260820140000_scraps_media_realtime.sql) → [20260829143000_profiles_plans.sql](supabase/migrations/20260829143000_profiles_plans.sql). Redirect URL에 위 Hosting 도메인 추가. 등급/관리자 수동 설정은 [supabase/README.md](supabase/README.md).
+2. Supabase Auth에서 Email, Google, Anonymous 활성화. 마이그레이션 순서: [20260820140000_scraps_media_realtime.sql](supabase/migrations/20260820140000_scraps_media_realtime.sql) → [20260829143000_profiles_plans.sql](supabase/migrations/20260829143000_profiles_plans.sql) → [20260905100000_scrap_engagement.sql](supabase/migrations/20260905100000_scrap_engagement.sql). Redirect URL에 위 Hosting 도메인 추가. 등급/관리자 수동 설정은 [supabase/README.md](supabase/README.md).
 3. 분류: [functions/src/index.ts](functions/src/index.ts), Hosting rewrite `/api/analyze`. 2세대 Functions는 Blaze 필요. 미배포 시 클라이언트 MIME/URL 폴백. Blaze면 `functions/.env`에 `ANTHROPIC_API_KEY`, `SUPABASE_URL`, `SUPABASE_ANON_KEY` 후 `npx -y firebase-tools@latest deploy --only functions,hosting`.
 4. 모델 ID는 `claude-sonnet-4-5` (과제명의 `claude-sonnet-5`는 현재 id가 아님).
 
@@ -78,7 +80,7 @@ Netlify는 선택: `npm run build`, publish `dist`, 동일 Vite 키 + 사이트 
 ## 폴더 구조
 
 ```
-src/                   React UI, Plan, 필터, AdMob 슬롯, i18n
+src/                   React UI, Plan, 필터, 둘러보기 로컬 저장, AdMob 슬롯, i18n
 public/assets/         파비콘, 인트로 스틸
 firebase.json          Hosting(dist) + /api/analyze rewrite
 functions/             Cloud Function 분류 (JWT 필요)

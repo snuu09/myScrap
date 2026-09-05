@@ -101,16 +101,23 @@ export function ScrapList({
           </div>
         ) : (
           <ul className="scrap-list">
-            {visible.map((item) => (
-              <li key={item.id} className="scrap-card">
+            {visible.map((item) => {
+              const thumb = item.og?.image || (item.dataUrl && item.type === "image" ? item.dataUrl : "");
+              const unread = !item.readAt;
+              return (
+              <li key={item.id} className={"scrap-card" + (unread ? " scrap-card--unread" : "")}>
                 <button type="button" className="scrap-card-hit" onClick={() => navigate(`/scrap/${item.id}`)}>
-                  {item.dataUrl && item.type === "image" ? (
-                    <img src={item.dataUrl} alt="" className="scrap-card-media" />
+                  {thumb ? (
+                    <img src={thumb} alt="" className="scrap-card-media" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
                   ) : null}
                   <div className="scrap-card-body">
                     <div className="scrap-card-head">
                       <div className="min-w-0 flex-1">
-                        <p className="scrap-card-title">{item.title || t(lang, "untitled")}</p>
+                        <p className="scrap-card-title">
+                          {unread ? <span className="scrap-unread-dot" aria-hidden /> : null}
+                          {item.bookmarked ? <span className="scrap-bookmark-mark" aria-hidden>★</span> : null}
+                          {item.title || item.og?.title || t(lang, "untitled")}
+                        </p>
                         <p className="scrap-card-meta">
                           {typeLabel(lang, item.type)} · {formatWhen(item.createdAt, lang)}
                         </p>
@@ -135,7 +142,8 @@ export function ScrapList({
                         <X className="size-[18px]" strokeWidth={1.8} />
                       </span>
                     </div>
-                    {item.text && item.type !== "image" ? (
+                    {item.og?.description ? <p className="scrap-card-text">{item.og.description}</p> : null}
+                    {item.text && item.type !== "image" && !item.og?.description ? (
                       <p className="scrap-card-text">{item.text}</p>
                     ) : null}
                     {item.url ? <span className="scrap-card-link">{t(lang, "openLink")}</span> : null}
@@ -155,7 +163,8 @@ export function ScrapList({
                   </div>
                 </button>
               </li>
-            ))}
+              );
+            })}
           </ul>
         )}
       </section>

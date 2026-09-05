@@ -39,7 +39,8 @@ export async function requestAnalyze(payload: Payload): Promise<AnalyzeResult> {
     };
   };
 
-  if (!token) return fallback();
+  // Guest media never reaches storage, so there is no path for the function to read.
+  if (!token || (payload.kind === "file" && !payload.mediaPath)) return fallback();
 
   try {
     const res = await fetch("/api/analyze", {

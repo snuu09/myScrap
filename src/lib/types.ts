@@ -1,5 +1,13 @@
 export type ScrapType = "text" | "image" | "video" | "audio" | "link" | "document" | "unknown";
 
+export type ScrapOg = {
+  title: string;
+  description: string;
+  image: string;
+  siteName: string;
+  favicon: string;
+};
+
 export type Scrap = {
   id: string;
   createdAt: number;
@@ -22,6 +30,11 @@ export type Scrap = {
   memo: string;
   mediaPath: string;
   analyzing?: boolean;
+  bookmarked: boolean;
+  readAt: number | null;
+  remindAt: number | null;
+  og: ScrapOg | null;
+  ogStatus: string;
 };
 
 export type AnalyzeResult = {

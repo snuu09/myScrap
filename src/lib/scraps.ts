@@ -1,5 +1,14 @@
 import type { User } from "@supabase/supabase-js";
 import { getSupabase } from "./supabase";
+import { isBrowseUser } from "./guest";
+import {
+  attachLocalMedia,
+  clearLocalScraps,
+  deleteLocalScrap,
+  loadLocalScraps,
+  localUsage,
+  saveLocalScrap,
+} from "./localScraps";
 import type { Scrap } from "./types";
 
 const BUCKET = "scrap-media";
@@ -31,7 +40,22 @@ type Row = {
   memo: string;
   media_path: string | null;
   poster_path: string | null;
+  bookmarked?: boolean;
+  read_at?: string | null;
+  remind_at?: string | null;
 };
+
+function parseOg(raw: unknown): Scrap["og"] {
+  if (!raw || typeof raw !== "object") return null;
+  const o = raw as Record<string, unknown>;
+  return {
+    title: String(o.title || ""),
+    description: String(o.description || ""),
+    image: String(o.image || ""),
+    siteName: String(o.siteName || o.site_name || ""),
+    favicon: String(o.favicon || ""),
+  };
+}
 
 function extFor(scrap: Scrap) {
   const ext = String(scrap.extension || "").replace(/^\./, "");
@@ -71,8 +95,8 @@ function toRow(userId: string, scrap: Scrap): Row {
     size: Number(scrap.size) || 0,
     preview_text: scrap.previewText || "",
     pages: 0,
-    og: null,
-    og_status: "",
+    og: scrap.og,
+    og_status: scrap.ogStatus || "",
     sample: false,
     ephemeral: false,
     stored_media: !!scrap.storedMedia,
@@ -81,6 +105,9 @@ function toRow(userId: string, scrap: Scrap): Row {
     memo: scrap.memo || "",
     media_path: scrap.mediaPath || null,
     poster_path: null,
+    bookmarked: !!scrap.bookmarked,
+    read_at: scrap.readAt ? new Date(scrap.readAt).toISOString() : null,
+    remind_at: scrap.remindAt ? new Date(scrap.remindAt).toISOString() : null,
   };
 }
 
@@ -107,10 +134,16 @@ async function fromRow(row: Row): Promise<Scrap> {
     error: row.error || "",
     memo: row.memo || "",
     mediaPath: row.media_path || "",
+    bookmarked: !!row.bookmarked,
+    readAt: row.read_at ? Date.parse(row.read_at) || null : null,
+    remindAt: row.remind_at ? Date.parse(row.remind_at) || null : null,
+    og: parseOg(row.og),
+    ogStatus: row.og_status || "",
   };
 }
 
 export async function loadScraps(user: User): Promise<Scrap[]> {
+  if (isBrowseUser(user)) return loadLocalScraps();
   const supabase = getSupabase();
   if (!supabase) return [];
   const { data, error } = await supabase
@@ -125,6 +158,7 @@ export async function loadScraps(user: User): Promise<Scrap[]> {
 }
 
 export async function uploadMedia(user: User, scrap: Scrap, file: File) {
+  if (isBrowseUser(user)) return attachLocalMedia(file);
   const supabase = getSupabase();
   if (!supabase) throw new Error("config");
   const path = mediaObjectPath(user.id, scrap);
@@ -134,10 +168,14 @@ export async function uploadMedia(user: User, scrap: Scrap, file: File) {
   });
   if (error) throw error;
   const dataUrl = await signedUrl(path);
-  return { mediaPath: path, dataUrl, storedMedia: !!dataUrl };
+  return { mediaPath: path, dataUrl, storedMedia: !!dataUrl, skipped: false };
 }
 
 export async function saveScrap(user: User, scrap: Scrap) {
+  if (isBrowseUser(user)) {
+    saveLocalScrap(scrap);
+    return;
+  }
   const supabase = getSupabase();
   if (!supabase) throw new Error("config");
   const { error } = await supabase.from("scraps").upsert(toRow(user.id, scrap), { onConflict: "id" });
@@ -145,6 +183,10 @@ export async function saveScrap(user: User, scrap: Scrap) {
 }
 
 export async function deleteScrap(user: User, scrap: Scrap) {
+  if (isBrowseUser(user)) {
+    deleteLocalScrap(scrap);
+    return;
+  }
   const supabase = getSupabase();
   if (!supabase) throw new Error("config");
   if (scrap.mediaPath) {
@@ -154,8 +196,9 @@ export async function deleteScrap(user: User, scrap: Scrap) {
   if (error) throw error;
 }
 
-/** Account scrap count + stored media bytes from Supabase (RLS-scoped). */
+/** Account scrap count + stored media bytes from Supabase (RLS-scoped), or this device for guests. */
 export async function loadUserDbUsage(user: User): Promise<{ count: number; bytes: number }> {
+  if (isBrowseUser(user)) return localUsage();
   const supabase = getSupabase();
   if (!supabase) return { count: 0, bytes: 0 };
   const { data, error, count } = await supabase
@@ -173,6 +216,10 @@ export async function loadUserDbUsage(user: User): Promise<{ count: number; byte
 
 /** Delete all scraps and media for this user. Does not touch profiles. */
 export async function clearUserScraps(user: User) {
+  if (isBrowseUser(user)) {
+    clearLocalScraps();
+    return;
+  }
   const supabase = getSupabase();
   if (!supabase) throw new Error("config");
   const { data, error } = await supabase.from("scraps").select("id, media_path").eq("user_id", user.id);
@@ -189,6 +236,7 @@ export async function clearUserScraps(user: User) {
 }
 
 export const SCRAPS_CLEARED_EVENT = "mybrary:scraps-cleared";
+export const SCRAPS_CHANGED_EVENT = "mybrary:scraps-changed";
 
 export async function getAccessToken() {
   const supabase = getSupabase();

@@ -1,18 +1,31 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { ArrowUp } from "lucide-react";
 import { t } from "../i18n";
 import { usePrefs } from "../context/Prefs";
-import { useAuth } from "../context/Auth";
+import { isBrowseUser, useAuth } from "../context/Auth";
 import { usePlan } from "../context/Plan";
 import { DraftCard } from "../components/DraftCard";
+import { GuestNoticeSheet } from "../components/GuestNoticeSheet";
 import { ScrapList } from "../components/ScrapList";
 import { StickDock } from "../components/StickDock";
 import { requestAnalyze } from "../lib/analyze";
-import { deleteScrap, loadScraps, saveScrap, uploadMedia, SCRAPS_CLEARED_EVENT } from "../lib/scraps";
+import { fetchOgPreview } from "../lib/og";
+import {
+  deleteScrap,
+  loadScraps,
+  saveScrap,
+  uploadMedia,
+  SCRAPS_CHANGED_EVENT,
+  SCRAPS_CLEARED_EVENT,
+} from "../lib/scraps";
+import { GuestQuotaError, guestNoticeSeen, markGuestNoticeSeen } from "../lib/localScraps";
 import { filterScraps } from "../lib/scrapFilters";
 import { getSupabase } from "../lib/supabase";
 import { analyzeFile, analyzeText, uid } from "../lib/tagger";
 import type { Scrap, ScrapType } from "../lib/types";
+
+const REMIND_NOTIFIED_KEY = "mybrary.remind.notified";
 
 function blankScrap(partial: Partial<Scrap>): Scrap {
   const now = Date.now();
@@ -37,14 +50,25 @@ function blankScrap(partial: Partial<Scrap>): Scrap {
     error: "",
     memo: "",
     mediaPath: "",
+    bookmarked: false,
+    readAt: null,
+    remindAt: null,
+    og: null,
+    ogStatus: "",
     ...partial,
   };
 }
 
-export function Shelf() {
+type Props = { onEnter?: () => void };
+
+export function Shelf({ onEnter }: Props) {
   const { lang } = usePrefs();
   const { user } = useAuth();
   const { setScrapsForUsage, canUpload, canStick } = usePlan();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const guest = isBrowseUser(user);
+  const pendingWrite = useRef<(() => void) | null>(null);
+  const [noticeOpen, setNoticeOpen] = useState(false);
   const [scraps, setScraps] = useState<Scrap[]>([]);
   const [draft, setDraft] = useState<Scrap | null>(null);
   const [composer, setComposer] = useState("");
@@ -55,6 +79,13 @@ export function Shelf() {
   const [dropping, setDropping] = useState(false);
   const [error, setError] = useState("");
   const [top, setTop] = useState(false);
+
+  useEffect(() => {
+    const q = searchParams.get("q");
+    if (q == null) return;
+    setQuery(q);
+    setSearchParams({}, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   const visible = useMemo(
     () => filterScraps(scraps, { query, type: typeFilter, day: dayFilter }),
@@ -77,14 +108,67 @@ export function Shelf() {
   }, [refresh]);
 
   useEffect(() => {
+    if (!scraps.length || typeof Notification === "undefined") return;
+    const due = scraps.filter((item) => item.remindAt && item.remindAt <= Date.now());
+    if (!due.length) return;
+    let notified: string[] = [];
+    try {
+      notified = JSON.parse(sessionStorage.getItem(REMIND_NOTIFIED_KEY) || "[]") as string[];
+    } catch {
+      notified = [];
+    }
+    const fresh = due.filter((item) => !notified.includes(item.id));
+    if (!fresh.length) return;
+    const mark = () => {
+      try {
+        sessionStorage.setItem(REMIND_NOTIFIED_KEY, JSON.stringify([...notified, ...fresh.map((item) => item.id)]));
+      } catch {
+        /* ignore */
+      }
+    };
+    if (Notification.permission === "granted") {
+      fresh.forEach((item) => {
+        new Notification(item.title || t(lang, "untitled"), {
+          body: t(lang, "remind"),
+          tag: "mybrary-remind-" + item.id,
+        });
+      });
+      mark();
+    } else if (Notification.permission === "default") {
+      void Notification.requestPermission().then((perm) => {
+        if (perm !== "granted") {
+          mark();
+          return;
+        }
+        fresh.forEach((item) => {
+          new Notification(item.title || t(lang, "untitled"), {
+            body: t(lang, "remind"),
+            tag: "mybrary-remind-" + item.id,
+          });
+        });
+        mark();
+      });
+    } else {
+      mark();
+    }
+  }, [scraps, lang]);
+
+  useEffect(() => {
     function onCleared() {
-      setScraps([]);
-      setScrapsForUsage([]);
+      setScraps([]);      setScrapsForUsage([]);
       setDraft(null);
     }
     window.addEventListener(SCRAPS_CLEARED_EVENT, onCleared);
     return () => window.removeEventListener(SCRAPS_CLEARED_EVENT, onCleared);
   }, [setScrapsForUsage]);
+
+  useEffect(() => {
+    function onChanged() {
+      void refresh();
+    }
+    window.addEventListener(SCRAPS_CHANGED_EVENT, onChanged);
+    return () => window.removeEventListener(SCRAPS_CHANGED_EVENT, onChanged);
+  }, [refresh]);
 
   useEffect(() => {
     function onScroll() {
@@ -105,7 +189,28 @@ export function Shelf() {
     const gate = canUpload(addingBytes);
     if (gate.ok) return "";
     if (gate.reason === "trialExpired") return t(lang, "trialExpiredMsg");
-    return t(lang, "quotaExceededMsg");
+    return t(lang, guest ? "guestQuotaMsg" : "quotaExceededMsg");
+  }
+
+  /** Guests learn where their scraps live before the first localStorage write. */
+  function needsGuestNotice(run: () => void) {
+    if (!guest || guestNoticeSeen()) return false;
+    pendingWrite.current = run;
+    setNoticeOpen(true);
+    return true;
+  }
+
+  function confirmGuestNotice() {
+    markGuestNoticeSeen();
+    setNoticeOpen(false);
+    const run = pendingWrite.current;
+    pendingWrite.current = null;
+    run?.();
+  }
+
+  function cancelGuestNotice() {
+    pendingWrite.current = null;
+    setNoticeOpen(false);
   }
 
   function guardStick() {
@@ -143,6 +248,12 @@ export function Shelf() {
     setDraft(next);
     setComposer("");
     const ai = await requestAnalyze({ kind: "text", text });
+    const url = ai.url || hint.url || "";
+    let ogPatch: Pick<Scrap, "og" | "ogStatus"> = { og: null, ogStatus: "" };
+    if (url) {
+      const ogResult = await fetchOgPreview(url);
+      ogPatch = { og: ogResult.og, ogStatus: ogResult.ogStatus };
+    }
     setDraft((cur) =>
       cur && cur.id === next.id
         ? {
@@ -150,10 +261,11 @@ export function Shelf() {
             analyzing: false,
             type: ai.type,
             tags: ai.tags,
-            title: ai.title || cur.title,
+            title: ai.title || ogPatch.og?.title || cur.title,
             text: ai.body || cur.text,
-            url: ai.url || cur.url,
+            url: url || cur.url,
             domain: ai.domain || cur.domain,
+            ...ogPatch,
           }
         : cur,
     );
@@ -169,6 +281,7 @@ export function Shelf() {
       window.alert(blocked);
       return;
     }
+    if (needsGuestNotice(() => void startFromFiles([file]))) return;
     const hint = analyzeFile(file);
     const next = blankScrap({
       type: hint.type,
@@ -187,6 +300,7 @@ export function Shelf() {
       next.dataUrl = uploaded.dataUrl;
       next.storedMedia = uploaded.storedMedia;
       setDraft({ ...next });
+      if (uploaded.skipped) setError(t(lang, "guestMediaSkipped"));
       const ai = await requestAnalyze({
         kind: "file",
         mediaPath: uploaded.mediaPath,
@@ -221,14 +335,16 @@ export function Shelf() {
       window.alert(t(lang, "syncError"));
       return;
     }
+    if (needsGuestNotice(() => void persist())) return;
     const saved = { ...draft, updatedAt: Date.now(), analyzing: false };
     try {
       await saveScrap(user, saved);
       setDraft(null);
       await refresh();
-    } catch {
-      setError(t(lang, "syncError"));
-      window.alert(t(lang, "syncError"));
+    } catch (err) {
+      const message = err instanceof GuestQuotaError ? t(lang, "guestQuotaMsg") : t(lang, "syncError");
+      setError(message);
+      window.alert(message);
     }
   }
 
@@ -274,6 +390,16 @@ export function Shelf() {
       }}
     >
       <div className="flex-1">
+        {guest ? (
+          <p className="mx-auto flex max-w-[40rem] flex-wrap items-center gap-x-2 gap-y-1 px-[var(--gutter)] pt-3 text-[0.8125rem] text-ink-soft">
+            {t(lang, "guestBanner")}
+            {onEnter ? (
+              <button type="button" className="auth-link-utility" onClick={onEnter}>
+                {t(lang, "guestBannerCta")}
+              </button>
+            ) : null}
+          </p>
+        ) : null}
         {error ? <p className="mx-auto max-w-[40rem] px-[var(--gutter)] pt-3 text-[0.8125rem] text-danger">{error}</p> : null}
         <ScrapList
           scraps={scraps}
@@ -321,6 +447,7 @@ export function Shelf() {
           <ArrowUp className="size-[22px]" strokeWidth={1.8} />
         </button>
       ) : null}
+      <GuestNoticeSheet open={noticeOpen} onConfirm={confirmGuestNotice} onCancel={cancelGuestNotice} />
     </div>
   );
 }

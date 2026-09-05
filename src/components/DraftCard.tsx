@@ -1,5 +1,6 @@
 import { t, typeLabel, detectedLabel } from "../i18n";
 import { usePrefs } from "../context/Prefs";
+import { SiteIcon } from "./SiteIcon";
 import type { Scrap } from "../lib/types";
 import { formatBytes } from "../lib/tagger";
 
@@ -26,6 +27,9 @@ export function DraftCard({ draft, onChange, onSave, onCancel }: Props) {
   const { lang } = usePrefs();
   if (draft.analyzing) return <AnalyzeSkeleton />;
 
+  const og = draft.og;
+  const thumb = og?.image || (draft.dataUrl && draft.type === "image" ? draft.dataUrl : "");
+
   return (
     <form
       className="classify-draft-form"
@@ -38,8 +42,30 @@ export function DraftCard({ draft, onChange, onSave, onCancel }: Props) {
         <p className="list-tools-label">{t(lang, "classifyTitle")}</p>
       </div>
       <p className="classify-draft-detected">{detectedLabel(lang, draft.type)}</p>
-      {draft.dataUrl && draft.type === "image" ? (
-        <img src={draft.dataUrl} alt="" className="max-h-48 rounded-[14px] object-cover" />
+      {og && (og.image || og.siteName || og.description) ? (
+        <div className="og-card">
+          {thumb ? (
+            <img
+              src={thumb}
+              alt=""
+              className="og-card-media"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = "none";
+              }}
+            />
+          ) : null}
+          <div className="og-card-body">
+            {og.siteName || draft.domain ? (
+              <p className="og-card-site">
+                <SiteIcon domain={draft.domain} favicon={og.favicon} className="og-card-icon" size={14} />
+                {og.siteName || draft.domain}
+              </p>
+            ) : null}
+            {og.description ? <p className="og-card-desc">{og.description}</p> : null}
+          </div>
+        </div>
+      ) : thumb && draft.type === "image" ? (
+        <img src={thumb} alt="" className="max-h-48 rounded-[14px] object-cover" />
       ) : null}
       {draft.url ? (
         <a href={draft.url} className="scrap-card-link" target="_blank" rel="noreferrer">

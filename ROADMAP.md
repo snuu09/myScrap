@@ -25,11 +25,12 @@ flowchart TB
 
 ## Current SPA
 
-With Vite env vars set, email sign in or 둘러보기 writes scraps per user. Live: [https://mybrary-snuu09.web.app](https://mybrary-snuu09.web.app).
+With Vite env vars set, email sign in writes scraps per user and 둘러보기 writes to this device. Live: [https://mybrary-snuu09.web.app](https://mybrary-snuu09.web.app).
 
 ### Capture and classify
 
-- [x] Entry: email sign up / sign in, **Google**, or **둘러보기** (anonymous Auth). No Apple or `localStorage` scrap store.
+- [x] Entry: email sign up / sign in, **Google**, or **둘러보기** (anonymous Auth). No Apple.
+- [x] 둘러보기 scraps live in this browser's `localStorage`, with a one-time notice on first local save, a device-only shelf banner, and a move-to-account prompt after a real sign-in. Account scraps still go to Supabase only.
 - [x] Composer: paste text or a URL, drag-and-drop, `+` (clipboard, camera on phones, photo, file).
 - [x] Classify-then-save draft: type, tags, memo, skeleton while `/api/analyze` (or MIME fallback) runs. A new Stick replaces an open draft.
 - [x] Recency list, newest first. Type chips, search, **일자별** day filter. Row detail sheet with prev/next on filtered order. Peel from list or detail.

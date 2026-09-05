@@ -2,6 +2,8 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import type { AuthChangeEvent, Session, User } from "@supabase/supabase-js";
 import { getSupabase, isGoogleAuthEnabled, isSupabaseConfigured } from "../lib/supabase";
 
+export { isBrowseUser } from "../lib/guest";
+
 type AuthState = {
   configured: boolean;
   ready: boolean;
@@ -132,10 +134,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
-
-export function isBrowseUser(user: User | null) {
-  return Boolean(user?.is_anonymous || user?.user_metadata?.browse === true);
 }
 
 export function useAuth() {
