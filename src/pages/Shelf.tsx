@@ -21,6 +21,7 @@ import {
 } from "../lib/scraps";
 import { GuestQuotaError, guestNoticeSeen, markGuestNoticeSeen } from "../lib/localScraps";
 import { filterScraps } from "../lib/scrapFilters";
+import { useDialog } from "../lib/dialog";
 import { getSupabase } from "../lib/supabase";
 import { analyzeFile, analyzeText, uid } from "../lib/tagger";
 import type { Scrap, ScrapType } from "../lib/types";
@@ -65,6 +66,7 @@ export function Shelf({ onEnter }: Props) {
   const { lang } = usePrefs();
   const { user } = useAuth();
   const { setScrapsForUsage, canUpload, canStick } = usePlan();
+  const { alert, confirm } = useDialog();
   const [searchParams, setSearchParams] = useSearchParams();
   const guest = isBrowseUser(user);
   const pendingWrite = useRef<(() => void) | null>(null);
@@ -213,28 +215,28 @@ export function Shelf({ onEnter }: Props) {
     setNoticeOpen(false);
   }
 
-  function guardStick() {
+  async function guardStick() {
     const msg = stickBlockedReason();
     if (msg) {
-      window.alert(msg);
+      await alert(msg);
       return true;
     }
     return false;
   }
 
-  function busyGuard() {
+  async function busyGuard() {
     if (draft) {
-      window.alert(t(lang, "draftBusy"));
+      await alert(t(lang, "draftBusy"));
       return true;
     }
-    if (guardStick()) return true;
+    if (await guardStick()) return true;
     return false;
   }
 
   async function startFromText(raw: string) {
     const text = raw.trim();
     if (!text || !user) return;
-    if (busyGuard()) return;
+    if (await busyGuard()) return;
     const hint = analyzeText(text);
     const next = blankScrap({
       type: hint.type,
@@ -273,16 +275,17 @@ export function Shelf({ onEnter }: Props) {
 
   async function startFromFiles(list: FileList | File[]) {
     if (!user) return;
-    if (busyGuard()) return;
+    if (await busyGuard()) return;
     const file = Array.from(list)[0];
     if (!file) return;
     const blocked = uploadBlockedReason(file.size);
     if (blocked) {
-      window.alert(blocked);
+      await alert(blocked);
       return;
     }
     if (needsGuestNotice(() => void startFromFiles([file]))) return;
     const hint = analyzeFile(file);
+    const localPreview = file.type.startsWith("image/") ? URL.createObjectURL(file) : "";
     const next = blankScrap({
       type: hint.type,
       tags: hint.tags,
@@ -291,13 +294,17 @@ export function Shelf({ onEnter }: Props) {
       mime: hint.mime,
       extension: hint.extension,
       size: hint.size,
+      dataUrl: localPreview,
       analyzing: true,
     });
     setDraft(next);
     try {
       const uploaded = await uploadMedia(user, next, file);
+      if (localPreview && uploaded.dataUrl && uploaded.dataUrl !== localPreview) {
+        URL.revokeObjectURL(localPreview);
+      }
       next.mediaPath = uploaded.mediaPath;
-      next.dataUrl = uploaded.dataUrl;
+      next.dataUrl = uploaded.dataUrl || localPreview;
       next.storedMedia = uploaded.storedMedia;
       setDraft({ ...next });
       if (uploaded.skipped) setError(t(lang, "guestMediaSkipped"));
@@ -318,12 +325,13 @@ export function Shelf({ onEnter }: Props) {
               text: ai.body || cur.text,
               storedMedia: uploaded.storedMedia,
               mediaPath: uploaded.mediaPath,
-              dataUrl: uploaded.dataUrl,
+              dataUrl: uploaded.dataUrl || cur.dataUrl,
             }
           : cur,
       );
     } catch {
-      setDraft((cur) => (cur && cur.id === next.id ? { ...cur, analyzing: false, error: "upload" } : cur));
+      if (localPreview) URL.revokeObjectURL(localPreview);
+      setDraft((cur) => (cur && cur.id === next.id ? { ...cur, analyzing: false, error: "upload", dataUrl: "" } : cur));
       setError(t(lang, "errorFile"));
     }
   }
@@ -332,19 +340,21 @@ export function Shelf({ onEnter }: Props) {
     if (!user || !draft || draft.analyzing) return;
     if (!getSupabase()) {
       setError(t(lang, "syncError"));
-      window.alert(t(lang, "syncError"));
+      await alert(t(lang, "syncError"));
       return;
     }
     if (needsGuestNotice(() => void persist())) return;
+    const preview = draft.dataUrl;
     const saved = { ...draft, updatedAt: Date.now(), analyzing: false };
     try {
       await saveScrap(user, saved);
+      if (preview.startsWith("blob:")) URL.revokeObjectURL(preview);
       setDraft(null);
       await refresh();
     } catch (err) {
       const message = err instanceof GuestQuotaError ? t(lang, "guestQuotaMsg") : t(lang, "syncError");
       setError(message);
-      window.alert(message);
+      await alert(message);
     }
   }
 
@@ -379,7 +389,7 @@ export function Shelf({ onEnter }: Props) {
         e.preventDefault();
         setDropping(false);
         if (stickDisabled) {
-          window.alert(stickBlockedReason());
+          void alert(stickBlockedReason() || t(lang, "trialExpiredMsg"));
           return;
         }
         if (e.dataTransfer.files.length) void startFromFiles(e.dataTransfer.files);
@@ -431,7 +441,11 @@ export function Shelf({ onEnter }: Props) {
               onChange={(patch) => setDraft((cur) => (cur ? { ...cur, ...patch } : cur))}
               onSave={() => void persist()}
               onCancel={() => {
-                if (window.confirm(t(lang, "leaveDraftConfirm"))) setDraft(null);
+                void (async () => {
+                  if (!(await confirm(t(lang, "leaveDraftConfirm")))) return;
+                  if (draft.dataUrl.startsWith("blob:")) URL.revokeObjectURL(draft.dataUrl);
+                  setDraft(null);
+                })();
               }}
             />
           ) : null

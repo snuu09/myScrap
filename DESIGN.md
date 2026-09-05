@@ -404,7 +404,7 @@ Binding for [`src/components/SettingsSheet.tsx`](src/components/SettingsSheet.ts
 
 **The Settings Session Rule.** When signed in, show `settings-session-chip` directly under the header: enamel/paper pill, caption size, ink-soft label plus ink value (email or **둘러보기** for anonymous browse). Truncate long emails.
 
-**The Guest Storage Notice Rule.** The two browse dialogs ([`GuestNoticeSheet`](src/components/GuestNoticeSheet.tsx), [`GuestMigrateSheet`](src/components/GuestMigrateSheet.tsx)) are the only **centered** overlays: same 32px `--login-wall` panel and ink 24% scrim as the header sheets, but centered because they interrupt a save rather than answer a header tap. Title, `auth-lead` line, disc list of device limits in ink-soft caption, then primary above secondary. They fire once per device (`mybrary.guest.notice`, `mybrary.guest.migrateAsked`), never on every save. On the shelf, browse mode keeps one quiet caption line above the list (ink-soft, `auth-link-utility` for 계정 만들기), not a colored alert bar.
+**The Guest Storage Notice Rule.** Centered overlays share one shell ([`GuestNoticeSheet`](src/components/GuestNoticeSheet.tsx), [`GuestMigrateSheet`](src/components/GuestMigrateSheet.tsx), [`AppDialog`](src/components/AppDialog.tsx), [`RemindSheet`](src/components/RemindSheet.tsx)): 32px `--login-wall` panel, ink scrim, true screen center. Guest notice/migrate fire once per device (`mybrary.guest.notice`, `mybrary.guest.migrateAsked`). AppDialog replaces browser `alert` / `confirm`. On the shelf, browse mode keeps one quiet caption line above the list (ink-soft, `auth-link-utility` for 계정 만들기), not a colored alert bar.
 
 ## Motion & interaction
 
@@ -434,7 +434,7 @@ These rules are binding for intro, header auth, capture, draft, list, menu, and 
 - **Pressed:** buttons scale to 0.98 (chips and FAB 0.96). Release returns on `--dur-fast`.
 - **Focus-visible:** tangerine ring (`--focus`). The ring follows the control radius. Composer focus is the 24px shell, never a rectangle on the inner field and never a pill. Never rely on hover color alone for the focused control.
 - **Disabled Stick:** opacity 0.45, `not-allowed`, no press scale that implies it will fire.
-- **Two-step:** peel, Leave with a draft, and Empty the door arm for 4s, then revert. The second press does the work. No browser `confirm()`.
+- **Two-step:** peel, Leave with a draft, and Empty the door use the centered AppDialog (or a second press where already designed). No browser `confirm()`.
 - **Drop:** composer background and dashed outline update on `--dur-fast`.
 
 ### Do not
@@ -460,7 +460,7 @@ Binding against [ROADMAP.md](ROADMAP.md) Phase 4. Header stays brand + 로그인
 
 **The Classify Draft Rule.** Classify-then-save lives in the floating Stick dock, **above** the composer pill. The outer `.classify-draft` panel reuses list-tools chrome (18px, paper, scrap shadow) with max-height scroll when tall. Cancel is auth utility ghost; Save is auth primary (48px magnet). Do not place the draft in shelf-door above list-tools.
 
-**The Detail Page Rule.** Row tap navigates to [`/scrap/:id`](src/pages/ScrapDetail.tsx). Full page in the app chrome (Header/Footer), not an auth/settings sheet. Back link **책장으로**. Prev/next over newest-first shelf list; Arrow keys and Escape return to shelf. Peel confirms then deletes and returns home. Use dashboard-door / dashboard-panel paper language — never login-wall floating sheet.
+**The Detail Page Rule.** Row tap navigates to [`/scrap/:id`](src/pages/ScrapDetail.tsx). Full page in the app chrome (Header/Footer), not an auth/settings sheet. Back link **책장으로**. Share / bookmark / read / remind sit **inside** `dashboard-panel` under the title meta. Prev/next over newest-first shelf list; Arrow keys and Escape return to shelf. Peel uses the centered AppDialog, then deletes and returns home. Use dashboard-door / dashboard-panel paper language — never login-wall floating sheet.
 
 **The Ad Slot Rule.** When `showAds` is true (free / standard tiers), one AdMob banner (`AdSlot` via `adsbygoogle`) sits below **list-tools** and above the recency list. Env: `VITE_ADMOB_PUBLISHER_ID` (ca-pub-…) and `VITE_ADMOB_BANNER_SLOT`. Premium and admin hide it. Browser SPAs use the AdSense tag; native Android/iOS shells can overlay native AdMob separately.
 

@@ -7,6 +7,7 @@ import { usePlan } from "../context/Plan";
 import { migrateLocalScraps } from "../lib/guestMigrate";
 import { localScrapCount, markGuestMigrateAsked } from "../lib/localScraps";
 import { SCRAPS_CHANGED_EVENT } from "../lib/scraps";
+import { useDialog } from "../lib/dialog";
 
 type Props = { open: boolean; onClose: () => void };
 
@@ -14,6 +15,7 @@ export function GuestMigrateSheet({ open, onClose }: Props) {
   const { lang } = usePrefs();
   const { user } = useAuth();
   const { canUpload } = usePlan();
+  const { alert } = useDialog();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [count] = useState(() => localScrapCount());
@@ -39,7 +41,7 @@ export function GuestMigrateSheet({ open, onClose }: Props) {
       markGuestMigrateAsked();
       window.dispatchEvent(new Event(SCRAPS_CHANGED_EVENT));
       if (result.moved && !result.left) {
-        window.alert(t(lang, "guestMigrateDone", { n: result.moved }));
+        await alert(t(lang, "guestMigrateDone", { n: result.moved }));
         onClose();
         return;
       }

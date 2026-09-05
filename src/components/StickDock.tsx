@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowUp, Camera, Clipboard, FileUp, ImageIcon, Plus } from "lucide-react";
 import { t } from "../i18n";
 import { usePrefs } from "../context/Prefs";
+import { useDialog } from "../lib/dialog";
+import { IconTip } from "./IconTip";
 
 export const CLOSE_OVERLAYS_EVENT = "mybrary:close-overlays";
 
@@ -19,21 +21,21 @@ type Props = {
 
 export function StickDock({ value, onChange, onSubmitText, onFiles, dropping, disabled, disabledHint, draftSlot }: Props) {
   const { lang } = usePrefs();
+  const { alert } = useDialog();
   const [menu, setMenu] = useState(false);
-  const [focused, setFocused] = useState(false);
   const photoRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
   const fieldRef = useRef<HTMLTextAreaElement>(null);
   const canSend = Boolean(value.trim()) && !disabled;
-  const expanded = focused || value.includes("\n") || value.length > 48;
+  const expanded = value.includes("\n") || value.length > 48;
 
   useEffect(() => {
     const el = fieldRef.current;
     if (!el) return;
     el.style.height = "auto";
-    const next = expanded ? Math.min(el.scrollHeight, 160) : Math.min(el.scrollHeight, 28);
-    el.style.height = `${Math.max(next, 24)}px`;
+    const next = expanded ? Math.min(el.scrollHeight, 160) : Math.min(el.scrollHeight, 36);
+    el.style.height = `${Math.max(next, 36)}px`;
   }, [value, expanded]);
 
   useEffect(() => {
@@ -55,12 +57,12 @@ export function StickDock({ value, onChange, onSubmitText, onFiles, dropping, di
 
   async function readClipboard() {
     if (disabled) {
-      window.alert(disabledHint || t(lang, "trialExpiredMsg"));
+      await alert(disabledHint || t(lang, "trialExpiredMsg"));
       return;
     }
     try {
       if (!navigator.clipboard?.read) {
-        window.alert(t(lang, "clipboardUnsupported"));
+        await alert(t(lang, "clipboardUnsupported"));
         return;
       }
       const items = await navigator.clipboard.read();
@@ -82,28 +84,28 @@ export function StickDock({ value, onChange, onSubmitText, onFiles, dropping, di
         onChange(text);
         return;
       }
-      window.alert(t(lang, "clipboardEmpty"));
+      await alert(t(lang, "clipboardEmpty"));
     } catch (err) {
       const name = err instanceof Error ? err.name : "";
-      if (name === "NotAllowedError") window.alert(t(lang, "clipboardDenied"));
-      else window.alert(t(lang, "clipboardEmpty"));
+      if (name === "NotAllowedError") await alert(t(lang, "clipboardDenied"));
+      else await alert(t(lang, "clipboardEmpty"));
     }
   }
 
-  function guardDisabled() {
+  async function guardDisabled() {
     if (!disabled) return false;
-    window.alert(disabledHint || t(lang, "trialExpiredMsg"));
+    await alert(disabledHint || t(lang, "trialExpiredMsg"));
     return true;
   }
 
-  function submit() {
-    if (guardDisabled()) return;
+  async function submit() {
+    if (await guardDisabled()) return;
     if (!value.trim()) return;
     onSubmitText();
   }
 
-  function openMenu() {
-    if (guardDisabled()) return;
+  async function openMenu() {
+    if (await guardDisabled()) return;
     window.dispatchEvent(new Event(CLOSE_OVERLAYS_EVENT));
     setMenu(true);
   }
@@ -135,20 +137,22 @@ export function StickDock({ value, onChange, onSubmitText, onFiles, dropping, di
           >
             <div className="composer-chat-row">
               <div className="relative shrink-0">
-                <button
-                  type="button"
-                  className="composer-chat-plus"
-                  aria-label={t(lang, "addMenu")}
-                  aria-expanded={menu}
-                  aria-haspopup="menu"
-                  disabled={disabled}
-                  onClick={() => {
-                    if (menu) setMenu(false);
-                    else openMenu();
-                  }}
-                >
-                  <Plus className="size-5" strokeWidth={1.8} />
-                </button>
+                <IconTip label={t(lang, "addMenu")}>
+                  <button
+                    type="button"
+                    className="composer-chat-plus"
+                    aria-label={t(lang, "addMenu")}
+                    aria-expanded={menu}
+                    aria-haspopup="menu"
+                    disabled={disabled}
+                    onClick={() => {
+                      if (menu) setMenu(false);
+                      else void openMenu();
+                    }}
+                  >
+                    <Plus className="size-5" strokeWidth={1.8} />
+                  </button>
+                </IconTip>
                 {menu ? (
                   <div className="composer-chat-menu" role="menu">
                     <button
@@ -208,26 +212,26 @@ export function StickDock({ value, onChange, onSubmitText, onFiles, dropping, di
                 value={value}
                 placeholder={t(lang, "placeholder")}
                 onChange={(e) => onChange(e.target.value)}
-                onFocus={() => setFocused(true)}
-                onBlur={() => setFocused(false)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
-                    submit();
+                    void submit();
                   }
                 }}
                 className="composer-chat-field"
                 disabled={disabled}
               />
-              <button
-                type="button"
-                className="composer-chat-send shrink-0"
-                disabled={!canSend}
-                aria-label={t(lang, "send")}
-                onClick={submit}
-              >
-                <ArrowUp className="size-5" strokeWidth={2.2} />
-              </button>
+              <IconTip label={t(lang, "send")}>
+                <button
+                  type="button"
+                  className="composer-chat-send shrink-0"
+                  disabled={!canSend}
+                  aria-label={t(lang, "send")}
+                  onClick={() => void submit()}
+                >
+                  <ArrowUp className="size-5" strokeWidth={2.2} />
+                </button>
+              </IconTip>
             </div>
           </div>
         </div>

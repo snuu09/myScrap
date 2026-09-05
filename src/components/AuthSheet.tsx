@@ -69,6 +69,7 @@ export function AuthSheet({ open, onClose }: Props) {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
+  const [busyKind, setBusyKind] = useState<"google" | "browse" | "submit" | null>(null);
   const [message, setMessage] = useState("");
   const [success, setSuccess] = useState("");
   const [fields, setFields] = useState<FieldErrors>({});
@@ -87,10 +88,21 @@ export function AuthSheet({ open, onClose }: Props) {
       setSuccess("");
       setFields({});
       setBusy(false);
+      setBusyKind(null);
     }
   }, [open]);
 
   if (!open) return null;
+
+  function startBusy(kind: "google" | "browse" | "submit") {
+    setBusy(true);
+    setBusyKind(kind);
+  }
+
+  function endBusy() {
+    setBusy(false);
+    setBusyKind(null);
+  }
 
   function backToChooser() {
     setMode("chooser");
@@ -121,12 +133,12 @@ export function AuthSheet({ open, onClose }: Props) {
         setMessage(t(lang, "authNeedConfig"));
         return;
       }
-      setBusy(true);
+      startBusy("submit");
       const result =
         mode === "findId"
           ? await requestLoginReminder(email.trim())
           : await requestPasswordReset(email.trim());
-      setBusy(false);
+      endBusy();
       if (result.error) {
         setMessage(t(lang, "authError"));
         return;
@@ -146,9 +158,9 @@ export function AuthSheet({ open, onClose }: Props) {
         setMessage(t(lang, "authNeedConfig"));
         return;
       }
-      setBusy(true);
+      startBusy("submit");
       const result = await updatePassword(password);
-      setBusy(false);
+      endBusy();
       if (result.error) {
         setMessage(t(lang, "authError"));
         return;
@@ -174,10 +186,10 @@ export function AuthSheet({ open, onClose }: Props) {
       setMessage(t(lang, "authNeedConfig"));
       return;
     }
-    setBusy(true);
+    startBusy("submit");
     if (mode === "up") {
       const result = await signUp(email.trim(), password);
-      setBusy(false);
+      endBusy();
       if (result.error) {
         setMessage(t(lang, "authError"));
         return;
@@ -190,7 +202,7 @@ export function AuthSheet({ open, onClose }: Props) {
       return;
     }
     const result = await signIn(email.trim(), password);
-    setBusy(false);
+    endBusy();
     if (result.error) {
       setMessage(t(lang, "authError"));
       return;
@@ -206,9 +218,9 @@ export function AuthSheet({ open, onClose }: Props) {
       setMessage(t(lang, "authNeedConfig"));
       return;
     }
-    setBusy(true);
+    startBusy("google");
     const result = await signInWithGoogle();
-    setBusy(false);
+    endBusy();
     if (result.error) setMessage(t(lang, "authError"));
   }
 
@@ -220,9 +232,9 @@ export function AuthSheet({ open, onClose }: Props) {
       setMessage(t(lang, "authNeedConfig"));
       return;
     }
-    setBusy(true);
+    startBusy("browse");
     const result = await browse();
-    setBusy(false);
+    endBusy();
     if (result.error) {
       setMessage(t(lang, "authError"));
       return;
@@ -241,15 +253,17 @@ export function AuthSheet({ open, onClose }: Props) {
   const showBack = isRecovery || mode === "newPassword" || isLoginForm;
 
   const submitLabel =
-    busy
-      ? t(lang, "authWorking")
-      : mode === "findId"
-        ? t(lang, "findId")
-        : mode === "resetPassword"
-          ? t(lang, "resetPassword")
-          : mode === "newPassword"
-            ? t(lang, "savePassword")
-            : t(lang, mode === "up" ? "signUp" : "enter");
+    mode === "findId"
+      ? t(lang, "findId")
+      : mode === "resetPassword"
+        ? t(lang, "resetPassword")
+        : mode === "newPassword"
+          ? t(lang, "savePassword")
+          : t(lang, mode === "up" ? "signUp" : "enter");
+
+  function progressClass(kind: "google" | "browse" | "submit") {
+    return busyKind === kind ? " is-progress" : "";
+  }
 
   let feedback: ReactNode = null;
   if (success) feedback = <p className="auth-feedback-ok">{success}</p>;
@@ -311,6 +325,7 @@ export function AuthSheet({ open, onClose }: Props) {
             className="grid size-12 shrink-0 place-items-center"
             onClick={onClose}
             aria-label={t(lang, "close")}
+            disabled={busy}
           >
             <X className="size-[22px]" strokeWidth={1.8} />
           </button>
@@ -319,7 +334,13 @@ export function AuthSheet({ open, onClose }: Props) {
         {isChooser ? (
           <div className="flex flex-col gap-2">
             {localCount > 0 ? <p className="auth-callout">{t(lang, "guestResume", { n: localCount })}</p> : null}
-            <button type="button" disabled={busy} className="auth-btn-tertiary" onClick={() => void onGoogle()}>
+            <button
+              type="button"
+              disabled={busy}
+              aria-busy={busyKind === "google"}
+              className={"auth-btn-tertiary" + progressClass("google")}
+              onClick={() => void onGoogle()}
+            >
               <GoogleMark />
               {t(lang, "googleContinue")}
             </button>
@@ -335,7 +356,13 @@ export function AuthSheet({ open, onClose }: Props) {
             >
               {t(lang, "emailSignIn")}
             </button>
-            <button type="button" disabled={busy} className="auth-btn-secondary" onClick={() => void onBrowse()}>
+            <button
+              type="button"
+              disabled={busy}
+              aria-busy={busyKind === "browse"}
+              className={"auth-btn-secondary" + progressClass("browse")}
+              onClick={() => void onBrowse()}
+            >
               {localCount > 0 ? t(lang, "guestResumeCta") : t(lang, "browse")}
             </button>
             {feedback}
@@ -413,7 +440,12 @@ export function AuthSheet({ open, onClose }: Props) {
             {mode === "up" || mode === "newPassword" ? <ConfirmField /> : null}
 
             <div className="flex flex-col gap-2">
-              <button type="submit" disabled={busy} className="auth-btn-primary">
+              <button
+                type="submit"
+                disabled={busy}
+                aria-busy={busyKind === "submit"}
+                className={"auth-btn-primary" + progressClass("submit")}
+              >
                 {submitLabel}
               </button>
               {feedback}
@@ -422,7 +454,13 @@ export function AuthSheet({ open, onClose }: Props) {
             {isRecovery ? (
               <>
                 <AuthDivider lang={lang} />
-                <button type="button" disabled={busy} className="auth-btn-tertiary" onClick={() => void onGoogle()}>
+                <button
+                  type="button"
+                  disabled={busy}
+                  aria-busy={busyKind === "google"}
+                  className={"auth-btn-tertiary" + progressClass("google")}
+                  onClick={() => void onGoogle()}
+                >
                   <GoogleMark />
                   {t(lang, "googleContinue")}
                 </button>

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { t, typeLabel, detectedLabel } from "../i18n";
 import { usePrefs } from "../context/Prefs";
 import { SiteIcon } from "./SiteIcon";
@@ -23,50 +24,72 @@ export function AnalyzeSkeleton() {
   );
 }
 
+function DraftMedia({ src, siteName, domain, favicon, description }: {
+  src: string;
+  siteName?: string;
+  domain?: string;
+  favicon?: string;
+  description?: string;
+}) {
+  const [loaded, setLoaded] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  return (
+    <div className="draft-media">
+      {siteName || domain || description ? (
+        <div className="og-card-body draft-media-meta">
+          {siteName || domain ? (
+            <p className="og-card-site">
+              <SiteIcon domain={domain || ""} favicon={favicon} className="og-card-icon" size={14} />
+              {siteName || domain}
+            </p>
+          ) : null}
+          {description ? <p className="og-card-desc">{description}</p> : null}
+        </div>
+      ) : null}
+      <div className="draft-media-frame">
+        {!loaded && !failed ? <div className="draft-media-skeleton" aria-hidden /> : null}
+        {src && !failed ? (
+          <img
+            src={src}
+            alt=""
+            className={"draft-media-img" + (loaded ? " is-loaded" : "")}
+            onLoad={() => setLoaded(true)}
+            onError={() => setFailed(true)}
+          />
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 export function DraftCard({ draft, onChange, onSave, onCancel }: Props) {
   const { lang } = usePrefs();
-  if (draft.analyzing) return <AnalyzeSkeleton />;
-
   const og = draft.og;
-  const thumb = og?.image || (draft.dataUrl && draft.type === "image" ? draft.dataUrl : "");
+  const thumb = og?.image || (draft.dataUrl && (draft.type === "image" || draft.mime.startsWith("image/")) ? draft.dataUrl : "");
+  const showMedia = Boolean(thumb) || Boolean(og && (og.siteName || og.description));
+
+  if (draft.analyzing && !thumb) return <AnalyzeSkeleton />;
 
   return (
     <form
       className="classify-draft-form"
       onSubmit={(e) => {
         e.preventDefault();
-        onSave();
+        if (!draft.analyzing) onSave();
       }}
     >
       <div className="list-tools-head">
-        <p className="list-tools-label">{t(lang, "classifyTitle")}</p>
+        <p className="list-tools-label">{draft.analyzing ? t(lang, "analyzing") : t(lang, "classifyTitle")}</p>
       </div>
-      <p className="classify-draft-detected">{detectedLabel(lang, draft.type)}</p>
-      {og && (og.image || og.siteName || og.description) ? (
-        <div className="og-card">
-          {thumb ? (
-            <img
-              src={thumb}
-              alt=""
-              className="og-card-media"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = "none";
-              }}
-            />
-          ) : null}
-          <div className="og-card-body">
-            {og.siteName || draft.domain ? (
-              <p className="og-card-site">
-                <SiteIcon domain={draft.domain} favicon={og.favicon} className="og-card-icon" size={14} />
-                {og.siteName || draft.domain}
-              </p>
-            ) : null}
-            {og.description ? <p className="og-card-desc">{og.description}</p> : null}
-          </div>
-        </div>
-      ) : thumb && draft.type === "image" ? (
-        <img src={thumb} alt="" className="max-h-48 rounded-[14px] object-cover" />
-      ) : null}
+      {draft.analyzing ? (
+        <>
+          <div className="classify-draft-skeleton-bar w-2/5" />
+          <div className="classify-draft-skeleton-bar w-4/5" />
+        </>
+      ) : (
+        <p className="classify-draft-detected">{detectedLabel(lang, draft.type)}</p>
+      )}
       {draft.url ? (
         <a href={draft.url} className="scrap-card-link" target="_blank" rel="noreferrer">
           {draft.url}
@@ -78,6 +101,7 @@ export function DraftCard({ draft, onChange, onSave, onCancel }: Props) {
           value={draft.title}
           onChange={(e) => onChange({ title: e.target.value })}
           className="list-tools-search"
+          disabled={draft.analyzing}
         />
       </label>
       <p className="scrap-card-tags">
@@ -98,15 +122,25 @@ export function DraftCard({ draft, onChange, onSave, onCancel }: Props) {
         placeholder={t(lang, "memoPlaceholder")}
         rows={2}
         className="classify-draft-memo"
+        disabled={draft.analyzing}
       />
       <div className="classify-draft-actions">
         <button type="button" className="auth-link-utility" onClick={onCancel}>
           {t(lang, "cancel")}
         </button>
-        <button type="submit" className="auth-btn-primary px-4">
+        <button type="submit" className="auth-btn-primary px-4" disabled={draft.analyzing}>
           {t(lang, "save")}
         </button>
       </div>
+      {showMedia ? (
+        <DraftMedia
+          src={thumb}
+          siteName={og?.siteName}
+          domain={draft.domain}
+          favicon={og?.favicon}
+          description={og?.description}
+        />
+      ) : null}
     </form>
   );
 }

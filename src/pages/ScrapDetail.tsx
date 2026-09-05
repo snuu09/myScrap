@@ -18,8 +18,10 @@ import { useAuth } from "../context/Auth";
 import { usePlan } from "../context/Plan";
 import { RemindSheet } from "../components/RemindSheet";
 import { deleteScrap, loadScraps, saveScrap } from "../lib/scraps";
-import { SiteIcon } from "../components/SiteIcon";
 import { fetchOgPreview } from "../lib/og";
+import { useDialog } from "../lib/dialog";
+import { SiteIcon } from "../components/SiteIcon";
+import { IconTip } from "../components/IconTip";
 import { formatWhen } from "../lib/time";
 import { formatBytes } from "../lib/tagger";
 import type { Scrap } from "../lib/types";
@@ -57,6 +59,7 @@ export function ScrapDetail() {
   const { lang } = usePrefs();
   const { user } = useAuth();
   const { setScrapsForUsage } = usePlan();
+  const { alert, confirm } = useDialog();
   const [scraps, setScraps] = useState<Scrap[]>([]);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState("");
@@ -162,7 +165,7 @@ export function ScrapDetail() {
 
   async function peel() {
     if (!user) return;
-    if (!window.confirm(t(lang, "peelConfirm"))) return;
+    if (!(await confirm({ body: t(lang, "peelConfirm"), danger: true, confirmLabel: t(lang, "deleteItem") }))) return;
     try {
       await deleteScrap(user, item);
       navigate("/");
@@ -173,7 +176,7 @@ export function ScrapDetail() {
 
   async function share() {
     if (!item.url) {
-      window.alert(t(lang, "shareLocalOnly"));
+      await alert(t(lang, "shareLocalOnly"));
       return;
     }
     const title = item.title || t(lang, "untitled");
@@ -183,10 +186,10 @@ export function ScrapDetail() {
         return;
       }
       await navigator.clipboard.writeText(item.url);
-      window.alert(t(lang, "shareCopied"));
+      await alert(t(lang, "shareCopied"));
     } catch (err) {
       if (err instanceof Error && err.name === "AbortError") return;
-      window.alert(t(lang, "shareFailed"));
+      await alert(t(lang, "shareFailed"));
     }
   }
 
@@ -200,45 +203,6 @@ export function ScrapDetail() {
         <Link to="/" className="auth-link-toggle min-h-10 no-underline">
           {t(lang, "backToShelf")}
         </Link>
-        <div className="detail-actions">
-          {item.url ? (
-            <a href={item.url} className="detail-action" target="_blank" rel="noreferrer" aria-label={t(lang, "openLink")}>
-              <ExternalLink className="size-5" strokeWidth={1.8} />
-            </a>
-          ) : null}
-          <button type="button" className="detail-action" aria-label={t(lang, "share")} onClick={() => void share()} disabled={busy}>
-            <Share2 className="size-5" strokeWidth={1.8} />
-          </button>
-          <button
-            type="button"
-            className="detail-action"
-            aria-pressed={item.bookmarked}
-            aria-label={t(lang, "bookmark")}
-            disabled={busy}
-            onClick={() => void patch({ ...item, bookmarked: !item.bookmarked })}
-          >
-            {item.bookmarked ? <BookmarkCheck className="size-5" strokeWidth={1.8} /> : <Bookmark className="size-5" strokeWidth={1.8} />}
-          </button>
-          <button
-            type="button"
-            className="detail-action"
-            aria-pressed={read}
-            aria-label={t(lang, read ? "markUnread" : "markRead")}
-            disabled={busy}
-            onClick={() => void patch({ ...item, readAt: read ? null : Date.now() })}
-          >
-            {read ? <BookOpenCheck className="size-5" strokeWidth={1.8} /> : <BookOpen className="size-5" strokeWidth={1.8} />}
-          </button>
-          <button
-            type="button"
-            className={"detail-action" + (dueRemind ? " detail-action--alert" : "")}
-            aria-label={t(lang, "remind")}
-            disabled={busy}
-            onClick={() => setRemindOpen(true)}
-          >
-            {item.remindAt ? <Bell className="size-5" strokeWidth={1.8} /> : <BellOff className="size-5" strokeWidth={1.8} />}
-          </button>
-        </div>
       </div>
 
       <div className="neighbor-row">
@@ -266,6 +230,55 @@ export function ScrapDetail() {
           {typeLabel(lang, item.type)} · {formatWhen(item.createdAt, lang)} · {index + 1}/{scraps.length}
           {!read ? ` · ${t(lang, "unread")}` : ""}
         </p>
+        <div className="detail-actions detail-actions--in-card">
+          {item.url ? (
+            <IconTip label={t(lang, "openLink")}>
+              <a href={item.url} className="detail-action" target="_blank" rel="noreferrer" aria-label={t(lang, "openLink")}>
+                <ExternalLink className="size-5" strokeWidth={1.8} />
+              </a>
+            </IconTip>
+          ) : null}
+          <IconTip label={t(lang, "share")}>
+            <button type="button" className="detail-action" aria-label={t(lang, "share")} onClick={() => void share()} disabled={busy}>
+              <Share2 className="size-5" strokeWidth={1.8} />
+            </button>
+          </IconTip>
+          <IconTip label={t(lang, "bookmark")}>
+            <button
+              type="button"
+              className="detail-action"
+              aria-pressed={item.bookmarked}
+              aria-label={t(lang, "bookmark")}
+              disabled={busy}
+              onClick={() => void patch({ ...item, bookmarked: !item.bookmarked })}
+            >
+              {item.bookmarked ? <BookmarkCheck className="size-5" strokeWidth={1.8} /> : <Bookmark className="size-5" strokeWidth={1.8} />}
+            </button>
+          </IconTip>
+          <IconTip label={t(lang, read ? "markUnread" : "markRead")}>
+            <button
+              type="button"
+              className="detail-action"
+              aria-pressed={read}
+              aria-label={t(lang, read ? "markUnread" : "markRead")}
+              disabled={busy}
+              onClick={() => void patch({ ...item, readAt: read ? null : Date.now() })}
+            >
+              {read ? <BookOpenCheck className="size-5" strokeWidth={1.8} /> : <BookOpen className="size-5" strokeWidth={1.8} />}
+            </button>
+          </IconTip>
+          <IconTip label={t(lang, "remind")}>
+            <button
+              type="button"
+              className={"detail-action" + (dueRemind ? " detail-action--alert" : "")}
+              aria-label={t(lang, "remind")}
+              disabled={busy}
+              onClick={() => setRemindOpen(true)}
+            >
+              {item.remindAt ? <Bell className="size-5" strokeWidth={1.8} /> : <BellOff className="size-5" strokeWidth={1.8} />}
+            </button>
+          </IconTip>
+        </div>
         {item.og?.siteName || item.domain ? (
           <p className="m-0 flex items-center gap-2 text-[0.8125rem] text-ink-soft">
             <SiteIcon domain={item.domain} favicon={item.og?.favicon} className="size-4 rounded-sm" size={16} />
@@ -298,15 +311,19 @@ export function ScrapDetail() {
           ))}
         </p>
         <div className="mt-2 flex items-center gap-2 max-[720px]:justify-between">
-          <button type="button" className="auth-back-btn" disabled={!prev} aria-label={t(lang, "prevScrap")} onClick={() => prev && navigate(`/scrap/${prev.id}`)}>
-            <ChevronLeft className="size-[22px]" strokeWidth={1.8} />
-          </button>
+          <IconTip label={t(lang, "prevScrap")}>
+            <button type="button" className="auth-back-btn" disabled={!prev} aria-label={t(lang, "prevScrap")} onClick={() => prev && navigate(`/scrap/${prev.id}`)}>
+              <ChevronLeft className="size-[22px]" strokeWidth={1.8} />
+            </button>
+          </IconTip>
           <button type="button" className="settings-btn-leave" onClick={() => void peel()}>
             {t(lang, "deleteItem")}
           </button>
-          <button type="button" className="auth-back-btn" disabled={!next} aria-label={t(lang, "nextScrap")} onClick={() => next && navigate(`/scrap/${next.id}`)}>
-            <ChevronRight className="size-[22px]" strokeWidth={1.8} />
-          </button>
+          <IconTip label={t(lang, "nextScrap")}>
+            <button type="button" className="auth-back-btn" disabled={!next} aria-label={t(lang, "nextScrap")} onClick={() => next && navigate(`/scrap/${next.id}`)}>
+              <ChevronRight className="size-[22px]" strokeWidth={1.8} />
+            </button>
+          </IconTip>
         </div>
       </article>
 

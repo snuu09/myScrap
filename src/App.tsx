@@ -9,6 +9,7 @@ import { AuthSheet } from "./components/AuthSheet";
 import { GuestMigrateSheet } from "./components/GuestMigrateSheet";
 import { SettingsSheet } from "./components/SettingsSheet";
 import { ShelfReveal } from "./components/ShelfReveal";
+import { AuthWaiting } from "./components/AuthWaiting";
 import { CLOSE_OVERLAYS_EVENT } from "./components/StickDock";
 import { Intro } from "./pages/Intro";
 import { Shelf } from "./pages/Shelf";
@@ -18,6 +19,7 @@ import { Legal } from "./pages/Legal";
 import { loadScraps } from "./lib/scraps";
 import { guestMigrateAsked, hasLocalScraps } from "./lib/localScraps";
 import type { Scrap } from "./lib/types";
+import { DialogProvider } from "./lib/dialog";
 import { t } from "./i18n";
 import { usePrefs } from "./context/Prefs";
 import { usePlan } from "./context/Plan";
@@ -76,7 +78,7 @@ function Home() {
       <Header onEnter={() => openSheet(setEnter)} onSettings={() => openSheet(setSettings)} />
       <main id="main" className={user ? "min-h-0" : "min-h-0 p-0"}>
         {!ready ? (
-          <p className="px-[var(--gutter)] py-8 text-muted">{t(lang, "authWorking")}</p>
+          <AuthWaiting />
         ) : user ? (
           <Shelf onEnter={() => openSheet(setEnter)} />
         ) : (
@@ -96,7 +98,6 @@ function Home() {
 
 function DashboardPage() {
   const { user, ready } = useAuth();
-  const { lang } = usePrefs();
   const { setScrapsForUsage } = usePlan();
   const [scraps, setScraps] = useState<Scrap[]>([]);
   const [enter, setEnter] = useState(false);
@@ -122,7 +123,7 @@ function DashboardPage() {
   }, []);
 
   if (!ready) {
-    return <p className="px-[var(--gutter)] py-8 text-muted">{t(lang, "authWorking")}</p>;
+    return <AuthWaiting />;
   }
   if (!user) {
     return <Navigate to="/" replace />;
@@ -143,7 +144,6 @@ function DashboardPage() {
 
 function ScrapDetailPage() {
   const { user, ready } = useAuth();
-  const { lang } = usePrefs();
   const [enter, setEnter] = useState(false);
   const [settings, setSettings] = useState(false);
 
@@ -157,7 +157,7 @@ function ScrapDetailPage() {
   }, []);
 
   if (!ready) {
-    return <p className="px-[var(--gutter)] py-8 text-muted">{t(lang, "authWorking")}</p>;
+    return <AuthWaiting />;
   }
   if (!user) {
     return <Navigate to="/" replace />;
@@ -214,16 +214,18 @@ export default function App() {
     <PrefsProvider>
       <AuthProvider>
         <PlanProvider>
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/scrap/:id" element={<ScrapDetailPage />} />
-              <Route path="/terms" element={<LegalLayout />} />
-              <Route path="/privacy" element={<LegalLayout />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </BrowserRouter>
+          <DialogProvider>
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/scrap/:id" element={<ScrapDetailPage />} />
+                <Route path="/terms" element={<LegalLayout />} />
+                <Route path="/privacy" element={<LegalLayout />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </BrowserRouter>
+          </DialogProvider>
         </PlanProvider>
       </AuthProvider>
     </PrefsProvider>

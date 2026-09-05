@@ -6,8 +6,10 @@ import { usePrefs, type Look, type Palette, type ThemeChoice } from "../context/
 import { isBrowseUser, useAuth } from "../context/Auth";
 import { usePlan } from "../context/Plan";
 import { clearUserScraps, loadUserDbUsage, SCRAPS_CLEARED_EVENT } from "../lib/scraps";
+import { useDialog } from "../lib/dialog";
 import { formatBytes } from "../lib/tagger";
 import { PlanUsageBlock, StorageGauge } from "./PlanUsageBlock";
+import { IconTip } from "./IconTip";
 
 type Props = { open: boolean; onClose: () => void };
 
@@ -50,9 +52,11 @@ export function SettingsSheet({ open, onClose }: Props) {
   const { lang, theme, palette, look, setLang, setTheme, setPalette, setLook } = usePrefs();
   const { user, signOut } = useAuth();
   const { setScrapsForUsage, setUsageSnapshot, scrapCount, usageBytes, storageLimit } = usePlan();
+  const { alert, confirm } = useDialog();
   const navigate = useNavigate();
   const [resetting, setResetting] = useState(false);
   const [usageLoading, setUsageLoading] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
   const [dbCount, setDbCount] = useState(scrapCount);
   const [dbBytes, setDbBytes] = useState(usageBytes);
 
@@ -94,7 +98,12 @@ export function SettingsSheet({ open, onClose }: Props) {
 
   async function resetDb() {
     if (!user || resetting || !hasData) return;
-    if (!window.confirm(t(lang, isBrowseUser(user) ? "guestResetConfirm" : "dbResetConfirm"))) return;
+    const ok = await confirm({
+      body: t(lang, isBrowseUser(user) ? "guestResetConfirm" : "dbResetConfirm"),
+      danger: true,
+      confirmLabel: t(lang, "dbReset"),
+    });
+    if (!ok) return;
     setResetting(true);
     try {
       await clearUserScraps(user);
@@ -103,11 +112,11 @@ export function SettingsSheet({ open, onClose }: Props) {
       setDbCount(0);
       setDbBytes(0);
       window.dispatchEvent(new Event(SCRAPS_CLEARED_EVENT));
-      window.alert(t(lang, "dbResetDone"));
+      await alert(t(lang, "dbResetDone"));
       onClose();
       navigate("/");
     } catch {
-      window.alert(t(lang, "syncError"));
+      await alert(t(lang, "syncError"));
     } finally {
       setResetting(false);
     }
@@ -126,9 +135,11 @@ export function SettingsSheet({ open, onClose }: Props) {
           <h2 id="settings-title" className="m-0 min-w-0 flex-1 text-[1.0625rem] font-bold">
             {t(lang, "settings")}
           </h2>
-          <button type="button" className="grid size-12 shrink-0 place-items-center" onClick={onClose} aria-label={t(lang, "close")}>
-            <X className="size-[22px]" strokeWidth={1.8} />
-          </button>
+          <IconTip label={t(lang, "close")}>
+            <button type="button" className="grid size-12 shrink-0 place-items-center" onClick={onClose} aria-label={t(lang, "close")}>
+              <X className="size-[22px]" strokeWidth={1.8} />
+            </button>
+          </IconTip>
         </div>
 
         {user ? (
@@ -219,10 +230,17 @@ export function SettingsSheet({ open, onClose }: Props) {
             </section>
             <button
               type="button"
-              className="settings-btn-leave"
+              className={"settings-btn-leave" + (signingOut ? " is-progress" : "")}
+              disabled={signingOut || resetting}
+              aria-busy={signingOut}
               onClick={async () => {
-                await signOut();
-                onClose();
+                setSigningOut(true);
+                try {
+                  await signOut();
+                  onClose();
+                } finally {
+                  setSigningOut(false);
+                }
               }}
             >
               {t(lang, "logout")}
