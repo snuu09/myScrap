@@ -1,0 +1,45 @@
+# Free path: public GitHub Actions minutes + Firebase Hosting (Spark) quotas.
+# Does not deploy Cloud Functions (those may need Blaze).
+name: Deploy Firebase Hosting
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: firebase-hosting-live
+  cancel-in-progress: true
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_ADMOB_PUBLISHER_ID: ${{ secrets.VITE_ADMOB_PUBLISHER_ID }}
+          VITE_ADMOB_BANNER_SLOT: ${{ secrets.VITE_ADMOB_BANNER_SLOT }}
+
+      - name: Deploy Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_MYBRARY_SNUU09 }}
+          channelId: live
+          projectId: mybrary-snuu09

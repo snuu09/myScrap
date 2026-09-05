@@ -70,10 +70,28 @@ npm run build
 
 라이브: [https://mybrary-snuu09.web.app](https://mybrary-snuu09.web.app) · [https://mybrary-snuu09.firebaseapp.com](https://mybrary-snuu09.firebaseapp.com)
 
-1. `.env`에 Vite 키를 넣고 `npm run deploy:hosting` (`dist` 빌드 후 Hosting). AdMob은 선택.
-2. Supabase Auth에서 Email, Google, Anonymous 활성화. 마이그레이션 순서: [20260820140000_scraps_media_realtime.sql](supabase/migrations/20260820140000_scraps_media_realtime.sql) → [20260829143000_profiles_plans.sql](supabase/migrations/20260829143000_profiles_plans.sql) → [20260905100000_scrap_engagement.sql](supabase/migrations/20260905100000_scrap_engagement.sql). Redirect URL에 위 Hosting 도메인 추가. 등급/관리자 수동 설정은 [supabase/README.md](supabase/README.md).
-3. 분류: [functions/src/index.ts](functions/src/index.ts), Hosting rewrite `/api/analyze`. 2세대 Functions는 Blaze 필요. 미배포 시 클라이언트 MIME/URL 폴백. Blaze면 `functions/.env`에 `ANTHROPIC_API_KEY`, `SUPABASE_URL`, `SUPABASE_ANON_KEY` 후 `npx -y firebase-tools@latest deploy --only functions,hosting`.
-4. 모델 ID는 `claude-sonnet-4-5` (과제명의 `claude-sonnet-5`는 현재 id가 아님).
+### Push → 라이브 (무료)
+
+`main`에 push하면 [`.github/workflows/firebase-hosting.yml`](.github/workflows/firebase-hosting.yml)이 `dist`를 빌드해 Hosting **live**에 올립니다. 공개 저장소 GitHub Actions 분 + Hosting Spark 할당량만 쓰며, Cloud Functions는 이 워크플로에서 배포하지 않습니다.
+
+한 번만 GitHub Actions secrets가 필요합니다 (`Settings → Secrets and variables → Actions`):
+
+| Secret | 용도 |
+| --- | --- |
+| `FIREBASE_SERVICE_ACCOUNT_MYBRARY_SNUU09` | Hosting 배포용 서비스 계정 JSON (`firebase init hosting:github`가 만들어 줌) |
+| `VITE_SUPABASE_URL` | 빌드 시 Vite에 주입 |
+| `VITE_SUPABASE_ANON_KEY` | 빌드 시 Vite에 주입 |
+| `VITE_ADMOB_PUBLISHER_ID` / `VITE_ADMOB_BANNER_SLOT` | 선택 |
+
+로컬에서 서비스 계정 시크릿만 만들 때: `npx -y firebase-tools@latest init hosting:github --project mybrary-snuu09` (저장소 `snuu09/myScrap`). Vite 시크릿은 `.env` 값을 repo secrets에 수동으로 넣거나 `gh secret set`로 넣습니다.
+
+로컬 수동 배포는 그대로 `npm run deploy:hosting`입니다.
+
+### 백엔드 · Auth
+
+1. Supabase Auth에서 Email, Google, Anonymous 활성화. 마이그레이션 순서: [20260820140000_scraps_media_realtime.sql](supabase/migrations/20260820140000_scraps_media_realtime.sql) → [20260829143000_profiles_plans.sql](supabase/migrations/20260829143000_profiles_plans.sql) → [20260905100000_scrap_engagement.sql](supabase/migrations/20260905100000_scrap_engagement.sql). Redirect URL에 위 Hosting 도메인 추가. 등급/관리자 수동 설정은 [supabase/README.md](supabase/README.md).
+2. 분류: [functions/src/index.ts](functions/src/index.ts), Hosting rewrite `/api/analyze`. 2세대 Functions는 Blaze 필요. 미배포 시 클라이언트 MIME/URL 폴백. Blaze면 `functions/.env`에 `ANTHROPIC_API_KEY`, `SUPABASE_URL`, `SUPABASE_ANON_KEY` 후 `npx -y firebase-tools@latest deploy --only functions,hosting`.
+3. 모델 ID는 `claude-sonnet-4-5` (과제명의 `claude-sonnet-5`는 현재 id가 아님).
 
 Netlify는 선택: `npm run build`, publish `dist`, 동일 Vite 키 + 사이트 env의 `ANTHROPIC_API_KEY`. Netlify 분석 함수는 [netlify/functions/analyze.ts](netlify/functions/analyze.ts).
 
