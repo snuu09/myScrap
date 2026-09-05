@@ -788,11 +788,38 @@ body {
     gap: 0.5rem;
   }
 
+  .day-filter-month-wrap {
+    display: grid;
+    justify-items: center;
+    gap: 0.25rem;
+    min-width: 0;
+  }
+
   .day-filter-month {
     margin: 0;
     font-size: 0.9375rem;
     font-weight: 650;
     color: var(--color-ink);
+  }
+
+  .day-filter-today {
+    margin: 0;
+    border: 0;
+    background: transparent;
+    color: var(--color-magnet);
+    font-size: 0.75rem;
+    font-weight: 650;
+    line-height: 1.2;
+    cursor: pointer;
+  }
+
+  .day-filter-today:hover {
+    text-decoration: underline;
+  }
+
+  .day-filter-nav .auth-back-btn:disabled {
+    opacity: 0.35;
+    cursor: default;
   }
 
   .day-filter-weekdays {

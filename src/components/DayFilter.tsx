@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { t } from "../i18n";
 import { usePrefs } from "../context/Prefs";
-import { dayKey, monthGrid, scrapsByDay } from "../lib/scrapFilters";
+import { dayKey, monthGrid, monthsWithScraps, scrapsByDay } from "../lib/scrapFilters";
 import type { Scrap } from "../lib/types";
 
 type SharedProps = {
@@ -27,13 +27,36 @@ export function DayFilterChip({ dayFilter, open, onOpenChange }: Pick<SharedProp
   );
 }
 
+function pickInitialMonth(scraps: Scrap[], today: Date) {
+  const months = monthsWithScraps(scraps);
+  const ty = today.getFullYear();
+  const tm = today.getMonth();
+  if (months.some((row) => row.year === ty && row.month === tm)) {
+    return { year: ty, month: tm };
+  }
+  if (months.length) {
+    const last = months[months.length - 1];
+    return { year: last.year, month: last.month };
+  }
+  return { year: ty, month: tm };
+}
+
 export function DayFilterPanel({ scraps, dayFilter, open, onOpenChange, onDayChange }: SharedProps) {
   const { lang } = usePrefs();
   const today = new Date();
-  const [viewYear, setViewYear] = useState(today.getFullYear());
-  const [viewMonth, setViewMonth] = useState(today.getMonth());
+  const todayYear = today.getFullYear();
+  const todayMonth = today.getMonth();
+  const todayKey = dayKey(todayYear, todayMonth, today.getDate());
+
+  const dataMonths = useMemo(() => monthsWithScraps(scraps), [scraps]);
+  const [viewYear, setViewYear] = useState(() => pickInitialMonth(scraps, today).year);
+  const [viewMonth, setViewMonth] = useState(() => pickInitialMonth(scraps, today).month);
   const counts = scrapsByDay(scraps);
-  const todayKey = dayKey(today.getFullYear(), today.getMonth(), today.getDate());
+
+  const viewIndex = dataMonths.findIndex((row) => row.year === viewYear && row.month === viewMonth);
+  const canPrev = viewIndex > 0 || (viewIndex < 0 && dataMonths.some((row) => row.year < viewYear || (row.year === viewYear && row.month < viewMonth)));
+  const canNext = viewIndex >= 0 ? viewIndex < dataMonths.length - 1 : dataMonths.some((row) => row.year > viewYear || (row.year === viewYear && row.month > viewMonth));
+  const showToday = viewYear !== todayYear || viewMonth !== todayMonth;
 
   useEffect(() => {
     if (!open) return;
@@ -44,12 +67,38 @@ export function DayFilterPanel({ scraps, dayFilter, open, onOpenChange, onDayCha
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onOpenChange]);
 
+  useEffect(() => {
+    if (!open || !dataMonths.length) return;
+    const onDataMonth = dataMonths.some((row) => row.year === viewYear && row.month === viewMonth);
+    if (onDataMonth) return;
+    const next = pickInitialMonth(scraps, new Date());
+    setViewYear(next.year);
+    setViewMonth(next.month);
+  }, [open, dataMonths, scraps, viewYear, viewMonth]);
+
   if (!open) return null;
 
   function shiftMonth(delta: number) {
-    const d = new Date(viewYear, viewMonth + delta, 1);
-    setViewYear(d.getFullYear());
-    setViewMonth(d.getMonth());
+    if (!dataMonths.length) return;
+    let idx = dataMonths.findIndex((row) => row.year === viewYear && row.month === viewMonth);
+    if (idx < 0) {
+      idx = dataMonths.findIndex((row) => row.year > viewYear || (row.year === viewYear && row.month > viewMonth));
+      if (delta < 0) {
+        idx = idx < 0 ? dataMonths.length - 1 : idx - 1;
+      } else if (idx < 0) {
+        idx = dataMonths.length - 1;
+      }
+    } else {
+      idx += delta;
+    }
+    if (idx < 0 || idx >= dataMonths.length) return;
+    setViewYear(dataMonths[idx].year);
+    setViewMonth(dataMonths[idx].month);
+  }
+
+  function goToday() {
+    setViewYear(todayYear);
+    setViewMonth(todayMonth);
   }
 
   const cells = monthGrid(viewYear, viewMonth);
@@ -63,11 +112,30 @@ export function DayFilterPanel({ scraps, dayFilter, open, onOpenChange, onDayCha
   return (
     <div className="day-filter-panel">
       <div className="day-filter-nav">
-        <button type="button" className="auth-back-btn !size-10" onClick={() => shiftMonth(-1)} aria-label={t(lang, "monthPrev")}>
+        <button
+          type="button"
+          className="auth-back-btn !size-10"
+          onClick={() => shiftMonth(-1)}
+          disabled={!canPrev}
+          aria-label={t(lang, "monthPrev")}
+        >
           <ChevronLeft className="size-5" strokeWidth={1.8} />
         </button>
-        <p className="day-filter-month">{monthLabel}</p>
-        <button type="button" className="auth-back-btn !size-10" onClick={() => shiftMonth(1)} aria-label={t(lang, "monthNext")}>
+        <div className="day-filter-month-wrap">
+          <p className="day-filter-month">{monthLabel}</p>
+          {showToday ? (
+            <button type="button" className="day-filter-today" onClick={goToday}>
+              {t(lang, "today")}
+            </button>
+          ) : null}
+        </div>
+        <button
+          type="button"
+          className="auth-back-btn !size-10"
+          onClick={() => shiftMonth(1)}
+          disabled={!canNext}
+          aria-label={t(lang, "monthNext")}
+        >
           <ChevronRight className="size-5" strokeWidth={1.8} />
         </button>
       </div>

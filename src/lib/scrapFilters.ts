@@ -66,3 +66,17 @@ export function monthGrid(year: number, month: number) {
 export function dayKey(year: number, month: number, day: number) {
   return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
+
+export function monthsWithScraps(scraps: Scrap[]) {
+  const keys = new Set<string>();
+  for (const item of scraps) {
+    const d = new Date(item.createdAt);
+    keys.add(`${d.getFullYear()}-${d.getMonth()}`);
+  }
+  return [...keys]
+    .map((key) => {
+      const [y, m] = key.split("-").map(Number);
+      return { year: y, month: m };
+    })
+    .sort((a, b) => a.year - b.year || a.month - b.month);
+}
