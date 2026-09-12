@@ -34,6 +34,12 @@ function faviconFor(pageUrl: string) {
   }
 }
 
+export function youtubeEmbedUrl(pageUrl: string) {
+  const id = youtubeId(pageUrl);
+  if (!id) return "";
+  return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(id)}`;
+}
+
 function youtubeId(pageUrl: string) {
   try {
     const u = new URL(pageUrl);
@@ -50,19 +56,24 @@ function youtubeId(pageUrl: string) {
   return "";
 }
 
-function instagramEmbed(pageUrl: string) {
+function instagramCode(pageUrl: string) {
   try {
     const u = new URL(pageUrl);
-    if (u.hostname.replace(/^www\./, "").toLowerCase() !== "instagram.com") return "";
+    const host = u.hostname.replace(/^www\./, "").toLowerCase();
+    if (host !== "instagram.com" && host !== "instagr.am") return "";
     const parts = u.pathname.split("/").filter(Boolean);
-    if (parts[0] !== "p" && parts[0] !== "reel" && parts[0] !== "tv" && parts[0] !== "reels") return "";
-    const code = parts[1] || "";
-    if (!code) return "";
-    const kind = parts[0] === "reels" ? "reel" : parts[0];
-    return `https://www.instagram.com/${kind}/${code}/embed/`;
+    const head = parts[0] === "share" ? parts[1] : parts[0];
+    const code = parts[0] === "share" ? parts[2] : parts[1];
+    if (head !== "p" && head !== "reel" && head !== "tv" && head !== "reels") return "";
+    return code || "";
   } catch {
     return "";
   }
+}
+
+/** Public media redirect. An img tag follows it; no CORS proxy required. */
+function instagramThumb(code: string) {
+  return `https://www.instagram.com/p/${code}/media/?size=m`;
 }
 
 function meta(html: string, key: string) {
@@ -80,9 +91,17 @@ function meta(html: string, key: string) {
 
 function decodeHtml(value: string) {
   return value
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex) => {
+      const code = Number.parseInt(hex, 16);
+      return Number.isFinite(code) ? String.fromCodePoint(code) : _;
+    })
+    .replace(/&#(\d+);/g, (_, num) => {
+      const code = Number.parseInt(num, 10);
+      return Number.isFinite(code) ? String.fromCodePoint(code) : _;
+    })
     .replace(/&amp;/g, "&")
     .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
+    .replace(/&#39;|&apos;/g, "'")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">");
 }
@@ -130,6 +149,26 @@ async function invokeRemote(url: string): Promise<ScrapOg | null> {
   }
 }
 
+function httpImage(value: string) {
+  return /^https?:\/\//i.test(value) ? value : "";
+}
+
+function withTimeout<T>(work: Promise<T | null>, ms: number): Promise<T | null> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => resolve(null), ms);
+    work.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      () => {
+        clearTimeout(timer);
+        resolve(null);
+      },
+    );
+  });
+}
+
 async function youtubeOg(url: string, id: string): Promise<ScrapOg> {
   const og: ScrapOg = {
     title: "",
@@ -138,22 +177,63 @@ async function youtubeOg(url: string, id: string): Promise<ScrapOg> {
     siteName: "YouTube",
     favicon: "https://www.youtube.com/favicon.ico",
   };
-  try {
-    const res = await fetch("https://www.youtube.com/oembed?format=json&url=" + encodeURIComponent(url));
-    if (!res.ok) return og;
-    const data = (await res.json()) as { title?: string; author_name?: string; thumbnail_url?: string };
-    if (data.title) og.title = data.title;
-    if (data.author_name) og.siteName = data.author_name;
-    if (data.thumbnail_url) og.image = data.thumbnail_url;
-  } catch {
-    /* thumbnail URL is enough */
-  }
+  const extra = await withTimeout(
+    (async () => {
+      const res = await fetch("https://www.youtube.com/oembed?format=json&url=" + encodeURIComponent(url));
+      if (!res.ok) return null;
+      return (await res.json()) as { title?: string; author_name?: string; thumbnail_url?: string };
+    })(),
+    400,
+  );
+  if (!extra) return og;
+  if (extra.title) og.title = extra.title;
+  if (extra.author_name) og.siteName = extra.author_name;
+  if (httpImage(extra.thumbnail_url || "")) og.image = extra.thumbnail_url || og.image;
   return og;
+}
+
+async function microlinkOg(url: string): Promise<ScrapOg | null> {
+  try {
+    const res = await fetch("https://api.microlink.io/?url=" + encodeURIComponent(url), {
+      signal: AbortSignal.timeout(6000),
+    });
+    if (!res.ok) return null;
+    const body = (await res.json()) as {
+      status?: string;
+      data?: {
+        title?: string;
+        description?: string;
+        publisher?: string;
+        author?: string;
+        image?: { url?: string } | string;
+        logo?: { url?: string } | string;
+      };
+    };
+    if (body.status && body.status !== "success") return null;
+    const data = body.data || {};
+    const imageRaw = typeof data.image === "string" ? data.image : data.image?.url || "";
+    const logoRaw = typeof data.logo === "string" ? data.logo : data.logo?.url || "";
+    const title = String(data.title || "").trim();
+    const image = httpImage(imageRaw);
+    if (!image && !title) return null;
+    if (title === "Instagram" && !image) return null;
+    return {
+      title: title === "Instagram" ? "" : title,
+      description: String(data.description || ""),
+      image,
+      siteName: String(data.author || data.publisher || ""),
+      favicon: httpImage(logoRaw) || faviconFor(url),
+    };
+  } catch {
+    return null;
+  }
 }
 
 async function proxyHtml(target: string) {
   try {
-    const res = await fetch("https://api.allorigins.win/get?url=" + encodeURIComponent(target));
+    const res = await fetch("https://api.allorigins.win/get?url=" + encodeURIComponent(target), {
+      signal: AbortSignal.timeout(3500),
+    });
     if (!res.ok) return "";
     const data = (await res.json()) as { contents?: string };
     return String(data.contents || "");
@@ -172,36 +252,53 @@ function mergeOg(base: ScrapOg | null, next: ScrapOg): ScrapOg {
   };
 }
 
-async function clientOg(url: string, remote: ScrapOg | null): Promise<ScrapOg | null> {
+function instagramOg(code: string): ScrapOg {
+  return {
+    title: "",
+    description: "",
+    image: instagramThumb(code),
+    siteName: "Instagram",
+    favicon: "https://www.instagram.com/favicon.ico",
+  };
+}
+
+async function clientOg(url: string): Promise<ScrapOg | null> {
   const yt = youtubeId(url);
-  if (yt) return mergeOg(remote, await youtubeOg(url, yt));
+  if (yt) return youtubeOg(url, yt);
+
+  const ig = instagramCode(url);
+  if (ig) return instagramOg(ig);
+
+  const linked = await microlinkOg(url);
+  if (linked?.image) {
+    if (!linked.siteName) linked.siteName = hostOf(url);
+    if (!linked.favicon) linked.favicon = faviconFor(url);
+    return linked;
+  }
 
   const html = await proxyHtml(url);
-  let parsed = html ? parseOgHtml(html, url) : emptyOg();
-  if (!parsed.image) {
-    const embed = instagramEmbed(url);
-    if (embed) {
-      const embedHtml = await proxyHtml(embed);
-      if (embedHtml) parsed = mergeOg(parsed, parseOgHtml(embedHtml, url));
-    }
-  }
-  const merged = mergeOg(remote, parsed);
-  if (!merged.image && !merged.title && !merged.siteName) return remote;
+  const parsed = html ? parseOgHtml(html, url) : emptyOg();
+  const merged = mergeOg(linked, parsed);
+  if (!merged.image && !merged.title && !merged.siteName) return null;
   if (!merged.siteName) merged.siteName = hostOf(url);
   if (!merged.favicon) merged.favicon = faviconFor(url);
   return merged;
 }
 
-/** Edge function when deployed, otherwise YouTube thumbs and an allorigins HTML scrape. */
+/** YouTube and Instagram thumbs first. Other links use microlink, then a short HTML scrape. */
 export async function fetchOgPreview(url: string): Promise<OgFetchResult> {
   const trimmed = url.trim();
   if (!/^https?:\/\//i.test(trimmed)) return { og: null, ogStatus: "skipped" };
 
-  const remote = await invokeRemote(trimmed);
+  const clientPromise = clientOg(trimmed);
+  const remotePromise = withTimeout(invokeRemote(trimmed), 800);
+  const client = await clientPromise;
+  if (client?.image) return { og: client, ogStatus: "ready" };
+
+  const remote = await remotePromise;
   if (remote?.image) return { og: remote, ogStatus: "ready" };
 
-  const filled = await clientOg(trimmed, remote);
-  if (filled?.image) return { og: filled, ogStatus: "ready" };
-  if (filled && (filled.title || filled.siteName)) return { og: filled, ogStatus: "error" };
-  return { og: null, ogStatus: "error" };
+  const filled = mergeOg(remote, client || emptyOg());
+  if (!filled.image && !filled.title && !filled.siteName) return { og: null, ogStatus: "error" };
+  return { og: filled, ogStatus: filled.image ? "ready" : "error" };
 }

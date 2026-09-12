@@ -13,6 +13,8 @@ Vite 8 + React 19 + TypeScript + Tailwind v4 + Lucide. Firebase Hosting project 
 
 Primary host is **Firebase Hosting**. Netlify files are a classify/dev twin, not a second product.
 
+Shelf and search lists page in (24, then more). Sign media only for the visible window. `/api/og-image` requires the user JWT and does not follow a redirect off HTTPS.
+
 ## Do not
 
 - Revive `js/`, `css/`, `legal/*.html`, or a parallel static client

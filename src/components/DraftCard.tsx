@@ -10,6 +10,7 @@ import { formatBytes, isPdf, mediaKindOf } from "../lib/tagger";
 type Props = {
   draft: Scrap;
   uploadRatio?: number | null;
+  queueLabel?: string;
   onChange: (patch: Partial<Scrap>) => void;
   onSave: () => void;
   onCancel: () => void;
@@ -162,7 +163,7 @@ function DraftMedia({
   );
 }
 
-export function DraftCard({ draft, uploadRatio = null, onChange, onSave, onCancel }: Props) {
+export function DraftCard({ draft, uploadRatio = null, queueLabel = "", onChange, onSave, onCancel }: Props) {
   const { lang } = usePrefs();
   const og = draft.og;
   const mediaKind = mediaKindOf(draft.type, draft.mime);
@@ -191,9 +192,14 @@ export function DraftCard({ draft, uploadRatio = null, onChange, onSave, onCance
             <a href={draft.url} className="scrap-card-link min-w-0 flex-1 truncate" target="_blank" rel="noreferrer">
               {draft.url}
             </a>
-            <a href={draft.url} className="inline-action" target="_blank" rel="noreferrer">
+            <a
+              href={draft.url}
+              className="inline-action"
+              target="_blank"
+              rel="noreferrer"
+              aria-label={t(lang, "openLink")}
+            >
               <ExternalLink className="size-4" strokeWidth={1.8} />
-              {t(lang, "openLink")}
             </a>
           </div>
         ) : null}
@@ -273,9 +279,13 @@ export function DraftCard({ draft, uploadRatio = null, onChange, onSave, onCance
             </span>
           </p>
           {draft.dataUrl ? (
-            <a href={draft.dataUrl} className="inline-action" download={draft.filename || undefined}>
+            <a
+              href={draft.dataUrl}
+              className="inline-action"
+              download={draft.filename || undefined}
+              aria-label={t(lang, "downloadFile")}
+            >
               <Download className="size-4" strokeWidth={1.8} />
-              {t(lang, "downloadFile")}
             </a>
           ) : null}
         </div>
@@ -319,9 +329,10 @@ export function DraftCard({ draft, uploadRatio = null, onChange, onSave, onCance
         if (!draft.analyzing) onSave();
       }}
     >
-      {!draft.analyzing ? (
+      {queueLabel || !draft.analyzing ? (
         <div className="list-tools-head">
-          <p className="list-tools-label">{t(lang, "classifyDone")}</p>
+          {!draft.analyzing ? <p className="list-tools-label">{t(lang, "classifyDone")}</p> : <span />}
+          {queueLabel ? <p className="list-tools-label">{queueLabel}</p> : null}
         </div>
       ) : null}
       {draft.analyzing ? (

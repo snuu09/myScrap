@@ -9,8 +9,10 @@ import { useT } from "../lib/useT";
 import { AuthWaiting } from "../components/AuthWaiting";
 import { DocumentMark } from "../components/DocumentMark";
 import { IconTip } from "../components/IconTip";
+import { DayFilterChip, DayFilterPanel } from "../components/DayFilter";
 import { TypeBookCarousel } from "../components/TypeBookCarousel";
-import { hydrateSignedMedia, loadScraps, SCRAPS_CHANGED_EVENT, SCRAPS_CLEARED_EVENT } from "../lib/scraps";
+import { loadScraps, SCRAPS_CHANGED_EVENT, SCRAPS_CLEARED_EVENT } from "../lib/scraps";
+import { usePagedSlice } from "../lib/usePagedSlice";
 import { filterScraps } from "../lib/scrapFilters";
 import { formatWhen } from "../lib/time";
 import { formatBytes, mediaKindOf } from "../lib/tagger";
@@ -30,6 +32,10 @@ export function SearchPage() {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState(() => searchParams.get("q") || "");
   const [typeFilter, setTypeFilter] = useState<ScrapType | "all">("all");
+  const [dayFilter, setDayFilter] = useState<string | null>(null);
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [tagFilter, setTagFilter] = useState<string[]>([]);
+  const [tagsOpen, setTagsOpen] = useState(false);
 
   useEffect(() => {
     const q = searchParams.get("q");
@@ -47,13 +53,6 @@ export function SearchPage() {
       const next = await loadScraps(user);
       setScraps(next);
       setScrapsForUsage(next);
-      try {
-        const hydrated = await hydrateSignedMedia(next);
-        setScraps(hydrated);
-        setScrapsForUsage(hydrated);
-      } catch {
-        /* metadata only */
-      }
     } catch {
       setScraps([]);
     } finally {
@@ -86,10 +85,29 @@ export function SearchPage() {
 
   const visibleTypes = loading ? TYPES : TYPES.filter((type) => (typeCounts[type] || 0) > 0);
 
+  const tagCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const item of scraps) {
+      for (const tag of item.tags) counts.set(tag, (counts.get(tag) || 0) + 1);
+    }
+    return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  }, [scraps]);
+
+  const orderedTags = [
+    ...tagCounts.filter(([tag]) => tagFilter.includes(tag)),
+    ...tagCounts.filter(([tag]) => !tagFilter.includes(tag)),
+  ];
+  const shownTags = tagsOpen ? orderedTags : orderedTags.slice(0, 8);
+
   const visible = useMemo(
-    () => filterScraps(scraps, { query, type: typeFilter, day: null }),
-    [scraps, query, typeFilter],
+    () => filterScraps(scraps, { query, type: typeFilter, day: dayFilter, tags: tagFilter }),
+    [scraps, query, typeFilter, dayFilter, tagFilter],
   );
+  const paged = usePagedSlice(visible);
+
+  function toggleTag(tag: string) {
+    setTagFilter((cur) => (cur.includes(tag) ? cur.filter((item) => item !== tag) : [...cur, tag]));
+  }
 
   function updateQuery(value: string) {
     setQuery(value);
@@ -130,9 +148,20 @@ export function SearchPage() {
             </IconTip>
           ) : null}
         </div>
+        <DayFilterChip dayFilter={dayFilter} open={calendarOpen} onOpenChange={setCalendarOpen} />
       </div>
 
-      <p className="search-page-title list-tools-label">{t("searchPageTitle")}</p>
+      {calendarOpen ? (
+        <div className="search-page-day">
+          <DayFilterPanel
+            scraps={scraps}
+            dayFilter={dayFilter}
+            open={calendarOpen}
+            onOpenChange={setCalendarOpen}
+            onDayChange={setDayFilter}
+          />
+        </div>
+      ) : null}
 
       <TypeBookCarousel
         types={visibleTypes}
@@ -141,6 +170,28 @@ export function SearchPage() {
         loading={loading}
         onSelect={setTypeFilter}
       />
+
+      {tagCounts.length ? (
+        <div className="search-tag-row">
+          {shownTags.map(([tag, count]) => (
+            <button
+              key={tag}
+              type="button"
+              className="chip-filter"
+              aria-pressed={tagFilter.includes(tag)}
+              onClick={() => toggleTag(tag)}
+            >
+              {tag}
+              <span className="chip-filter-count">{count}</span>
+            </button>
+          ))}
+          {tagCounts.length > 8 ? (
+            <button type="button" className="auth-link-utility" onClick={() => setTagsOpen((open) => !open)}>
+              {t(tagsOpen ? "tagsLess" : "tagsMore")}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
 
       <section className="list-body search-page-results" aria-live="polite">
         {loading ? (
@@ -151,7 +202,7 @@ export function SearchPage() {
           </div>
         ) : (
           <ul className="scrap-list scrap-list--list">
-            {visible.map((item) => {
+            {paged.slice.map((item) => {
               const title = item.title || item.og?.title || t("untitled");
               const showFileMark =
                 item.type === "document" ||
@@ -213,6 +264,13 @@ export function SearchPage() {
             })}
           </ul>
         )}
+        {paged.hasMore ? (
+          <div ref={paged.sentinelRef} className="list-page-more">
+            <button type="button" className="auth-link-utility" onClick={paged.loadMore}>
+              {t("loadMore")}
+            </button>
+          </div>
+        ) : null}
       </section>
     </div>
   );

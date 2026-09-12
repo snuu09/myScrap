@@ -4,6 +4,7 @@ export type ScrapFilterState = {
   query: string;
   type: ScrapType | "all";
   day: string | null;
+  tags?: string[];
 };
 
 export function localDayKey(ms: number) {
@@ -19,6 +20,7 @@ export function filterScraps(scraps: Scrap[], state: ScrapFilterState) {
   return scraps.filter((item) => {
     if (state.type !== "all" && item.type !== state.type) return false;
     if (state.day && localDayKey(item.createdAt) !== state.day) return false;
+    if (state.tags?.length && !item.tags.some((tag) => state.tags?.includes(tag))) return false;
     if (!q) return true;
     const blob = [item.title, item.text, item.memo, item.url, item.filename, item.tags.join(" ")]
       .join(" ")

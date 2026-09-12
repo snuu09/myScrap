@@ -454,9 +454,11 @@ Binding against [ROADMAP.md](ROADMAP.md) Phase 4. Header stays brand + 로그인
 
 **The Demo Is The Product Rule.** Intro is a full-bleed library still (`public/assets/intro-hero.jpg`) filling below the header. Hero and **책장을 연다** sit on the photo. No 견본 / Sample on the still. Stick, classify, and find sit as hotspots on the matching objects: titles always visible, two short beats on hover or tap. Do not invent customers, download counts, testimonials, or AI claims. Do not build a purple SaaS landing, a phone farm of fake UI, or CSS widgets that impersonate the composer.
 
-**The Day Magnet Rule.** 일자별 is a filter on the recency list, not a calendar product and not a second home. **일자별** lives in slim **list-tools** with the layout segment; type filtering is the horizontal **type book carousel** above. Toggling day opens a month panel under the tools (18px radius, paper). Selected day uses magnet fill. Prev/next month, Escape closes. Day + type are AND on the shelf; search lives on `/search`. Do not persist day in localStorage.
+**The Day Magnet Rule.** 일자별 is a filter on find, not a calendar product and not a second home. **일자별** lives in the `/search` bar; type filtering is the horizontal **type book carousel** under it. Toggling day opens a month panel (18px radius, paper). Selected day uses magnet fill. Prev/next month, Escape closes. Day, type, query, and tags are AND except tags, which match any selected tag. Do not persist day in localStorage.
 
-**The List Tools Rule.** Search is the header capsule → `/search` (autofocus field + type books + results). Shelf list-tools keeps day chip, layout segment (리스트 / 갤러리), and clear-filters when needed; preference persists as `mybrary.shelfLayout`. Type books sit above list-tools. Ad slot and list body stay separate sections below.
+**The List Tools Rule.** Search is the header capsule → `/search` (autofocus field, placeholder **검색어를 입력해주세요.**, type books, tag chips, results). Shelf list-tools keeps only the list layout button and clear-filters when a type is active. Gallery still renders if that preference is already stored (`mybrary.shelfLayout`), but the bar does not offer it again. Type books sit above list-tools. Ad slot and list body stay separate sections below. Lists mount a page of cards, then more when the sentinel nears the viewport. Do not mount the whole shelf at once.
+
+**The Long List Rule.** Shelf and `/search` render 24 scraps, then the next page on scroll or **더 보기**. Signed media is hydrated for that window only. Document film images mount only within four pages of the current page. Offscreen cards use `content-visibility: auto`. Do not sign every file for search or stats.
 
 **The Classify Draft Rule.** Classify-then-save lives in the floating Stick dock, **above** the composer pill. While a draft is open, a full-viewport blur+dim scrim sits behind the dock (does not dismiss on tap). The `.classify-draft` panel is a near-full bottom sheet (scroll when tall, paper chrome, scrap/sheet shadow). Upload progress shows **label + % inside** the progress track. A new **분류하기** (Stick send), paste, or drop **replaces** an open draft in place with no confirm; only the draft **Cancel** control uses leave-draft confirm. Cancel is auth utility ghost; Save is auth primary (48px magnet). Do not place the draft in shelf-door above list-tools.
 
@@ -487,7 +489,7 @@ Binding against [ROADMAP.md](ROADMAP.md) Phase 4. Header stays brand + 로그인
 
 ### 일자별 filter
 
-Shipped in [`src/components/DayFilter.tsx`](src/components/DayFilter.tsx). Chip next to type chips, paper panel under the tools, local `createdAt` day, magnet for the selected day. Not a scheduling calendar.
+Shipped in [`src/components/DayFilter.tsx`](src/components/DayFilter.tsx). Chip in the `/search` bar, paper panel under it, local `createdAt` day, magnet for the selected day. Not a scheduling calendar.
 
 ### Korean footer
 

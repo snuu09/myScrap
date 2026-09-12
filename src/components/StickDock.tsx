@@ -255,6 +255,7 @@ export function StickDock({ value, onChange, onSubmitText, onFiles, dropping, di
             className="sr-only"
             type="file"
             accept="image/*"
+            multiple
             tabIndex={-1}
             onChange={(e) => {
               emitFiles(e.target.files);
@@ -265,6 +266,7 @@ export function StickDock({ value, onChange, onSubmitText, onFiles, dropping, di
             ref={fileRef}
             className="sr-only"
             type="file"
+            multiple
             tabIndex={-1}
             onChange={(e) => {
               emitFiles(e.target.files);

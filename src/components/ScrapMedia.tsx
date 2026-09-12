@@ -11,6 +11,8 @@ type Props = {
   controls?: boolean;
   /** Called when every candidate URL fails to load. */
   onExhausted?: () => void;
+  /** First-screen gallery cards should not wait on lazy loading. */
+  priority?: boolean;
 };
 
 function uniqueSrcs(primary: string, fallbacks: string[] = []) {
@@ -31,6 +33,7 @@ export function ScrapMedia({
   frameClassName = "scrap-card-media-frame",
   controls = true,
   onExhausted,
+  priority = false,
 }: Props) {
   const candidates = uniqueSrcs(src, fallbackSrcs);
   const [index, setIndex] = useState(0);
@@ -59,7 +62,7 @@ export function ScrapMedia({
 
   return (
     <div className={frameClassName + (kind === "audio" ? " scrap-card-media-frame--audio" : "")}>
-      {!loaded ? <div className="scrap-card-media-skeleton" aria-hidden /> : null}
+      {!loaded && !priority ? <div className="scrap-card-media-skeleton" aria-hidden /> : null}
       {kind === "video" ? (
         <video
           key={active}
@@ -87,9 +90,11 @@ export function ScrapMedia({
           key={active}
           src={active}
           alt=""
-          loading="lazy"
+          loading={priority ? "eager" : "lazy"}
           decoding="async"
-          className={className + (loaded ? " is-loaded" : "")}
+          fetchPriority={priority ? "high" : "auto"}
+          referrerPolicy="no-referrer"
+          className={className + (loaded || priority ? " is-loaded" : "")}
           onLoad={() => setLoaded(true)}
           onError={advance}
         />

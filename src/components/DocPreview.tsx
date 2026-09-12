@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useT } from "../lib/useT";
 
@@ -15,53 +15,43 @@ export function DocPreview({ src, pages, filename, limitedNote }: Props) {
   const t = useT();
   const urls = (pages?.length ? pages : src ? [src] : []).filter(Boolean);
   const [index, setIndex] = useState(0);
+  const [shift, setShift] = useState(0);
   const stripRef = useRef<HTMLDivElement>(null);
   const thumbRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const ignoreScroll = useRef(false);
+  const wheelLock = useRef(0);
   const page = Math.min(index, Math.max(0, urls.length - 1));
   const current = urls[page] || "";
   const multi = urls.length > 1;
 
-  function scrollThumb(i: number) {
+  useLayoutEffect(() => {
     const strip = stripRef.current;
-    const el = thumbRefs.current[i];
+    const el = thumbRefs.current[page];
     if (!strip || !el) return;
-    ignoreScroll.current = true;
-    const left = el.offsetLeft - (strip.clientWidth - el.offsetWidth) / 2;
-    strip.scrollTo({ left: Math.max(0, left), behavior: "smooth" });
-  }
+    const left = el.offsetLeft + el.offsetWidth / 2 - strip.clientWidth / 2;
+    setShift(-left);
+  }, [page, urls.length]);
 
   useEffect(() => {
-    if (!multi) return;
-    scrollThumb(page);
-    const timer =     window.setTimeout(() => {
-      ignoreScroll.current = false;
-    }, 500);
-    return () => window.clearTimeout(timer);
-  }, [page, multi, urls.length]);
-
-  function nearestThumb() {
     const strip = stripRef.current;
-    if (!strip) return page;
-    const mid = strip.scrollLeft + strip.clientWidth / 2;
-    let best = 0;
-    let bestDist = Number.POSITIVE_INFINITY;
-    thumbRefs.current.forEach((el, i) => {
-      if (!el) return;
-      const center = el.offsetLeft + el.offsetWidth / 2;
-      const dist = Math.abs(center - mid);
-      if (dist < bestDist) {
-        bestDist = dist;
-        best = i;
-      }
-    });
-    return best;
-  }
+    if (!strip || !multi) return;
+    function onWheel(ev: WheelEvent) {
+      const delta = Math.abs(ev.deltaX) > Math.abs(ev.deltaY) ? ev.deltaX : ev.deltaY;
+      if (Math.abs(delta) < 4) return;
+      ev.preventDefault();
+      const now = Date.now();
+      if (now - wheelLock.current < 180) return;
+      wheelLock.current = now;
+      setIndex((n) => Math.min(urls.length - 1, Math.max(0, n + (delta > 0 ? 1 : -1))));
+    }
+    strip.addEventListener("wheel", onWheel, { passive: false });
+    return () => strip.removeEventListener("wheel", onWheel);
+  }, [multi, urls.length]);
 
-  function onStripScrollEnd() {
-    if (ignoreScroll.current) return;
-    const next = nearestThumb();
-    if (next !== page) setIndex(next);
+  function thumbClass(i: number) {
+    const dist = Math.abs(i - page);
+    if (dist === 0) return " is-current";
+    if (dist === 1) return " is-near";
+    return " is-far";
   }
 
   if (!current) return null;
@@ -92,37 +82,42 @@ export function DocPreview({ src, pages, filename, limitedNote }: Props) {
             <ChevronRight className="size-5" strokeWidth={1.8} />
           </button>
         ) : null}
-        {multi ? (
-          <p className="doc-preview-count">
-            {t("pageCount", { n: page + 1, total: urls.length })}
-          </p>
-        ) : null}
-        {multi ? (
-          <div
-            ref={stripRef}
-            className="doc-preview-thumbs"
-            role="tablist"
-            aria-label={filename || ""}
-            onScrollEnd={onStripScrollEnd}
-          >
-            {urls.map((url, i) => (
-              <button
-                key={url + i}
-                ref={(el) => {
-                  thumbRefs.current[i] = el;
-                }}
-                type="button"
-                role="tab"
-                aria-selected={i === page}
-                className={"doc-preview-thumb" + (i === page ? " is-current" : "")}
-                onClick={() => setIndex(i)}
-              >
-                <img src={url} alt="" />
-              </button>
-            ))}
-          </div>
-        ) : null}
       </div>
+      {multi ? (
+        <div
+          ref={stripRef}
+          className="doc-preview-thumbs"
+          role="tablist"
+          aria-label={filename || ""}
+        >
+          <div className="doc-preview-track" style={{ transform: `translateX(${shift}px)` }}>
+            {urls.map((url, i) => {
+              const near = Math.abs(i - page) <= 4;
+              if (!near) return null;
+              return (
+                <button
+                  key={url + i}
+                  ref={(el) => {
+                    thumbRefs.current[i] = el;
+                  }}
+                  type="button"
+                  role="tab"
+                  aria-selected={i === page}
+                  className={"doc-preview-thumb" + thumbClass(i)}
+                  onClick={() => setIndex(i)}
+                >
+                  <img src={url} alt="" loading={i === page ? "eager" : "lazy"} decoding="async" />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+      {multi ? (
+        <p className="doc-preview-count">
+          {t("pageCount", { n: page + 1, total: urls.length })}
+        </p>
+      ) : null}
       {limitedNote ? <p className="doc-preview-note">{limitedNote}</p> : null}
     </div>
   );

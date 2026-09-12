@@ -1,11 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type RefObject } from "react";
 import { useNavigate } from "react-router-dom";
-import { LayoutList, PanelsTopLeft } from "lucide-react";
+import { LayoutList } from "lucide-react";
 import { typeLabel } from "../i18n";
-import { usePrefs, type ShelfLayout } from "../context/Prefs";
+import { usePrefs } from "../context/Prefs";
 import { useT } from "../lib/useT";
 import { AdSlot } from "./AdSlot";
-import { DayFilterChip, DayFilterPanel } from "./DayFilter";
 import { DocumentMark } from "./DocumentMark";
 import { IconTip } from "./IconTip";
 import { ScrapListSkeleton } from "./ScrapListSkeleton";
@@ -17,29 +16,35 @@ import { formatBytes, mediaKindOf } from "../lib/tagger";
 
 const TYPES: ScrapType[] = ["text", "image", "video", "audio", "link", "document"];
 
-const LAYOUTS: { id: ShelfLayout; icon: typeof LayoutList; labelKey: "layoutList" | "layoutGallery" }[] = [
-  { id: "list", icon: LayoutList, labelKey: "layoutList" },
-  { id: "gallery", icon: PanelsTopLeft, labelKey: "layoutGallery" },
-];
+function shelfThumb(url: string) {
+  return url.replace(
+    /\/vi\/([^/]+)\/(?:maxresdefault|sddefault|hqdefault)\.jpg/i,
+    "/vi/$1/mqdefault.jpg",
+  );
+}
 
 function thumbCandidates(item: Scrap, mediaKind: ReturnType<typeof mediaKindOf>) {
   const media =
     item.dataUrl && (mediaKind === "image" || mediaKind === "video") ? item.dataUrl : "";
-  return [item.posterUrl, item.og?.image || "", media].filter(Boolean);
+  return [item.posterUrl, item.og?.image || "", media].filter(Boolean).map(shelfThumb);
 }
 
 function ScrapCardThumb({
   item,
   mediaKind,
   title,
+  unread,
   showFileMark,
   gallery,
+  priority = false,
 }: {
   item: Scrap;
   mediaKind: ReturnType<typeof mediaKindOf>;
   title: string;
+  unread: boolean;
   showFileMark: boolean;
   gallery: boolean;
+  priority?: boolean;
 }) {
   const { lang } = usePrefs();
   const candidates = thumbCandidates(item, mediaKind);
@@ -56,7 +61,7 @@ function ScrapCardThumb({
   if (!primary || exhausted) {
     if (!gallery) return null;
     return (
-      <div className="scrap-book-cover" aria-hidden>
+      <div className="scrap-book-cover">
         <span className="scrap-book-cover-spine" />
         <span className="scrap-book-cover-face">
           {showFileMark ? (
@@ -70,21 +75,49 @@ function ScrapCardThumb({
           ) : (
             <span className="scrap-book-cover-type">{typeLabel(lang, item.type)}</span>
           )}
-          <span className="scrap-book-cover-title">{title}</span>
+          <span className="scrap-book-cover-title">
+            {unread ? <span className="scrap-unread-dot" aria-hidden /> : null}
+            {title}
+          </span>
         </span>
       </div>
     );
   }
 
-  return (
+  const media = (
     <ScrapMedia
       key={primary + fallbacks.join("|")}
       src={primary}
       fallbackSrcs={fallbacks}
       kind={thumbIsCover ? "image" : mediaKind || "image"}
       controls={false}
+      priority={priority}
       onExhausted={() => setExhausted(true)}
+      className="scrap-book-photo"
+      frameClassName="scrap-book-photo-frame"
     />
+  );
+
+  if (!gallery) {
+    return (
+      <div className="scrap-book-cover scrap-book-cover--compact">
+        <span className="scrap-book-cover-spine" />
+        <span className="scrap-book-cover-face">{media}</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="scrap-book-cover">
+      <span className="scrap-book-cover-spine" />
+      <span className="scrap-book-cover-face">
+        {media}
+        <span className="scrap-book-cover-title">
+          {unread ? <span className="scrap-unread-dot" aria-hidden /> : null}
+          {title}
+        </span>
+      </span>
+    </div>
   );
 }
 
@@ -93,12 +126,11 @@ type Props = {
   visible: Scrap[];
   loading?: boolean;
   typeFilter: ScrapType | "all";
-  dayFilter: string | null;
-  calendarOpen: boolean;
   onType: (value: ScrapType | "all") => void;
-  onDayFilter: (value: string | null) => void;
-  onCalendarOpen: (open: boolean) => void;
   onClearFilters: () => void;
+  hasMore?: boolean;
+  onLoadMore?: () => void;
+  sentinelRef?: RefObject<HTMLDivElement | null>;
 };
 
 export function ScrapList({
@@ -106,17 +138,16 @@ export function ScrapList({
   visible,
   loading = false,
   typeFilter,
-  dayFilter,
-  calendarOpen,
   onType,
-  onDayFilter,
-  onCalendarOpen,
   onClearFilters,
+  hasMore = false,
+  onLoadMore,
+  sentinelRef,
 }: Props) {
   const { lang, shelfLayout, setShelfLayout } = usePrefs();
   const t = useT();
   const navigate = useNavigate();
-  const filtersActive = typeFilter !== "all" || Boolean(dayFilter) || calendarOpen;
+  const filtersActive = typeFilter !== "all";
   const compact = shelfLayout !== "list";
 
   const typeCounts = (() => {
@@ -163,24 +194,19 @@ export function ScrapList({
 
       <section className="list-tools list-tools--slim" aria-label={t("layoutSwitch")}>
         <div className="list-tools-head">
-          <div className="list-tools-chips list-tools-chips--slim" role="group" aria-label={t("filterByDay")}>
-            <DayFilterChip dayFilter={dayFilter} open={calendarOpen} onOpenChange={onCalendarOpen} />
-          </div>
           <div className="list-tools-head-actions">
             <div className="layout-seg" role="group" aria-label={t("layoutSwitch")}>
-              {LAYOUTS.map(({ id, icon: Icon, labelKey }) => (
-                <IconTip key={id} label={t(labelKey)}>
-                  <button
-                    type="button"
-                    className="layout-seg-btn"
-                    aria-pressed={shelfLayout === id}
-                    aria-label={t(labelKey)}
-                    onClick={() => setShelfLayout(id)}
-                  >
-                    <Icon className="size-[18px]" strokeWidth={1.8} />
-                  </button>
-                </IconTip>
-              ))}
+              <IconTip label={t("layoutList")}>
+                <button
+                  type="button"
+                  className="layout-seg-btn"
+                  aria-pressed={shelfLayout === "list"}
+                  aria-label={t("layoutList")}
+                  onClick={() => setShelfLayout("list")}
+                >
+                  <LayoutList className="size-[18px]" strokeWidth={1.8} />
+                </button>
+              </IconTip>
             </div>
             {filtersActive ? (
               <button type="button" className="auth-link-utility" onClick={onClearFilters}>
@@ -189,13 +215,6 @@ export function ScrapList({
             ) : null}
           </div>
         </div>
-        <DayFilterPanel
-          scraps={scraps}
-          dayFilter={dayFilter}
-          open={calendarOpen}
-          onOpenChange={onCalendarOpen}
-          onDayChange={onDayFilter}
-        />
       </section>
 
       <AdSlot />
@@ -209,7 +228,7 @@ export function ScrapList({
           </div>
         ) : (
           <ul className={"scrap-list scrap-list--" + shelfLayout}>
-            {visible.map((item) => {
+            {visible.map((item, index) => {
               const mediaKind = mediaKindOf(item.type, item.mime);
               const candidates = thumbCandidates(item, mediaKind);
               const thumb = candidates[0] || "";
@@ -224,7 +243,7 @@ export function ScrapList({
                     "scrap-card" +
                     (unread ? " scrap-card--unread" : "") +
                     (item.bookmarked ? " scrap-card--bookmarked" : "") +
-                    (!thumb && shelfLayout === "gallery" ? " scrap-card--no-media" : "")
+                    (shelfLayout === "gallery" ? " scrap-card--book" : "")
                   }
                 >
                   {item.bookmarked ? <span className="scrap-bookmark-ribbon" aria-hidden /> : null}
@@ -233,8 +252,10 @@ export function ScrapList({
                       item={item}
                       mediaKind={mediaKind}
                       title={title}
+                      unread={unread}
                       showFileMark={showFileMark}
                       gallery={shelfLayout === "gallery"}
+                      priority={shelfLayout === "gallery" && index < 9}
                     />
                     <div className="scrap-card-body">
                       <div className="scrap-card-head">
@@ -313,6 +334,13 @@ export function ScrapList({
             })}
           </ul>
         )}
+        {hasMore ? (
+          <div ref={sentinelRef} className="list-page-more">
+            <button type="button" className="auth-link-utility" onClick={onLoadMore}>
+              {t("loadMore")}
+            </button>
+          </div>
+        ) : null}
       </section>
     </div>
   );

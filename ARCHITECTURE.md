@@ -55,7 +55,7 @@ flowchart TB
 | Plan | [`src/context/Plan.tsx`](src/context/Plan.tsx), [`src/lib/plans.ts`](src/lib/plans.ts), [`src/lib/profiles.ts`](src/lib/profiles.ts) | Tier limits, trial, storage usage, ad flag, upload gates |
 | Filters | [`src/lib/scrapFilters.ts`](src/lib/scrapFilters.ts) | Shared query/type/day filter and dashboard aggregates |
 | Classify | [`functions/src/index.ts`](functions/src/index.ts), [`netlify/functions/analyze.ts`](netlify/functions/analyze.ts), [`src/lib/tagger.ts`](src/lib/tagger.ts) | Claude with JWT; MIME/URL fallback |
-| Persist | [`src/lib/scraps.ts`](src/lib/scraps.ts) | `public.scraps` (incl. engagement + `og`) + `public.profiles` + `scrap-media/{userId}/{scrapId}/`. Shelf paints metadata first; image `media_path` values get batch `createSignedUrls` via `hydrateSignedMedia` (session-cached). |
+| Persist | [`src/lib/scraps.ts`](src/lib/scraps.ts) | `public.scraps` (incl. engagement + `og`) + `public.profiles` + `scrap-media/{userId}/{scrapId}/`. Shelf and search paint a window of 24, then more as you scroll. Signed URLs are created only for that window (`posterPages: 1`, session-cached). Search and stats do not sign every file. |
 | Guest store | [`src/lib/guest.ts`](src/lib/guest.ts), [`src/lib/localScraps.ts`](src/lib/localScraps.ts), [`src/lib/guestMigrate.ts`](src/lib/guestMigrate.ts) | 둘러보기 scraps in `localStorage` on this device, plus the move-to-account path |
 | OG | [`src/lib/og.ts`](src/lib/og.ts), [`supabase/functions/og-preview`](supabase/functions/og-preview) | URL preview after classify; Detail lazy backfill |
 
@@ -66,7 +66,7 @@ flowchart TB
 
 **Deploy Claude on Firebase:** Blaze plan, `functions/.env` with non-empty `ANTHROPIC_API_KEY`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, then `npx firebase-tools deploy --only functions,hosting --project mybrary-snuu09`. Confirm `POST /api/analyze` returns JSON (or 401), not Hosting HTML 404.
 3. **Save.** Upsert the scrap row. List is newest first, RLS `auth.uid() = user_id`. `PlanProvider` sums stored-media bytes for quota; free trial ends at `profiles.trial_ends_at`.
-4. **Filter.** Shelf holds query, type, and optional local day. `filterScraps` drives list, detail prev/next, and dashboard stats.
+4. **Filter.** Shelf holds type. Search (`/search`) holds query, type, local day, and stored tags. `filterScraps` drives the windowed list, detail prev/next, and dashboard stats. The list mounts 24 cards, then the next page when the sentinel nears the viewport. Document film images mount only near the current page.
 5. **Leave.** Sign out returns to intro. Account scraps are not kept in `localStorage`.
 
 **둘러보기 branch.** The anonymous session still signs the classify JWT, but every scrap call in `src/lib/scraps.ts` routes to `localStorage` when `isBrowseUser(user)`. Media rides along as an inline data URL, so limits are per device: 1.5MB a file, about 4MB in total. Keys are `mybrary.guest.scraps` (not keyed by anonymous uid, so a fresh browse session on the same browser picks the shelf back up), `mybrary.guest.notice` (the one-time storage notice), and `mybrary.guest.migrateAsked`. Another browser or cleared history means the scraps are gone; signing into a real account offers to move whatever is still on the device.

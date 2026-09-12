@@ -27,7 +27,8 @@ import { DocPreview } from "../components/DocPreview";
 import { requestAnalyze } from "../lib/analyze";
 import { captureCover } from "../lib/captureCover";
 import { deleteScrap, hydrateSignedMedia, isPagedPosterPath, loadScraps, saveScrap, uploadPosters } from "../lib/scraps";
-import { fetchOgPreview } from "../lib/og";
+import { fetchOgPreview, youtubeEmbedUrl } from "../lib/og";
+import { needsOgCoverSnapshot, snapshotOgCover } from "../lib/ogCover";
 import { useDialog } from "../lib/dialog";
 import { useT } from "../lib/useT";
 import { SiteIcon } from "../components/SiteIcon";
@@ -93,6 +94,7 @@ export function ScrapDetail() {
   const aiBusyRef = useRef(false);
   const pageBackfillTried = useRef(new Set<string>());
   const ogImageTried = useRef(new Set<string>());
+  const coverSnapTried = useRef(new Set<string>());
 
   const cancelAiAnalyze = useCallback(() => {
     aiAbortRef.current?.abort();
@@ -249,6 +251,29 @@ export function ScrapDetail() {
     });
     // one attempt per scrap; do not cancel on identity churn or the retry never lands
   }, [user, scrap?.id, scrap?.url, scrap?.og?.image]);
+
+  useEffect(() => {
+    if (!user || !scrap || !needsOgCoverSnapshot(scrap)) return;
+    if (coverSnapTried.current.has(scrap.id)) return;
+    coverSnapTried.current.add(scrap.id);
+    const target = scrap;
+    void snapshotOgCover(user, target).then(async (poster) => {
+      if (!poster?.posterUrl && !poster?.posterPath) return;
+      const nextScrap = { ...target, ...poster, updatedAt: Date.now() };
+      try {
+        await saveScrap(user, nextScrap);
+        setScraps((list) => {
+          const updated = list.map((row) =>
+            row.id === nextScrap.id && !row.posterUrl && !row.posterPath ? { ...row, ...poster, updatedAt: nextScrap.updatedAt } : row,
+          );
+          setScrapsForUsage(updated);
+          return updated;
+        });
+      } catch {
+        coverSnapTried.current.delete(target.id);
+      }
+    });
+  }, [user, scrap, setScrapsForUsage]);
 
   if (!user) return <Navigate to="/" replace />;
 
@@ -432,9 +457,14 @@ export function ScrapDetail() {
   const dueRemind = item.remindAt && item.remindAt <= Date.now();
   const showOgCard = Boolean(item.url && (item.og || item.domain));
   const coverPages = item.posterUrls.length ? item.posterUrls : item.posterUrl ? [item.posterUrl] : [];
+  const hasFileMedia = Boolean(item.dataUrl || item.mediaPath);
+  /** Link posters are the stored OG snapshot, not a document page set. */
+  const ogSnapshotOnly = Boolean(item.url && !hasFileMedia);
+  const youtubeEmbed = ogSnapshotOnly && item.url ? youtubeEmbedUrl(item.url) : "";
   /** Docs/audio always use poster; image/video use poster only when media URL is missing. */
   const showDocCover =
     coverPages.length > 0 &&
+    !ogSnapshotOnly &&
     (mediaKind === "audio" || mediaKind === null || (!playable && (mediaKind === "image" || mediaKind === "video")));
   const showPlayable = playable;
 
@@ -539,9 +569,8 @@ export function ScrapDetail() {
             <a href={item.url} className="scrap-card-link min-w-0 flex-1 truncate" target="_blank" rel="noreferrer">
               {item.url}
             </a>
-            <a href={item.url} className="inline-action" target="_blank" rel="noreferrer">
+            <a href={item.url} className="inline-action" target="_blank" rel="noreferrer" aria-label={t("openLink")}>
               <ExternalLink className="size-4" strokeWidth={1.8} />
-              {t("openLink")}
             </a>
           </div>
         ) : null}
@@ -553,13 +582,26 @@ export function ScrapDetail() {
                 {item.og?.siteName || item.domain}
               </p>
             ) : null}
-            {item.og?.image ? (
+            {youtubeEmbed ? (
+              <div className="detail-media-frame detail-media-frame--bordered detail-media-frame--embed">
+                <iframe
+                  className="detail-embed"
+                  src={youtubeEmbed}
+                  title={item.og?.title || item.title || item.domain || ""}
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  allow="encrypted-media; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+            ) : item.posterUrl || item.og?.image ? (
               <ScrapMedia
-                key={item.og.image}
-                src={item.og.image}
+                key={item.posterUrl || item.og?.image}
+                src={item.posterUrl || item.og?.image || ""}
+                fallbackSrcs={item.posterUrl && item.og?.image ? [item.og.image] : []}
                 kind="image"
+                priority
                 className="detail-media-img"
-                frameClassName="detail-media-frame"
+                frameClassName="detail-media-frame detail-media-frame--bordered"
               />
             ) : null}
             {item.og?.description ? <p className="og-card-desc">{item.og.description}</p> : null}
@@ -612,9 +654,13 @@ export function ScrapDetail() {
               </span>
             </p>
             {item.dataUrl ? (
-              <a href={item.dataUrl} className="inline-action" download={item.filename || undefined}>
+              <a
+                href={item.dataUrl}
+                className="inline-action"
+                download={item.filename || undefined}
+                aria-label={t("downloadFile")}
+              >
                 <Download className="size-4" strokeWidth={1.8} />
-                {t("downloadFile")}
               </a>
             ) : null}
           </div>

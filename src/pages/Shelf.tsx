@@ -6,12 +6,14 @@ import { usePrefs } from "../context/Prefs";
 import { isBrowseUser, useAuth } from "../context/Auth";
 import { usePlan } from "../context/Plan";
 import { DraftCard } from "../components/DraftCard";
+import { FileBatch, type BatchItem } from "../components/FileBatch";
 import { Footer } from "../components/Footer";
 import { GuestNoticeSheet } from "../components/GuestNoticeSheet";
 import { ScrapList } from "../components/ScrapList";
 import { StickDock } from "../components/StickDock";
 import { requestAnalyze } from "../lib/analyze";
 import { fetchOgPreview } from "../lib/og";
+import { needsOgCoverSnapshot, snapshotOgCover } from "../lib/ogCover";
 import {
   hydrateSignedMedia,
   loadScraps,
@@ -24,7 +26,9 @@ import {
   SCRAPS_CLEARED_EVENT,
 } from "../lib/scraps";
 import { GuestQuotaError, GUEST_FILE_LIMIT, guestNoticeSeen, markGuestNoticeSeen } from "../lib/localScraps";
+import { uploadIssue } from "../lib/uploadCheck";
 import { filterScraps } from "../lib/scrapFilters";
+import { usePagedSlice } from "../lib/usePagedSlice";
 import { useDialog } from "../lib/dialog";
 import { getSupabase } from "../lib/supabase";
 import { analyzeFile, analyzeText, uid } from "../lib/tagger";
@@ -85,11 +89,18 @@ export function Shelf({ onEnter }: Props) {
   const [scraps, setScraps] = useState<Scrap[]>([]);
   const [listReady, setListReady] = useState(false);
   const [draft, setDraft] = useState<Scrap | null>(null);
+  const [batch, setBatch] = useState<BatchItem[]>([]);
+  const [queueLabel, setQueueLabel] = useState("");
+  const queueRef = useRef<{ file: File; analyze: boolean }[]>([]);
+  const queueMetaRef = useRef({ n: 0, total: 0 });
+  const draftRef = useRef<Scrap | null>(null);
   const [uploadRatio, setUploadRatio] = useState<number | null>(null);
+
+  useEffect(() => {
+    draftRef.current = draft;
+  }, [draft]);
   const [composer, setComposer] = useState("");
   const [typeFilter, setTypeFilter] = useState<ScrapType | "all">("all");
-  const [dayFilter, setDayFilter] = useState<string | null>(null);
-  const [calendarOpen, setCalendarOpen] = useState(false);
   const [dropping, setDropping] = useState(false);
   const [error, setError] = useState("");
   const [top, setTop] = useState(false);
@@ -101,9 +112,114 @@ export function Shelf({ onEnter }: Props) {
   }, [searchParams, navigate]);
 
   const visible = useMemo(
-    () => filterScraps(scraps, { query: "", type: typeFilter, day: dayFilter }),
-    [scraps, typeFilter, dayFilter],
+    () => filterScraps(scraps, { query: "", type: typeFilter, day: null }),
+    [scraps, typeFilter],
   );
+  const paged = usePagedSlice(visible);
+  const windowRef = useRef(paged.slice);
+  windowRef.current = paged.slice;
+
+  const ogFillTried = useRef(new Set<string>());
+  const coverSnapTried = useRef(new Set<string>());
+
+  useEffect(() => {
+    if (!user || !listReady) return;
+    const missing = windowRef.current.filter((item) => item.url && !item.og?.image && !ogFillTried.current.has(item.id));
+    if (!missing.length) return;
+    for (const item of missing.slice(0, 8)) {
+      ogFillTried.current.add(item.id);
+      void fetchOgPreview(item.url).then(async (result) => {
+        if (!result.og?.image) return;
+        const updated = {
+          ...item,
+          og: result.og,
+          ogStatus: result.ogStatus,
+          updatedAt: Date.now(),
+        };
+        try {
+          await saveScrap(user, updated);
+          setScraps((list) =>
+            list.map((row) =>
+              row.id === updated.id && !row.og?.image
+                ? { ...row, og: updated.og, ogStatus: updated.ogStatus, updatedAt: updated.updatedAt }
+                : row,
+            ),
+          );
+        } catch {
+          ogFillTried.current.delete(item.id);
+        }
+      });
+    }
+  }, [user, listReady, paged.shown, typeFilter]);
+
+  useEffect(() => {
+    if (!user || !listReady) return;
+    const missing = windowRef.current.filter((item) => needsOgCoverSnapshot(item) && !coverSnapTried.current.has(item.id));
+    if (!missing.length) return;
+    for (const item of missing.slice(0, 4)) {
+      coverSnapTried.current.add(item.id);
+      void snapshotOgCover(user, item).then(async (poster) => {
+        if (!poster?.posterUrl && !poster?.posterPath) return;
+        const updated = { ...item, ...poster, updatedAt: Date.now() };
+        try {
+          await saveScrap(user, updated);
+          setScraps((list) =>
+            list.map((row) =>
+              row.id === updated.id && !row.posterUrl && !row.posterPath
+                ? {
+                    ...row,
+                    posterPath: updated.posterPath,
+                    posterUrl: updated.posterUrl,
+                    posterUrls: updated.posterUrls,
+                    pages: updated.pages,
+                    updatedAt: updated.updatedAt,
+                  }
+                : row,
+            ),
+          );
+        } catch {
+          coverSnapTried.current.delete(item.id);
+        }
+      });
+    }
+  }, [user, listReady, paged.shown, typeFilter]);
+
+  useEffect(() => {
+    if (!user || !listReady || !paged.slice.length) return;
+    const windowItems = windowRef.current;
+    let cancelled = false;
+    void hydrateSignedMedia(windowItems, { posterPages: 1 })
+      .then((hydrated) => {
+        if (cancelled) return;
+        const byId = new Map(hydrated.map((item) => [item.id, item]));
+        setScraps((list) =>
+          list.map((item) => {
+            const signed = byId.get(item.id);
+            if (!signed) return item;
+            if (
+              signed.dataUrl === item.dataUrl &&
+              signed.posterUrl === item.posterUrl &&
+              signed.posterUrls.length === item.posterUrls.length
+            ) {
+              return item;
+            }
+            return {
+              ...item,
+              dataUrl: signed.dataUrl || item.dataUrl,
+              storedMedia: signed.storedMedia || item.storedMedia,
+              posterUrl: signed.posterUrl || item.posterUrl,
+              posterUrls: signed.posterUrls.length ? signed.posterUrls : item.posterUrls,
+            };
+          }),
+        );
+      })
+      .catch(() => {
+        /* metadata stays until the next window */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user, listReady, paged.shown, typeFilter]);
 
   const refresh = useCallback(async () => {
     if (!user) return;
@@ -112,14 +228,6 @@ export function Shelf({ onEnter }: Props) {
       setScraps(next);
       setScrapsForUsage(next);
       setListReady(true);
-      void hydrateSignedMedia(next)
-        .then((hydrated) => {
-          setScraps(hydrated);
-          setScrapsForUsage(hydrated);
-        })
-        .catch(() => {
-          /* keep metadata-only list */
-        });
     } catch {
       setError(t("syncError"));
       setListReady(true);
@@ -236,6 +344,7 @@ export function Shelf({ onEnter }: Props) {
   function cancelGuestNotice() {
     pendingWrite.current = null;
     setNoticeOpen(false);
+    if (!draftRef.current && queueRef.current.length) advanceQueue();
   }
 
   async function guardStick() {
@@ -331,20 +440,90 @@ export function Shelf({ onEnter }: Props) {
     );
   }
 
-  async function startFromFiles(list: FileList | File[]) {
-    if (!user) return;
+  function receiveFiles(list: FileList | File[]) {
+    if (!getSupabase()) {
+      void alert(t("syncError"));
+      return;
+    }
     const files = Array.from(list);
-    if (await busyGuard()) return;
-    const file = files[0];
+    if (!files.length) return;
+    setBatch((cur) => {
+      const next = [...cur];
+      for (const file of files) {
+        const id = `${file.name}:${file.size}:${file.lastModified}`;
+        if (next.some((item) => item.id === id)) continue;
+        next.push({ id, file, analyze: true });
+      }
+      return next;
+    });
+  }
+
+  function validBatchItems(items: BatchItem[]) {
+    let reserved = 0;
+    const ready: { file: File; analyze: boolean }[] = [];
+    for (const item of items) {
+      const issue = uploadIssue(item.file, { guest, reservedBytes: reserved, canUpload });
+      if (issue) continue;
+      reserved += item.file.size;
+      ready.push({ file: item.file, analyze: item.analyze });
+    }
+    return ready;
+  }
+
+  function beginQueue(items: { file: File; analyze: boolean }[]) {
+    const [first, ...rest] = items;
+    if (!first) return;
+    queueRef.current = rest;
+    queueMetaRef.current = { n: 1, total: items.length };
+    setQueueLabel(items.length > 1 ? t("batchProgress", { n: 1, total: items.length }) : "");
+    void startFromFile(first.file, first.analyze);
+  }
+
+  function advanceQueue() {
+    const next = queueRef.current.shift();
+    if (!next) {
+      queueMetaRef.current = { n: 0, total: 0 };
+      setQueueLabel("");
+      return;
+    }
+    const n = queueMetaRef.current.n + 1;
+    queueMetaRef.current.n = n;
+    const total = queueMetaRef.current.total || n;
+    setQueueLabel(total > 1 ? t("batchProgress", { n, total }) : "");
+    void startFromFile(next.file, next.analyze);
+  }
+
+  function confirmBatch() {
+    const ready = validBatchItems(batch);
+    if (!ready.length) return;
+    if (needsGuestNotice(() => confirmBatch())) return;
+    setBatch([]);
+    if (draftRef.current) {
+      queueRef.current.push(...ready);
+      if (!queueMetaRef.current.total) queueMetaRef.current = { n: 0, total: ready.length };
+      else {
+        queueMetaRef.current.total += ready.length;
+        setQueueLabel(t("batchProgress", { n: queueMetaRef.current.n, total: queueMetaRef.current.total }));
+      }
+      return;
+    }
+    beginQueue(ready);
+  }
+
+  async function startFromFile(file: File, analyze = true) {
+    if (!user) return;
+    if (draftRef.current) return;
+    if (await guardStick()) return;
     if (!file) return;
     // Guest oversize sticks as metadata only (0 media bytes); attachLocalMedia skips the blob.
     const guestMetaOnly = guest && file.size > GUEST_FILE_LIMIT;
     const blocked = uploadBlockedReason(guestMetaOnly ? 0 : file.size);
     if (blocked) {
       await alert(blocked);
+      advanceQueue();
       return;
     }
-    if (needsGuestNotice(() => void startFromFiles([file]))) return;
+    if (needsGuestNotice(() => void startFromFile(file, analyze))) return;
     const hint = analyzeFile(file);
     const wantsBlob =
       hint.type === "image" ||
@@ -409,26 +588,28 @@ export function Shelf({ onEnter }: Props) {
         next.posterUrls = poster.posterUrls?.length ? poster.posterUrls : coverObjectUrls;
         next.pages = poster.pages || next.posterUrls.length;
       }
-      setDraft({ ...next });
+      setDraft({ ...next, analyzing: analyze });
       const skipped = uploaded.skipped;
-      const ai = await requestAnalyze({
-        kind: "file",
-        mediaPath: uploaded.mediaPath,
-        mime: hint.mime,
-        filename: hint.filename,
-        lang,
-      });
+      const ai = analyze
+        ? await requestAnalyze({
+            kind: "file",
+            mediaPath: uploaded.mediaPath,
+            mime: hint.mime,
+            filename: hint.filename,
+            lang,
+          })
+        : null;
       setDraft((cur) =>
         cur && cur.id === next.id
           ? {
               ...cur,
               analyzing: false,
-              type: ai.type,
-              tags: ai.tags,
-              title: ai.title || cur.title,
-              text: ai.summary || ai.body || cur.text,
-              previewText: ai.analysis || "",
-              classifyFallback: Boolean(ai.fallback),
+              type: ai?.type || cur.type,
+              tags: ai?.tags || cur.tags,
+              title: ai?.title || cur.title,
+              text: ai?.summary || ai?.body || cur.text,
+              previewText: ai?.analysis || cur.previewText,
+              classifyFallback: ai ? Boolean(ai.fallback) : false,
               storedMedia: uploaded.storedMedia,
               mediaPath: uploaded.mediaPath,
               dataUrl: uploaded.dataUrl || cur.dataUrl,
@@ -494,16 +675,25 @@ export function Shelf({ onEnter }: Props) {
       return;
     }
     if (needsGuestNotice(() => void persist())) return;
-    const previewBlob = draft.dataUrl.startsWith("blob:") ? draft.dataUrl : "";
-    const posterBlobs = [...new Set([draft.posterUrl, ...draft.posterUrls].filter((url) => url.startsWith("blob:")))];
-    let dataUrl = draft.dataUrl;
-    let posterUrl = draft.posterUrl;
-    let posterUrls = draft.posterUrls.length ? draft.posterUrls : posterUrl ? [posterUrl] : [];
+    let nextDraft = draft;
+    if (needsOgCoverSnapshot(draft)) {
+      try {
+        const poster = await snapshotOgCover(user, draft);
+        if (poster) nextDraft = { ...draft, ...poster };
+      } catch {
+        /* keep the remote og image if the copy fails */
+      }
+    }
+    const previewBlob = nextDraft.dataUrl.startsWith("blob:") ? nextDraft.dataUrl : "";
+    const posterBlobs = [...new Set([nextDraft.posterUrl, ...nextDraft.posterUrls].filter((url) => url.startsWith("blob:")))];
+    let dataUrl = nextDraft.dataUrl;
+    let posterUrl = nextDraft.posterUrl;
+    let posterUrls = nextDraft.posterUrls.length ? nextDraft.posterUrls : posterUrl ? [posterUrl] : [];
     try {
-      if (draft.mediaPath && dataUrl.startsWith("blob:")) dataUrl = "";
-      else if (!draft.mediaPath && dataUrl.startsWith("blob:")) dataUrl = await blobUrlToDataUrl(dataUrl);
+      if (nextDraft.mediaPath && dataUrl.startsWith("blob:")) dataUrl = "";
+      else if (!nextDraft.mediaPath && dataUrl.startsWith("blob:")) dataUrl = await blobUrlToDataUrl(dataUrl);
 
-      if (draft.posterPath) {
+      if (nextDraft.posterPath) {
         if (posterUrl.startsWith("blob:")) posterUrl = "";
         posterUrls = posterUrls.filter((url) => !url.startsWith("blob:"));
       } else {
@@ -513,20 +703,22 @@ export function Shelf({ onEnter }: Props) {
       }
 
       const saved = {
-        ...draft,
+        ...nextDraft,
         dataUrl,
         posterUrl: posterUrl || posterUrls[0] || "",
         posterUrls,
-        pages: draft.pages || posterUrls.length,
+        pages: nextDraft.pages || posterUrls.length,
         updatedAt: Date.now(),
         analyzing: false,
         classifyFallback: undefined,
       };
       await saveScrap(user, saved);
+      draftRef.current = null;
       setDraft(null);
       await refresh();
       if (previewBlob) URL.revokeObjectURL(previewBlob);
       posterBlobs.forEach((url) => URL.revokeObjectURL(url));
+      advanceQueue();
     } catch (err) {
       const message = err instanceof GuestQuotaError ? t("guestQuotaMsg") : t("syncError");
       setError(message);
@@ -540,6 +732,7 @@ export function Shelf({ onEnter }: Props) {
     if (!(await confirm(t("leaveDraftConfirm")))) return;
     const doomed = draft;
     setUploadRatio(null);
+    draftRef.current = null;
     setDraft(null);
     if (doomed.dataUrl.startsWith("blob:")) URL.revokeObjectURL(doomed.dataUrl);
     for (const url of [doomed.posterUrl, ...doomed.posterUrls]) {
@@ -566,12 +759,11 @@ export function Shelf({ onEnter }: Props) {
         }
       }
     }
+    advanceQueue();
   }
 
   function clearFilters() {
     setTypeFilter("all");
-    setDayFilter(null);
-    setCalendarOpen(false);
   }
 
   const stickDisabled = !canStick().ok || !getSupabase();
@@ -591,7 +783,7 @@ export function Shelf({ onEnter }: Props) {
           void alert(stickBlockedReason() || t("trialExpiredMsg"));
           return;
         }
-        if (e.dataTransfer.files.length) void startFromFiles(e.dataTransfer.files);
+        if (e.dataTransfer.files.length) receiveFiles(e.dataTransfer.files);
         else {
           const text = e.dataTransfer.getData("text/plain");
           if (text) void startFromText(text);
@@ -612,15 +804,14 @@ export function Shelf({ onEnter }: Props) {
         {error ? <p className="mx-auto max-w-[40rem] px-[var(--gutter)] pt-3 text-[0.8125rem] text-danger">{error}</p> : null}
         <ScrapList
           scraps={scraps}
-          visible={visible}
           loading={!listReady}
           typeFilter={typeFilter}
-          dayFilter={dayFilter}
-          calendarOpen={calendarOpen}
           onType={setTypeFilter}
-          onDayFilter={setDayFilter}
-          onCalendarOpen={setCalendarOpen}
           onClearFilters={clearFilters}
+          hasMore={paged.hasMore}
+          onLoadMore={paged.loadMore}
+          sentinelRef={paged.sentinelRef}
+          visible={paged.slice}
         />
         <Footer />
       </div>
@@ -628,19 +819,37 @@ export function Shelf({ onEnter }: Props) {
         value={composer}
         onChange={setComposer}
         onSubmitText={() => void startFromText(composer)}
-        onFiles={(files) => void startFromFiles(files)}
+        onFiles={receiveFiles}
         dropping={dropping}
         disabled={stickDisabled}
         disabledHint={stickBlockedReason()}
         draftSlot={
-          draft ? (
-            <DraftCard
-              draft={draft}
-              uploadRatio={uploadRatio}
-              onChange={(patch) => setDraft((cur) => (cur ? { ...cur, ...patch } : cur))}
-              onSave={() => void persist()}
-              onCancel={() => void discardDraft()}
-            />
+          batch.length || draft ? (
+            <>
+              {batch.length ? (
+                <FileBatch
+                  items={batch}
+                  guest={guest}
+                  canUpload={canUpload}
+                  onToggleAnalyze={(id) =>
+                    setBatch((cur) => cur.map((item) => (item.id === id ? { ...item, analyze: !item.analyze } : item)))
+                  }
+                  onRemove={(id) => setBatch((cur) => cur.filter((item) => item.id !== id))}
+                  onConfirm={confirmBatch}
+                  onCancel={() => setBatch([])}
+                />
+              ) : null}
+              {draft ? (
+                <DraftCard
+                  draft={draft}
+                  uploadRatio={uploadRatio}
+                  queueLabel={queueLabel}
+                  onChange={(patch) => setDraft((cur) => (cur ? { ...cur, ...patch } : cur))}
+                  onSave={() => void persist()}
+                  onCancel={() => void discardDraft()}
+                />
+              ) : null}
+            </>
           ) : null
         }
       />

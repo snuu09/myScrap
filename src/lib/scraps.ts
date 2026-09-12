@@ -143,17 +143,29 @@ function needsSignedMedia(scrap: Scrap) {
   return true;
 }
 
-function needsSignedPoster(scrap: Scrap) {
+function posterPathsToSign(scrap: Scrap, posterPages?: number) {
+  const all = posterPathsFor(scrap);
+  if (!posterPages || posterPages < 1) return all;
+  return all.slice(0, posterPages);
+}
+
+function needsSignedPoster(scrap: Scrap, posterPages?: number) {
   if (!scrap.posterPath) return false;
-  const wanted = posterPathsFor(scrap);
+  const wanted = posterPathsToSign(scrap, posterPages);
+  if (!wanted.length) return false;
   if (!scrap.posterUrl) return true;
+  if (posterPages) return false;
   return wanted.length > 1 && scrap.posterUrls.length < wanted.length;
 }
 
 /** Batch-sign media + poster paths and fill `dataUrl` / `posterUrl` (session-cached). */
-export async function hydrateSignedMedia(scraps: Scrap[]): Promise<Scrap[]> {
+export async function hydrateSignedMedia(
+  scraps: Scrap[],
+  opts?: { posterPages?: number },
+): Promise<Scrap[]> {
   const supabase = getSupabase();
   if (!supabase || !scraps.length) return scraps;
+  const posterPages = opts?.posterPages;
 
   const paths: string[] = [];
   const urlByPath = new Map<string, string>();
@@ -161,7 +173,7 @@ export async function hydrateSignedMedia(scraps: Scrap[]): Promise<Scrap[]> {
   for (const scrap of scraps) {
     const candidates = [
       needsSignedMedia(scrap) ? scrap.mediaPath : "",
-      ...(needsSignedPoster(scrap) ? posterPathsFor(scrap) : []),
+      ...(needsSignedPoster(scrap, posterPages) ? posterPathsToSign(scrap, posterPages) : []),
     ].filter(Boolean);
     for (const path of candidates) {
       const cached = cachedSignedUrl(path);
@@ -199,8 +211,8 @@ export async function hydrateSignedMedia(scraps: Scrap[]): Promise<Scrap[]> {
       const url = urlByPath.get(scrap.mediaPath);
       if (url) next = { ...next, dataUrl: url, storedMedia: true };
     }
-    if (scrap.posterPath) {
-      const urls = posterPathsFor(scrap)
+    if (scrap.posterPath && needsSignedPoster(scrap, posterPages)) {
+      const urls = posterPathsToSign(scrap, posterPages)
         .map((path) => urlByPath.get(path) || "")
         .filter(Boolean);
       if (urls.length) next = { ...next, posterUrl: urls[0], posterUrls: urls };
