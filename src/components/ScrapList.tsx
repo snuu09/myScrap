@@ -1,8 +1,8 @@
 import { useEffect, useState, type RefObject } from "react";
 import { useNavigate } from "react-router-dom";
-import { LayoutList } from "lucide-react";
+import { LayoutList, PanelsTopLeft } from "lucide-react";
 import { typeLabel } from "../i18n";
-import { usePrefs } from "../context/Prefs";
+import { usePrefs, type ShelfLayout } from "../context/Prefs";
 import { useT } from "../lib/useT";
 import { AdSlot } from "./AdSlot";
 import { DocumentMark } from "./DocumentMark";
@@ -15,6 +15,11 @@ import { formatWhen } from "../lib/time";
 import { formatBytes, mediaKindOf } from "../lib/tagger";
 
 const TYPES: ScrapType[] = ["text", "image", "video", "audio", "link", "document"];
+
+const LAYOUTS: { id: ShelfLayout; icon: typeof LayoutList; labelKey: "layoutList" | "layoutGallery" }[] = [
+  { id: "gallery", icon: PanelsTopLeft, labelKey: "layoutGallery" },
+  { id: "list", icon: LayoutList, labelKey: "layoutList" },
+];
 
 function shelfThumb(url: string) {
   return url.replace(
@@ -196,17 +201,19 @@ export function ScrapList({
         <div className="list-tools-head">
           <div className="list-tools-head-actions">
             <div className="layout-seg" role="group" aria-label={t("layoutSwitch")}>
-              <IconTip label={t("layoutList")}>
-                <button
-                  type="button"
-                  className="layout-seg-btn"
-                  aria-pressed={shelfLayout === "list"}
-                  aria-label={t("layoutList")}
-                  onClick={() => setShelfLayout("list")}
-                >
-                  <LayoutList className="size-[18px]" strokeWidth={1.8} />
-                </button>
-              </IconTip>
+              {LAYOUTS.map(({ id, icon: Icon, labelKey }) => (
+                <IconTip key={id} label={t(labelKey)}>
+                  <button
+                    type="button"
+                    className="layout-seg-btn"
+                    aria-pressed={shelfLayout === id}
+                    aria-label={t(labelKey)}
+                    onClick={() => setShelfLayout(id)}
+                  >
+                    <Icon className="size-[18px]" strokeWidth={1.8} />
+                  </button>
+                </IconTip>
+              ))}
             </div>
             {filtersActive ? (
               <button type="button" className="auth-link-utility" onClick={onClearFilters}>

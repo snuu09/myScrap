@@ -1097,19 +1097,22 @@ body {
 
   .scrap-list--list .scrap-card-hit:has(.scrap-book-cover--compact) {
     display: flex;
-    align-items: stretch;
+    align-items: center;
   }
 
   .scrap-list--list .scrap-book-cover--compact {
-    flex: 0 0 5.25rem;
-    width: 5.25rem;
-    min-height: 7rem;
-    aspect-ratio: 3 / 4;
-    border-radius: 0;
+    flex: 0 0 7.5rem;
+    width: 7.5rem;
+    height: 7.5rem;
+    min-height: 7.5rem;
+    aspect-ratio: 1;
+    margin: 0.7rem 0 0.7rem 0.7rem;
+    border-radius: 12px;
+    align-self: center;
   }
 
   .scrap-list--list .scrap-book-cover--compact .scrap-book-cover-face {
-    padding: 0.4rem 0.35rem;
+    padding: 0.45rem;
     gap: 0;
   }
 
@@ -1508,7 +1511,7 @@ body {
   }
 
   .scrap-list--list .scrap-card {
-    contain-intrinsic-size: auto 7.5rem;
+    contain-intrinsic-size: auto 9rem;
   }
 
   .scrap-list--gallery {

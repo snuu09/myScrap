@@ -61,6 +61,11 @@ function readLook(): Look {
 
 function readShelfLayout(): ShelfLayout {
   try {
+    // Gallery is the default. Drop a stored list choice from before that default.
+    if (localStorage.getItem("mybrary.shelfLayoutDefault") !== "gallery") {
+      localStorage.removeItem("mybrary.shelfLayout");
+      localStorage.setItem("mybrary.shelfLayoutDefault", "gallery");
+    }
     const stored = localStorage.getItem("mybrary.shelfLayout");
     if (stored === "list") return "list";
   } catch {
