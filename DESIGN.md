@@ -344,7 +344,7 @@ Slight clipping rotation (±0.45deg) on every third scrap. That is the fridge, n
 - **Palette switch:** Pill track, 40px cells. 기본 (tangerine swatch) and 현무암 (basalt swatch). Lives in the settings sheet. Default is tangerine.
 - **Theme switch:** Light, system, and dark magnets in a pill track, 40px cells, 18px glyphs. Also in the settings sheet.
 - **Composer:** Bottom dock after entry. 24px shell; 22px +; 15px field; Stick 48px / 14px. Focus ring follows the 24px shell, not a square on the textarea and not a pill.
-- **Classify draft:** A new Stick, paste, or drop replaces the open classify card in place.
+- **Classify draft:** A new **분류하기**, paste, or drop replaces the open classify card in place (no confirm). Only Cancel asks to discard. Upload % sits inside the progress track.
 - **+ menu:** 40px rows, 18px glyphs, hairline border.
 - **Clipping:** Caption tags 13px / `--control-tag` 26px tall, peel 40px hits with 18px glyphs.
 - **Search:** 48px capsule, 15px type. Type chips 34px / 13px.
@@ -458,7 +458,7 @@ Binding against [ROADMAP.md](ROADMAP.md) Phase 4. Header stays brand + 로그인
 
 **The List Tools Rule.** Search is the header capsule → `/search` (autofocus field + type books + results). Shelf list-tools keeps day chip, layout segment (리스트 / 갤러리), and clear-filters when needed; preference persists as `mybrary.shelfLayout`. Type books sit above list-tools. Ad slot and list body stay separate sections below.
 
-**The Classify Draft Rule.** Classify-then-save lives in the floating Stick dock, **above** the composer pill. The outer `.classify-draft` panel reuses list-tools chrome (18px, paper, scrap shadow) with max-height scroll when tall. Cancel is auth utility ghost; Save is auth primary (48px magnet). Do not place the draft in shelf-door above list-tools.
+**The Classify Draft Rule.** Classify-then-save lives in the floating Stick dock, **above** the composer pill. While a draft is open, a full-viewport blur+dim scrim sits behind the dock (does not dismiss on tap). The `.classify-draft` panel is a near-full bottom sheet (scroll when tall, paper chrome, scrap/sheet shadow). Upload progress shows **label + % inside** the progress track. A new **분류하기** (Stick send), paste, or drop **replaces** an open draft in place with no confirm; only the draft **Cancel** control uses leave-draft confirm. Cancel is auth utility ghost; Save is auth primary (48px magnet). Do not place the draft in shelf-door above list-tools.
 
 **The Detail Page Rule.** Row tap navigates to [`/scrap/:id`](src/pages/ScrapDetail.tsx). Full page in the app chrome (Header/Footer), not an auth/settings sheet. Back is a Library icon (`auth-back-btn` + IconTip **책장으로**). Share / edit / bookmark / read / remind sit **inside** `dashboard-panel` under the title meta. Edit mode (pencil) changes title, memo, and tags only; Escape cancels edit. Share appears only when the scrap has an external URL. Peel is centered alone under the tags. Neighbor prev/next previews sit **below** the panel (newest-first shelf order). Arrow keys and Escape return to shelf (Escape exits edit first). Peel uses the centered AppDialog, then deletes and returns home. List rows show a magnet **corner bookmark ribbon** when bookmarked (not an inline glyph). Type chips in list-tools hide types with count 0. Loading the detail list reuses `AuthWaiting` (circular spinner). Use dashboard-door / dashboard-panel paper language — never login-wall floating sheet.
 

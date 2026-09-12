@@ -29,6 +29,10 @@ function normalize(item: Scrap): Scrap {
     remindAt: item.remindAt ?? null,
     og: item.og ?? null,
     ogStatus: item.ogStatus || "",
+    posterPath: item.posterPath || "",
+    posterUrl: item.posterUrl || "",
+    posterUrls: Array.isArray(item.posterUrls) ? item.posterUrls.filter(Boolean) : item.posterUrl ? [item.posterUrl] : [],
+    pages: Number(item.pages) || 0,
   };
 }
 

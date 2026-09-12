@@ -1,51 +1,102 @@
+import type { LucideIcon } from "lucide-react";
+import {
+  File,
+  FileSpreadsheet,
+  FileText,
+  Film,
+  ImageIcon,
+  Music,
+  Presentation,
+} from "lucide-react";
 import type { ScrapType } from "../lib/types";
+import { extOf, mediaKindOf } from "../lib/tagger";
 
-type MarkStyle = { letter: string; bg: string; fg: string };
+type MarkStyle = { Icon: LucideIcon; bg: string; fg: string };
+
+const IMAGE_EXT = ["jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "avif", "svg", "bmp"];
+const VIDEO_EXT = ["mp4", "mov", "webm", "m4v", "mkv", "ogv"];
+const AUDIO_EXT = ["mp3", "wav", "m4a", "aac", "ogg", "flac"];
+
+function markForMedia(type: ScrapType | undefined, mime: string, ext: string): MarkStyle | null {
+  const kind = mediaKindOf(type || "", mime);
+  if (kind === "image" || IMAGE_EXT.includes(ext)) {
+    return { Icon: ImageIcon, bg: "#3d6b8a", fg: "#f2f8fc" };
+  }
+  if (kind === "video" || VIDEO_EXT.includes(ext)) {
+    return { Icon: Film, bg: "#6b4a8a", fg: "#f8f3fc" };
+  }
+  if (kind === "audio" || AUDIO_EXT.includes(ext)) {
+    return { Icon: Music, bg: "#4a7a62", fg: "#f2faf6" };
+  }
+  return null;
+}
 
 function markForExt(extension: string, mime = ""): MarkStyle {
   const ext = String(extension || "")
     .toLowerCase()
     .replace(/^\./, "");
   const m = String(mime || "").toLowerCase();
-  if (ext === "pdf" || m === "application/pdf") return { letter: "PDF", bg: "#c45c4a", fg: "#fff8f5" };
+  if (ext === "pdf" || m === "application/pdf") {
+    return { Icon: FileText, bg: "#c45c4a", fg: "#fff8f5" };
+  }
   if (["doc", "docx"].includes(ext) || m.includes("msword") || m.includes("wordprocessingml")) {
-    return { letter: "W", bg: "#2b579a", fg: "#f4f8ff" };
+    return { Icon: FileText, bg: "#2b579a", fg: "#f4f8ff" };
   }
   if (["xls", "xlsx"].includes(ext) || m.includes("spreadsheet") || m.includes("ms-excel")) {
-    return { letter: "X", bg: "#217346", fg: "#f2faf5" };
+    return { Icon: FileSpreadsheet, bg: "#217346", fg: "#f2faf5" };
   }
   if (["ppt", "pptx"].includes(ext) || m.includes("presentation") || m.includes("ms-powerpoint")) {
-    return { letter: "P", bg: "#c43e1c", fg: "#fff6f2" };
+    return { Icon: Presentation, bg: "#c43e1c", fg: "#fff6f2" };
   }
   if (["hwp", "hwpx"].includes(ext) || m.includes("haansoft")) {
-    return { letter: "H", bg: "#5a6570", fg: "#f5f6f7" };
+    return { Icon: File, bg: "#5a6570", fg: "#f5f6f7" };
   }
   if (["txt", "md", "rtf", "csv"].includes(ext) || m.startsWith("text/")) {
-    return { letter: "T", bg: "#6e665c", fg: "#f7f3ee" };
+    return { Icon: FileText, bg: "#6e665c", fg: "#f7f3ee" };
   }
-  return { letter: "DOC", bg: "#8a7a68", fg: "#faf6ef" };
+  return { Icon: File, bg: "#8a7a68", fg: "#faf6ef" };
 }
 
 type Props = {
   extension?: string;
   mime?: string;
   type?: ScrapType;
+  filename?: string;
   className?: string;
   size?: "sm" | "md" | "lg";
 };
 
-/** Extension-colored cover mark (no trademark logos). */
-export function DocumentMark({ extension = "", mime = "", type, className = "", size = "md" }: Props) {
-  if (type && type !== "document" && !extension && !mime) return null;
-  const { letter, bg, fg } = markForExt(extension, mime);
+const ICON_PX = { sm: 14, md: 16, lg: 22 } as const;
+
+/** Colored cover mark with Lucide icons (no letter labels). */
+export function DocumentMark({
+  extension = "",
+  mime = "",
+  type,
+  filename = "",
+  className = "",
+  size = "md",
+}: Props) {
+  const ext = String(extension || extOf(filename) || "")
+    .toLowerCase()
+    .replace(/^\./, "");
+  const media = markForMedia(type, mime, ext);
+  let mark: MarkStyle | null = media;
+  if (!mark) {
+    if (type && type !== "document") return null;
+    if (type === "document" || ext || mime) mark = markForExt(ext, mime);
+  }
+  if (!mark) return null;
+
+  const { Icon } = mark;
   const sizeClass = size === "sm" ? "doc-mark--sm" : size === "lg" ? "doc-mark--lg" : "doc-mark--md";
   return (
     <span
       className={"doc-mark " + sizeClass + (className ? " " + className : "")}
-      style={{ background: bg, color: fg }}
+      style={{ background: mark.bg, color: mark.fg }}
       aria-hidden
     >
-      {letter}
+      <Icon className="doc-mark-icon" size={ICON_PX[size]} strokeWidth={1.8} />
     </span>
   );
 }

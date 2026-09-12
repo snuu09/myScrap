@@ -12,6 +12,6 @@ Palettes shipped: **기본** and **현무암**. Do not add header **AI** / celad
 
 Routes: `/` intro or shelf, `/terms`, `/privacy`. Intro still: `public/assets/intro-hero.jpg`, full-bleed under the header. Hero **책장을 연다** only (opens auth sheet). No 견본 on the still.
 
-After session: search and list above, Stick dock below, classify draft in the dock. Email sheet is white (light) / night enamel (dark), 32px radius. Settings sheet follows **Settings Ladder** (session chip → language → palette → theme → Leave) in [DESIGN.md](DESIGN.md).
+After session: search and list above, Stick dock below (send = **분류하기** / Classify). A new stick/paste/drop replaces an open classify draft. Classify draft is a full sheet over a blur scrim. Email sheet is white (light) / night enamel (dark), 32px radius. Settings sheet follows **Settings Ladder** (session chip → language → palette → theme → Leave) in [DESIGN.md](DESIGN.md).
 
-Copy: stick / peel / 나가기. No em-dashes. Empty operator fields: 표시 예정. Honor `prefers-reduced-motion`. Binding visuals: [DESIGN.md](DESIGN.md).
+Copy: stick / peel / 나가기; composer send label is **분류하기**. No em-dashes. Empty operator fields: 표시 예정. Honor `prefers-reduced-motion`. Binding visuals: [DESIGN.md](DESIGN.md).

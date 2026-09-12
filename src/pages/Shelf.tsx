@@ -6,18 +6,20 @@ import { usePrefs } from "../context/Prefs";
 import { isBrowseUser, useAuth } from "../context/Auth";
 import { usePlan } from "../context/Plan";
 import { DraftCard } from "../components/DraftCard";
+import { Footer } from "../components/Footer";
 import { GuestNoticeSheet } from "../components/GuestNoticeSheet";
 import { ScrapList } from "../components/ScrapList";
 import { StickDock } from "../components/StickDock";
 import { requestAnalyze } from "../lib/analyze";
 import { fetchOgPreview } from "../lib/og";
 import {
-  deleteScrap,
   hydrateSignedMedia,
   loadScraps,
+  posterPagePath,
   removeMedia,
   saveScrap,
   uploadMedia,
+  uploadPosters,
   SCRAPS_CHANGED_EVENT,
   SCRAPS_CLEARED_EVENT,
 } from "../lib/scraps";
@@ -26,6 +28,7 @@ import { filterScraps } from "../lib/scrapFilters";
 import { useDialog } from "../lib/dialog";
 import { getSupabase } from "../lib/supabase";
 import { analyzeFile, analyzeText, uid } from "../lib/tagger";
+import { blobToObjectUrl, blobUrlToDataUrl, captureCover } from "../lib/captureCover";
 import type { Scrap, ScrapType } from "../lib/types";
 
 const REMIND_NOTIFIED_KEY = "mybrary.remind.notified";
@@ -46,6 +49,10 @@ function blankScrap(partial: Partial<Scrap>): Scrap {
     extension: "",
     size: 0,
     dataUrl: "",
+    posterPath: "",
+    posterUrl: "",
+    posterUrls: [],
+    pages: 0,
     previewText: "",
     sample: false,
     storedMedia: false,
@@ -240,11 +247,23 @@ export function Shelf({ onEnter }: Props) {
     return false;
   }
 
-  async function busyGuard() {
-    if (draft) {
-      await alert(t("draftBusy"));
-      return true;
+  async function replaceOpenDraft() {
+    const doomed = draft;
+    if (!doomed) return;
+    setUploadRatio(null);
+    setDraft(null);
+    if (doomed.dataUrl.startsWith("blob:")) URL.revokeObjectURL(doomed.dataUrl);
+    if (user && doomed.mediaPath) {
+      try {
+        await removeMedia(user, doomed.mediaPath);
+      } catch {
+        /* best-effort before starting the next stick */
+      }
     }
+  }
+
+  async function busyGuard() {
+    if (draft) await replaceOpenDraft();
     if (await guardStick()) return true;
     return false;
   }
@@ -265,11 +284,32 @@ export function Shelf({ onEnter }: Props) {
     });
     setDraft(next);
     setComposer("");
-    const ai = await requestAnalyze({ kind: "text", text, lang });
-    const url = ai.url || hint.url || "";
+    const url = hint.url || "";
+    const aiPromise = requestAnalyze({ kind: "text", text, lang });
+    const ogPromise = url ? fetchOgPreview(url) : null;
+    if (ogPromise) {
+      void ogPromise.then((ogResult) => {
+        setDraft((cur) =>
+          cur && cur.id === next.id && cur.analyzing
+            ? {
+                ...cur,
+                og: ogResult.og || cur.og,
+                ogStatus: ogResult.ogStatus || cur.ogStatus,
+                title: cur.title || ogResult.og?.title || cur.title,
+                domain: cur.domain || ogResult.og?.siteName || cur.domain,
+              }
+            : cur,
+        );
+      });
+    }
+    const ai = await aiPromise;
+    const resolvedUrl = ai.url || url || "";
     let ogPatch: Pick<Scrap, "og" | "ogStatus"> = { og: null, ogStatus: "" };
-    if (url) {
-      const ogResult = await fetchOgPreview(url);
+    if (ogPromise) {
+      const ogResult = await ogPromise;
+      ogPatch = { og: ogResult.og, ogStatus: ogResult.ogStatus };
+    } else if (resolvedUrl) {
+      const ogResult = await fetchOgPreview(resolvedUrl);
       ogPatch = { og: ogResult.og, ogStatus: ogResult.ogStatus };
     }
     setDraft((cur) =>
@@ -282,8 +322,9 @@ export function Shelf({ onEnter }: Props) {
             title: ai.title || ogPatch.og?.title || cur.title,
             text: ai.summary || ai.body || cur.text,
             previewText: ai.analysis || "",
-            url: url || cur.url,
+            url: resolvedUrl || cur.url,
             domain: ai.domain || cur.domain,
+            classifyFallback: Boolean(ai.fallback),
             ...ogPatch,
           }
         : cur,
@@ -311,7 +352,9 @@ export function Shelf({ onEnter }: Props) {
       hint.type === "audio" ||
       file.type.startsWith("image/") ||
       file.type.startsWith("video/") ||
-      file.type.startsWith("audio/");
+      file.type.startsWith("audio/") ||
+      file.type === "application/pdf" ||
+      /\.pdf$/i.test(file.name);
     const localPreview = wantsBlob ? URL.createObjectURL(file) : "";
     const next = blankScrap({
       type: hint.type,
@@ -326,7 +369,32 @@ export function Shelf({ onEnter }: Props) {
     });
     setDraft(next);
     setUploadRatio(0);
+    const coverObjectUrls: string[] = [];
     try {
+      const coverPromise = captureCover(file).then(async (blobs) => {
+        if (!blobs.length) return null;
+        blobs.forEach((blob) => coverObjectUrls.push(blobToObjectUrl(blob)));
+        setDraft((cur) =>
+          cur && cur.id === next.id
+            ? {
+                ...cur,
+                posterUrl: coverObjectUrls[0] || "",
+                posterUrls: coverObjectUrls,
+                pages: coverObjectUrls.length,
+              }
+            : cur,
+        );
+        try {
+          return await uploadPosters(user, next.id, blobs);
+        } catch {
+          return {
+            posterPath: "",
+            posterUrl: coverObjectUrls[0] || "",
+            posterUrls: coverObjectUrls,
+            pages: coverObjectUrls.length,
+          };
+        }
+      });
       const uploaded = await uploadMedia(user, next, file, (ratio) => setUploadRatio(ratio));
       if (localPreview && uploaded.dataUrl && uploaded.dataUrl !== localPreview) {
         URL.revokeObjectURL(localPreview);
@@ -334,6 +402,13 @@ export function Shelf({ onEnter }: Props) {
       next.mediaPath = uploaded.mediaPath;
       next.dataUrl = uploaded.dataUrl || localPreview;
       next.storedMedia = uploaded.storedMedia;
+      const poster = await coverPromise;
+      if (poster) {
+        next.posterPath = poster.posterPath;
+        next.posterUrl = poster.posterUrl || coverObjectUrls[0] || next.posterUrl;
+        next.posterUrls = poster.posterUrls?.length ? poster.posterUrls : coverObjectUrls;
+        next.pages = poster.pages || next.posterUrls.length;
+      }
       setDraft({ ...next });
       const skipped = uploaded.skipped;
       const ai = await requestAnalyze({
@@ -353,9 +428,14 @@ export function Shelf({ onEnter }: Props) {
               title: ai.title || cur.title,
               text: ai.summary || ai.body || cur.text,
               previewText: ai.analysis || "",
+              classifyFallback: Boolean(ai.fallback),
               storedMedia: uploaded.storedMedia,
               mediaPath: uploaded.mediaPath,
               dataUrl: uploaded.dataUrl || cur.dataUrl,
+              posterPath: next.posterPath || cur.posterPath,
+              posterUrl: next.posterUrl || cur.posterUrl,
+              posterUrls: next.posterUrls.length ? next.posterUrls : cur.posterUrls,
+              pages: next.pages || cur.pages,
             }
           : cur,
       );
@@ -366,12 +446,35 @@ export function Shelf({ onEnter }: Props) {
       }
     } catch (err) {
       if (localPreview) URL.revokeObjectURL(localPreview);
+      coverObjectUrls.forEach((url) => URL.revokeObjectURL(url));
       setUploadRatio(null);
       const orphanPath = next.mediaPath;
-      setDraft((cur) => (cur && cur.id === next.id ? { ...cur, analyzing: false, error: "upload", dataUrl: "", mediaPath: "" } : cur));
+      const orphanPoster = next.posterPath;
+      setDraft((cur) =>
+        cur && cur.id === next.id
+          ? {
+              ...cur,
+              analyzing: false,
+              error: "upload",
+              dataUrl: "",
+              mediaPath: "",
+              posterPath: "",
+              posterUrl: "",
+              posterUrls: [],
+              pages: 0,
+            }
+          : cur,
+      );
       if (orphanPath) {
         try {
           await removeMedia(user, orphanPath);
+        } catch {
+          /* best-effort */
+        }
+      }
+      if (orphanPoster) {
+        try {
+          await removeMedia(user, orphanPoster);
         } catch {
           /* best-effort */
         }
@@ -391,13 +494,39 @@ export function Shelf({ onEnter }: Props) {
       return;
     }
     if (needsGuestNotice(() => void persist())) return;
-    const preview = draft.dataUrl;
-    const saved = { ...draft, updatedAt: Date.now(), analyzing: false };
+    const previewBlob = draft.dataUrl.startsWith("blob:") ? draft.dataUrl : "";
+    const posterBlobs = [...new Set([draft.posterUrl, ...draft.posterUrls].filter((url) => url.startsWith("blob:")))];
+    let dataUrl = draft.dataUrl;
+    let posterUrl = draft.posterUrl;
+    let posterUrls = draft.posterUrls.length ? draft.posterUrls : posterUrl ? [posterUrl] : [];
     try {
+      if (draft.mediaPath && dataUrl.startsWith("blob:")) dataUrl = "";
+      else if (!draft.mediaPath && dataUrl.startsWith("blob:")) dataUrl = await blobUrlToDataUrl(dataUrl);
+
+      if (draft.posterPath) {
+        if (posterUrl.startsWith("blob:")) posterUrl = "";
+        posterUrls = posterUrls.filter((url) => !url.startsWith("blob:"));
+      } else {
+        if (posterUrl.startsWith("blob:")) posterUrl = await blobUrlToDataUrl(posterUrl);
+        posterUrls = await Promise.all(posterUrls.map((url) => (url.startsWith("blob:") ? blobUrlToDataUrl(url) : url)));
+        if (!posterUrls.length && posterUrl) posterUrls = [posterUrl];
+      }
+
+      const saved = {
+        ...draft,
+        dataUrl,
+        posterUrl: posterUrl || posterUrls[0] || "",
+        posterUrls,
+        pages: draft.pages || posterUrls.length,
+        updatedAt: Date.now(),
+        analyzing: false,
+        classifyFallback: undefined,
+      };
       await saveScrap(user, saved);
-      if (preview.startsWith("blob:")) URL.revokeObjectURL(preview);
       setDraft(null);
       await refresh();
+      if (previewBlob) URL.revokeObjectURL(previewBlob);
+      posterBlobs.forEach((url) => URL.revokeObjectURL(url));
     } catch (err) {
       const message = err instanceof GuestQuotaError ? t("guestQuotaMsg") : t("syncError");
       setError(message);
@@ -413,6 +542,9 @@ export function Shelf({ onEnter }: Props) {
     setUploadRatio(null);
     setDraft(null);
     if (doomed.dataUrl.startsWith("blob:")) URL.revokeObjectURL(doomed.dataUrl);
+    for (const url of [doomed.posterUrl, ...doomed.posterUrls]) {
+      if (url.startsWith("blob:")) URL.revokeObjectURL(url);
+    }
     if (user && doomed.mediaPath) {
       try {
         await removeMedia(user, doomed.mediaPath);
@@ -420,15 +552,19 @@ export function Shelf({ onEnter }: Props) {
         /* draft is already closed; orphan cleanup can wait for a later peel/clear */
       }
     }
-  }
-
-  async function peel(item: Scrap) {
-    if (!user) return;
-    try {
-      await deleteScrap(user, item);
-      await refresh();
-    } catch {
-      setError(t("syncError"));
+    if (user && (doomed.posterPath || doomed.pages)) {
+      const paths = new Set<string>();
+      if (doomed.posterPath) paths.add(doomed.posterPath);
+      for (let i = 1; i <= Math.max(doomed.pages, 4); i++) {
+        paths.add(posterPagePath(user.id, doomed.id, i));
+      }
+      for (const path of paths) {
+        try {
+          await removeMedia(user, path);
+        } catch {
+          /* best-effort */
+        }
+      }
     }
   }
 
@@ -442,7 +578,7 @@ export function Shelf({ onEnter }: Props) {
 
   return (
     <div
-      className="relative flex min-h-[calc(100dvh-60px)] flex-col pb-[calc(7.5rem+env(safe-area-inset-bottom))]"
+      className="relative flex min-h-0 flex-1 flex-col pb-[calc(7.5rem+env(safe-area-inset-bottom))]"
       onDragOver={(e) => {
         e.preventDefault();
         setDropping(true);
@@ -463,7 +599,7 @@ export function Shelf({ onEnter }: Props) {
       }}
     >
       <div className="flex-1">
-        {guest ? (
+        {guest && listReady && scraps.length > 0 ? (
           <p className="mx-auto flex max-w-[40rem] flex-wrap items-center gap-x-2 gap-y-1 px-[var(--gutter)] pt-3 text-[0.8125rem] text-ink-soft">
             {t("guestBanner")}
             {onEnter ? (
@@ -485,8 +621,8 @@ export function Shelf({ onEnter }: Props) {
           onDayFilter={setDayFilter}
           onCalendarOpen={setCalendarOpen}
           onClearFilters={clearFilters}
-          onPeel={(item) => void peel(item)}
         />
+        <Footer />
       </div>
       <StickDock
         value={composer}

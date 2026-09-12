@@ -28,7 +28,7 @@ Today (shipped):
 
 - First visit: intro on porcelain peach / night kitchen. Hero plus stick / classify / find hotspots. Header **로그인** opens the auth sheet on a **chooser** (Google / email / 둘러보기); email path keeps Auth Ladder fields, **회원가입** confirm password, and Auth Recovery. Intro hero keeps **책장을 연다** only. Settings stay a sheet (language, Look fridge|library, palette, theme, Leave).
 - A saved session skips intro and opens the door (`ShelfReveal` once per session). Leave returns to intro.
-- After entry: recency list; Stick is a **floating** compact composer (not in the legal Footer). Composer has a + menu with scrim (clipboard, camera on mobile, photo pick, file attach) and drag-and-drop. Classify draft appears **above** the composer pill, with a skeleton while Claude (or the MIME fallback) runs; URL scraps also fetch OG. List metadata paints before image signed URLs hydrate in batch. Header **통계** opens the scrap dashboard. Header search capsule opens **`/search`** (find). Shelf type filter is a horizontal **type book carousel**; **일자별** and **리스트 / 갤러리** stay in slim list-tools. Zero-count types are hidden. Row tap opens **`/scrap/:id`** detail (Library back icon, edit title/memo/tags, share only when URL exists, bookmark, read, remind, tags → `/search?q=`, neighbor previews **below** peel). Bookmarked rows show a corner ribbon. Look **책장** (default) swaps scrap/peel copy to page / take-off-shelf wording. Free and standard tiers see an ad slot below list-tools.
+- After entry: recency list; Stick is a **floating** compact composer (not in the legal Footer). Composer send label is **분류하기**. Composer has a + menu with scrim (clipboard, camera on mobile, photo pick, file attach) and drag-and-drop. Classify draft is a near-full sheet above the pill (blur scrim behind) while Claude (or the MIME fallback) runs; URL scraps also fetch OG. List metadata paints before image signed URLs hydrate in batch. Header **통계** opens the scrap dashboard. Header search capsule opens **`/search`** (find). Shelf type filter is a horizontal **type book carousel**; **일자별** and **리스트 / 갤러리** stay in slim list-tools. Zero-count types are hidden. Row tap opens **`/scrap/:id`** detail (Library back icon, edit title/memo/tags, share only when URL exists, bookmark, read, remind, tags → `/search?q=`, neighbor previews **below** peel). Bookmarked rows show a corner ribbon. Look **책장** (default) swaps scrap/peel copy to page / take-off-shelf wording. Free and standard tiers see an ad slot below list-tools.
 - Footer on intro and app: 이용약관, 개인정보처리방침, operator placeholders (표시 예정 until filled).
 - Empty list copy: "항목이 없습니다."
 - List order: newest first.
@@ -46,7 +46,7 @@ Confirmed from brief and implemented in the Vite SPA:
 - i18n: Korean, English.
 - Auto-tag pasted/dropped content by type: text, image, video, audio, link, document extension (Claude at `/api/analyze`, MIME/URL fallback).
 - Classify-then-save draft (type, tags, Claude summary/analysis, memo, preview) before the item hits the recency list. Account file drafts upload to Storage for Claude, then remove that object if the draft is cancelled. Detail **AI 분석** re-runs classify and persists summary/analysis.
-- A new Stick, paste, or drop replaces an open classify draft.
+- A new **분류하기** (Stick send), paste, or drop replaces an open classify draft without confirm; only Cancel asks to discard.
 - Image: show the image when a signed URL exists.
 - + menu: clipboard, camera (mobile), photo, file.
 - Placeholder: "붙여넣기 할 내용이나 파일을 첨부해주세요."

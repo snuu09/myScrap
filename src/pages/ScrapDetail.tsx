@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import {
   Bookmark,
@@ -7,6 +7,7 @@ import {
   BellOff,
   BookOpen,
   BookOpenCheck,
+  Download,
   ExternalLink,
   Library,
   Pencil,
@@ -20,31 +21,29 @@ import { useAuth } from "../context/Auth";
 import { usePlan } from "../context/Plan";
 import { RemindSheet } from "../components/RemindSheet";
 import { AuthWaiting } from "../components/AuthWaiting";
+import { BusyOverlay } from "../components/BusyOverlay";
 import { ScrapMedia } from "../components/ScrapMedia";
+import { DocPreview } from "../components/DocPreview";
 import { requestAnalyze } from "../lib/analyze";
-import { deleteScrap, hydrateSignedMedia, loadScraps, saveScrap } from "../lib/scraps";
+import { captureCover } from "../lib/captureCover";
+import { deleteScrap, hydrateSignedMedia, isPagedPosterPath, loadScraps, saveScrap, uploadPosters } from "../lib/scraps";
 import { fetchOgPreview } from "../lib/og";
 import { useDialog } from "../lib/dialog";
 import { useT } from "../lib/useT";
 import { SiteIcon } from "../components/SiteIcon";
 import { IconTip } from "../components/IconTip";
 import { formatWhen } from "../lib/time";
-import { formatBytes, mediaKindOf } from "../lib/tagger";
+import { formatBytes, isPdf, mediaKindOf } from "../lib/tagger";
+import { isImeComposing } from "../lib/ime";
 import { DocumentMark } from "../components/DocumentMark";
 import type { Scrap } from "../lib/types";
 
-function NeighborPreview({ scrap, label, onClick, disabled }: { scrap: Scrap | null; label: string; onClick: () => void; disabled: boolean }) {
+function NeighborPreview({ scrap, label, onClick }: { scrap: Scrap | null; label: string; onClick: () => void }) {
   const t = useT();
-  if (!scrap) {
-    return (
-      <button type="button" className="neighbor-preview neighbor-preview--empty" disabled aria-label={label}>
-        <span className="text-muted">{label}</span>
-      </button>
-    );
-  }
-  const thumb = scrap.og?.image || (scrap.dataUrl && scrap.type === "image" ? scrap.dataUrl : "");
+  if (!scrap) return null;
+  const thumb = scrap.posterUrl || scrap.og?.image || (scrap.dataUrl && (scrap.type === "image" || scrap.type === "video") ? scrap.dataUrl : "");
   return (
-    <button type="button" className="neighbor-preview" disabled={disabled} onClick={onClick} aria-label={label}>
+    <button type="button" className="neighbor-preview" onClick={onClick} aria-label={label}>
       {thumb ? <img src={thumb} alt="" className="neighbor-preview-thumb" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} /> : null}
       <span className="neighbor-preview-body">
         <span className="neighbor-preview-label">{label}</span>
@@ -84,11 +83,46 @@ export function ScrapDetail() {
   const [error, setError] = useState("");
   const [remindOpen, setRemindOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [aiBusy, setAiBusy] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editMemo, setEditMemo] = useState("");
   const [editTags, setEditTags] = useState<string[]>([]);
   const [tagDraft, setTagDraft] = useState("");
+  const aiAbortRef = useRef<AbortController | null>(null);
+  const aiBusyRef = useRef(false);
+  const pageBackfillTried = useRef(new Set<string>());
+  const ogImageTried = useRef(new Set<string>());
+
+  const cancelAiAnalyze = useCallback(() => {
+    aiAbortRef.current?.abort();
+    aiAbortRef.current = null;
+    aiBusyRef.current = false;
+    setAiBusy(false);
+    setBusy(false);
+  }, []);
+
+  useEffect(() => {
+    aiBusyRef.current = aiBusy;
+  }, [aiBusy]);
+
+  useEffect(() => {
+    if (!aiBusy) return;
+    const marker = window.location.href;
+    const onPop = () => {
+      if (!aiBusyRef.current) return;
+      window.history.pushState(null, "", marker);
+    };
+    window.history.pushState(null, "", marker);
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, [aiBusy]);
+
+  useEffect(() => {
+    return () => {
+      aiAbortRef.current?.abort();
+    };
+  }, []);
 
   const refresh = useCallback(async () => {
     if (!user) return;
@@ -121,6 +155,52 @@ export function ScrapDetail() {
   const next = index >= 0 && index < scraps.length - 1 ? scraps[index + 1] : null;
 
   useEffect(() => {
+    if (!user || !scrap?.dataUrl) return;
+    if (!isPdf(scrap.mime, scrap.filename)) return;
+    if (pageBackfillTried.current.has(scrap.id)) return;
+    const stored = scrap.pages || 0;
+    const paged = isPagedPosterPath(scrap.posterPath);
+    if (paged && stored > 4) return;
+    if (paged && stored > 0 && stored < 4) return;
+    pageBackfillTried.current.add(scrap.id);
+    const target = scrap;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch(target.dataUrl);
+        if (!res.ok || cancelled) return;
+        const blob = await res.blob();
+        const file = new File([blob], target.filename || "file.pdf", { type: target.mime || "application/pdf" });
+        const covers = await captureCover(file);
+        if (cancelled || !covers.length) return;
+        if (paged && covers.length <= stored) return;
+        const uploaded = await uploadPosters(user, target.id, covers);
+        if (cancelled) return;
+        const nextScrap: Scrap = {
+          ...target,
+          posterPath: uploaded.posterPath || target.posterPath,
+          posterUrl: uploaded.posterUrl || target.posterUrl,
+          posterUrls: uploaded.posterUrls.length ? uploaded.posterUrls : target.posterUrls,
+          pages: uploaded.pages || covers.length,
+          updatedAt: Date.now(),
+        };
+        await saveScrap(user, nextScrap);
+        if (cancelled) return;
+        setScraps((list) => {
+          const updated = list.map((row) => (row.id === nextScrap.id ? nextScrap : row));
+          setScrapsForUsage(updated);
+          return updated;
+        });
+      } catch {
+        /* keep the existing cover */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user, scrap, setScrapsForUsage]);
+
+  useEffect(() => {
     setEditing(false);
     setTagDraft("");
   }, [id]);
@@ -144,27 +224,31 @@ export function ScrapDetail() {
   }, [navigate, index, scraps, editing]);
 
   useEffect(() => {
-    if (!user || !scrap?.url || scrap.ogStatus === "ready" || scrap.og) return;
+    if (!user || !scrap?.url || scrap.og?.image) return;
+    if (ogImageTried.current.has(scrap.id)) return;
+    ogImageTried.current.add(scrap.id);
     const scrapId = scrap.id;
     const scrapUrl = scrap.url;
-    let cancelled = false;
     void fetchOgPreview(scrapUrl).then(async (result) => {
-      if (cancelled || !result.og) return;
+      if (!result.og) return;
       const base = scraps.find((item) => item.id === scrapId);
-      if (!base) return;
+      if (!base || base.og?.image) return;
       const updated = { ...base, og: result.og, ogStatus: result.ogStatus, updatedAt: Date.now() };
       try {
         await saveScrap(user, updated);
-        setScraps((list) => list.map((item) => (item.id === updated.id ? updated : item)));
+        setScraps((list) =>
+          list.map((item) =>
+            item.id === updated.id && !item.og?.image
+              ? { ...item, og: updated.og, ogStatus: updated.ogStatus, updatedAt: updated.updatedAt }
+              : item,
+          ),
+        );
       } catch {
         /* ignore backfill failure */
       }
     });
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- avoid loop on scrap object identity
-  }, [user, scrap?.id, scrap?.url, scrap?.ogStatus, scrap?.og]);
+    // one attempt per scrap; do not cancel on identity churn or the retry never lands
+  }, [user, scrap?.id, scrap?.url, scrap?.og?.image]);
 
   if (!user) return <Navigate to="/" replace />;
 
@@ -251,7 +335,11 @@ export function ScrapDetail() {
   }
 
   async function runAiAnalyze() {
-    if (!user || busy) return;
+    if (!user || busy || aiBusy) return;
+    const ac = new AbortController();
+    aiAbortRef.current = ac;
+    aiBusyRef.current = true;
+    setAiBusy(true);
     setBusy(true);
     setError("");
     try {
@@ -264,13 +352,20 @@ export function ScrapDetail() {
               mime: item.mime,
               filename: item.filename,
               lang,
+              signal: ac.signal,
             })
-          : await requestAnalyze({ kind: "text", text: blob || item.title || item.filename, lang });
+          : await requestAnalyze({
+              kind: "text",
+              text: blob || item.title || item.filename,
+              lang,
+              signal: ac.signal,
+            });
+      if (ac.signal.aborted) return;
       if (ai.fallback) {
         await alert(t("aiAnalyzeFailed"));
         return;
       }
-      const next: Scrap = {
+      let next: Scrap = {
         ...item,
         type: ai.type || item.type,
         tags: ai.tags?.length ? ai.tags : item.tags,
@@ -279,16 +374,37 @@ export function ScrapDetail() {
         previewText: ai.analysis || item.previewText,
         updatedAt: Date.now(),
       };
+      const linkUrl = next.url || item.url;
+      if (linkUrl && !next.og) {
+        try {
+          const ogResult = await fetchOgPreview(linkUrl);
+          if (ac.signal.aborted) return;
+          if (ogResult.og) {
+            next = { ...next, og: ogResult.og, ogStatus: ogResult.ogStatus };
+          }
+        } catch {
+          /* keep analyze result without OG */
+        }
+      }
+      if (ac.signal.aborted) return;
       await saveScrap(user, next);
+      if (ac.signal.aborted) return;
       setScraps((list) => {
         const updated = list.map((row) => (row.id === next.id ? next : row));
         setScrapsForUsage(updated);
         return updated;
       });
-    } catch {
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
+      if (err instanceof Error && err.name === "AbortError") return;
       await alert(t("aiAnalyzeFailed"));
     } finally {
-      setBusy(false);
+      if (aiAbortRef.current === ac) aiAbortRef.current = null;
+      if (!ac.signal.aborted) {
+        aiBusyRef.current = false;
+        setAiBusy(false);
+        setBusy(false);
+      }
     }
   }
 
@@ -309,13 +425,18 @@ export function ScrapDetail() {
   }
 
   const mediaKind = mediaKindOf(item.type, item.mime);
-  const thumb =
-    item.og?.image ||
-    (item.dataUrl && (mediaKind === "image" || mediaKind === "video" || mediaKind === "audio")
-      ? item.dataUrl
-      : "");
+  const playable = Boolean(
+    item.dataUrl && (mediaKind === "image" || mediaKind === "video" || mediaKind === "audio"),
+  );
   const read = Boolean(item.readAt);
   const dueRemind = item.remindAt && item.remindAt <= Date.now();
+  const showOgCard = Boolean(item.url && (item.og || item.domain));
+  const coverPages = item.posterUrls.length ? item.posterUrls : item.posterUrl ? [item.posterUrl] : [];
+  /** Docs/audio always use poster; image/video use poster only when media URL is missing. */
+  const showDocCover =
+    coverPages.length > 0 &&
+    (mediaKind === "audio" || mediaKind === null || (!playable && (mediaKind === "image" || mediaKind === "video")));
+  const showPlayable = playable;
 
   return (
     <div className="dashboard-door">
@@ -353,37 +474,17 @@ export function ScrapDetail() {
                 <Pencil className="size-5" strokeWidth={1.8} />
               </button>
             </IconTip>
-            <IconTip label={busy ? t("aiAnalyzing") : t("aiAnalyze")}>
+            <IconTip label={aiBusy ? t("aiAnalyzing") : t("aiAnalyze")}>
               <button
                 type="button"
-                className="detail-action"
-                aria-label={busy ? t("aiAnalyzing") : t("aiAnalyze")}
-                disabled={busy}
+                className={"detail-action" + (aiBusy ? " detail-action--busy" : "")}
+                aria-label={aiBusy ? t("aiAnalyzing") : t("aiAnalyze")}
+                disabled={busy || aiBusy}
                 onClick={() => void runAiAnalyze()}
               >
                 <Sparkles className="size-5" strokeWidth={1.8} />
               </button>
             </IconTip>
-            {item.url ? (
-              <IconTip label={t("openLink")}>
-                <a href={item.url} className="detail-action" target="_blank" rel="noreferrer" aria-label={t("openLink")}>
-                  <ExternalLink className="size-5" strokeWidth={1.8} />
-                </a>
-              </IconTip>
-            ) : item.dataUrl && !mediaKind ? (
-              <IconTip label={t("openFile")}>
-                <a
-                  href={item.dataUrl}
-                  className="detail-action"
-                  target="_blank"
-                  rel="noreferrer"
-                  download={item.filename || undefined}
-                  aria-label={t("openFile")}
-                >
-                  <ExternalLink className="size-5" strokeWidth={1.8} />
-                </a>
-              </IconTip>
-            ) : null}
             {item.url ? (
               <IconTip label={t("share")}>
                 <button type="button" className="detail-action" aria-label={t("share")} onClick={() => void share()} disabled={busy}>
@@ -433,22 +534,55 @@ export function ScrapDetail() {
             </IconTip>
           </div>
         ) : null}
-        {item.og?.siteName || item.domain ? (
-          <p className="m-0 flex items-center gap-2 text-[0.8125rem] text-ink-soft">
-            <SiteIcon domain={item.domain} favicon={item.og?.favicon} className="size-4 rounded-sm" size={16} />
-            {item.og?.siteName || item.domain}
-          </p>
+        {item.url ? (
+          <div className="inline-action-row">
+            <a href={item.url} className="scrap-card-link min-w-0 flex-1 truncate" target="_blank" rel="noreferrer">
+              {item.url}
+            </a>
+            <a href={item.url} className="inline-action" target="_blank" rel="noreferrer">
+              <ExternalLink className="size-4" strokeWidth={1.8} />
+              {t("openLink")}
+            </a>
+          </div>
         ) : null}
-        {thumb ? (
+        {showOgCard ? (
+          <div className="detail-og-card">
+            {item.og?.siteName || item.domain ? (
+              <p className="og-card-site">
+                <SiteIcon domain={item.domain} favicon={item.og?.favicon} className="og-card-icon" size={14} />
+                {item.og?.siteName || item.domain}
+              </p>
+            ) : null}
+            {item.og?.image ? (
+              <ScrapMedia
+                key={item.og.image}
+                src={item.og.image}
+                kind="image"
+                className="detail-media-img"
+                frameClassName="detail-media-frame"
+              />
+            ) : null}
+            {item.og?.description ? <p className="og-card-desc">{item.og.description}</p> : null}
+          </div>
+        ) : null}
+        {showDocCover ? (
+          <DocPreview
+            src={coverPages[0]}
+            pages={coverPages}
+            filename={item.filename}
+            limitedNote={!isPdf(item.mime, item.filename) && item.type === "document" ? t("previewPagesLimited") : ""}
+          />
+        ) : null}
+        {showPlayable ? (
           <ScrapMedia
-            key={thumb}
-            src={thumb}
-            kind={item.og?.image ? "image" : mediaKind || "image"}
+            key={item.dataUrl}
+            src={item.dataUrl}
+            fallbackSrcs={mediaKind === "image" || mediaKind === "video" ? [item.posterUrl].filter(Boolean) : []}
+            kind={mediaKind || "image"}
             className="detail-media-img"
             frameClassName="detail-media-frame"
           />
         ) : null}
-        {item.og?.description ? <p className="m-0 text-[0.9375rem] text-ink-soft">{item.og.description}</p> : null}
         {item.text ? (
           <div className="detail-ai-block">
             <p className="list-tools-label">{t("aiSummary")}</p>
@@ -462,18 +596,28 @@ export function ScrapDetail() {
           </div>
         ) : null}
         {item.filename ? (
-          <p className="scrap-card-file">
-            {(item.type === "document" || item.filename) && (
+          <div className="inline-action-row">
+            <p className="scrap-card-file min-w-0 flex-1">
               <DocumentMark
                 extension={item.extension}
                 mime={item.mime}
                 type={item.type}
+                filename={item.filename}
                 size="sm"
                 className="scrap-card-file-mark"
               />
-            )}
-            {item.filename} · {formatBytes(item.size)}
-          </p>
+              <span className="truncate">
+                {item.filename}
+                {item.size ? ` · ${formatBytes(item.size)}` : ""}
+              </span>
+            </p>
+            {item.dataUrl ? (
+              <a href={item.dataUrl} className="inline-action" download={item.filename || undefined}>
+                <Download className="size-4" strokeWidth={1.8} />
+                {t("downloadFile")}
+              </a>
+            ) : null}
+          </div>
         ) : null}
         {editing ? (
           <>
@@ -490,7 +634,7 @@ export function ScrapDetail() {
                 <button
                   key={tag}
                   type="button"
-                  className="scrap-tag scrap-tag--btn"
+                  className="scrap-tag scrap-tag--btn detail-tag-chip"
                   disabled={busy}
                   onClick={() => setEditTags((tags) => tags.filter((row) => row !== tag))}
                 >
@@ -503,6 +647,7 @@ export function ScrapDetail() {
               value={tagDraft}
               onChange={(e) => setTagDraft(e.target.value)}
               onKeyDown={(e) => {
+                if (isImeComposing(e)) return;
                 if (e.key === "Enter" || e.key === ",") {
                   e.preventDefault();
                   commitTagDraft();
@@ -531,7 +676,7 @@ export function ScrapDetail() {
                 <button
                   key={tag}
                   type="button"
-                  className="scrap-tag scrap-tag--btn"
+                  className="scrap-tag scrap-tag--btn detail-tag-chip"
                   onClick={() => navigate(`/search?q=${encodeURIComponent(tag)}`)}
                 >
                   {tag}
@@ -542,18 +687,16 @@ export function ScrapDetail() {
         )}
       </article>
 
-      {!editing ? (
+      {!editing && (prev || next) ? (
         <div className="neighbor-row neighbor-row--below">
           <NeighborPreview
             scrap={prev}
             label={t("prevScrap")}
-            disabled={!prev}
             onClick={() => prev && navigate(`/scrap/${prev.id}`)}
           />
           <NeighborPreview
             scrap={next}
             label={t("nextScrap")}
-            disabled={!next}
             onClick={() => next && navigate(`/scrap/${next.id}`)}
           />
         </div>
@@ -568,6 +711,8 @@ export function ScrapDetail() {
           void patch({ ...item, remindAt });
         }}
       />
+
+      <BusyOverlay open={aiBusy} label={t("aiAnalyzingBusy")} onCancel={cancelAiAnalyze} />
     </div>
   );
 }

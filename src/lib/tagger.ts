@@ -184,6 +184,12 @@ export function mediaKindOf(type: string, mime = ""): "image" | "video" | "audio
   return null;
 }
 
+export function isPdf(mime = "", filename = "") {
+  const m = String(mime || "").toLowerCase();
+  if (m === "application/pdf" || m.includes("pdf")) return true;
+  return /\.pdf$/i.test(String(filename || ""));
+}
+
 export function uid() {
   if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
   return "s" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);

@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
+import { Download, ExternalLink, Sparkles } from "lucide-react";
 import { t, typeLabel, detectedLabel } from "../i18n";
 import { usePrefs } from "../context/Prefs";
 import { SiteIcon } from "./SiteIcon";
+import { DocPreview } from "./DocPreview";
 import type { Scrap } from "../lib/types";
-import { formatBytes, mediaKindOf } from "../lib/tagger";
+import { formatBytes, isPdf, mediaKindOf } from "../lib/tagger";
 
 type Props = {
   draft: Scrap;
@@ -13,35 +15,81 @@ type Props = {
   onCancel: () => void;
 };
 
+function ClassifyBusyOverlay({
+  children,
+  onCancel,
+}: {
+  children?: ReactNode;
+  onCancel: () => void;
+}) {
+  const { lang } = usePrefs();
+  return (
+    <div className="classify-busy" aria-busy="true" aria-live="polite">
+      {children ? <div className="classify-busy-content">{children}</div> : null}
+      <div className="classify-busy-dim" aria-hidden />
+      <div className="classify-busy-status">
+        <Sparkles className="classify-busy-icon size-8" strokeWidth={1.6} aria-hidden />
+        <p className="classify-busy-label">{t(lang, "classifyRunningBusy")}</p>
+      </div>
+      <button type="button" className="auth-link-utility classify-busy-cancel" onClick={onCancel}>
+        {t(lang, "cancel")}
+      </button>
+    </div>
+  );
+}
+
 export function AnalyzeSkeleton({
   filename,
   size,
   uploadRatio,
+  onCancel,
+  preview,
 }: {
   filename?: string;
   size?: number;
   uploadRatio?: number | null;
+  onCancel: () => void;
+  preview?: ReactNode;
 }) {
   const { lang } = usePrefs();
-  const pct =
+  const ratio =
     uploadRatio != null && Number.isFinite(uploadRatio)
-      ? ` · ${Math.min(100, Math.max(0, Math.round(uploadRatio * 100)))}%`
-      : "";
+      ? Math.min(100, Math.max(0, Math.round(uploadRatio * 100)))
+      : null;
+  const uploadLabel = `${t(lang, "uploadingFile")} · ${ratio ?? 0}%`;
   return (
-    <div className="classify-draft-skeleton" aria-busy="true">
-      <p className="list-tools-label">
-        {t(lang, filename ? "uploadingFile" : "analyzing")}
-        {pct}
-      </p>
+    <div className="classify-draft-skeleton">
       {filename ? (
         <p className="scrap-card-file m-0">
           {filename}
           {size ? ` · ${formatBytes(size)}` : ""}
         </p>
       ) : null}
-      <div className="classify-draft-skeleton-bar w-2/5" />
-      <div className="classify-draft-skeleton-bar w-4/5" />
-      <div className="classify-draft-skeleton-block" />
+      {ratio != null ? (
+        <div
+          className="upload-progress"
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={ratio}
+          aria-valuetext={uploadLabel}
+        >
+          <div className="upload-progress-track">
+            <div className="upload-progress-fill" style={{ width: `${ratio}%` }} />
+            <span className="upload-progress-label">{uploadLabel}</span>
+          </div>
+        </div>
+      ) : null}
+      {preview ? <div className="classify-draft-preview">{preview}</div> : null}
+      <ClassifyBusyOverlay onCancel={onCancel}>
+        {ratio == null && !preview ? (
+          <>
+            <div className="classify-draft-skeleton-bar w-2/5" />
+            <div className="classify-draft-skeleton-bar w-4/5" />
+            <div className="classify-draft-skeleton-block" />
+          </>
+        ) : null}
+      </ClassifyBusyOverlay>
     </div>
   );
 }
@@ -118,54 +166,88 @@ export function DraftCard({ draft, uploadRatio = null, onChange, onSave, onCance
   const { lang } = usePrefs();
   const og = draft.og;
   const mediaKind = mediaKindOf(draft.type, draft.mime);
+  const visual = mediaKind === "image" || mediaKind === "video";
   const thumb =
+    (visual ? draft.posterUrl || draft.dataUrl : "") ||
     og?.image ||
     (draft.dataUrl && (mediaKind === "image" || mediaKind === "video" || mediaKind === "audio")
       ? draft.dataUrl
-      : "");
+      : "") ||
+    "";
   const showMedia = Boolean(thumb) || Boolean(og && (og.siteName || og.description));
-  const pct =
+  /** Canvas/PDF covers for non-visual files; images & video use DraftMedia. */
+  const showDocCover = Boolean(draft.posterUrl) && !visual;
+  const ratio =
     uploadRatio != null && Number.isFinite(uploadRatio)
-      ? ` · ${Math.min(100, Math.max(0, Math.round(uploadRatio * 100)))}%`
-      : "";
+      ? Math.min(100, Math.max(0, Math.round(uploadRatio * 100)))
+      : null;
+  const uploadLabel = ratio != null ? `${t(lang, "uploadingFile")} · ${ratio}%` : "";
 
-  if (draft.analyzing && !thumb) {
-    return <AnalyzeSkeleton filename={draft.filename} size={draft.size} uploadRatio={uploadRatio} />;
+  const previewBlock =
+    showMedia || showDocCover || draft.url ? (
+      <>
+        {draft.url ? (
+          <div className="inline-action-row">
+            <a href={draft.url} className="scrap-card-link min-w-0 flex-1 truncate" target="_blank" rel="noreferrer">
+              {draft.url}
+            </a>
+            <a href={draft.url} className="inline-action" target="_blank" rel="noreferrer">
+              <ExternalLink className="size-4" strokeWidth={1.8} />
+              {t(lang, "openLink")}
+            </a>
+          </div>
+        ) : null}
+        {showDocCover ? (
+          <DocPreview
+            src={draft.posterUrl}
+            pages={draft.posterUrls}
+            filename={draft.filename}
+            limitedNote={!isPdf(draft.mime, draft.filename) && draft.type === "document" ? t(lang, "previewPagesLimited") : ""}
+          />
+        ) : null}
+        {!showDocCover && showMedia ? (
+          <DraftMedia
+            src={thumb || draft.posterUrl || ""}
+            kind={og?.image || draft.posterUrl ? "image" : mediaKind || "image"}
+            siteName={og?.siteName}
+            domain={draft.domain}
+            favicon={og?.favicon}
+            description={og?.description}
+          />
+        ) : null}
+        {showDocCover && og && (og.siteName || og.description) ? (
+          <DraftMedia
+            src=""
+            siteName={og.siteName}
+            domain={draft.domain}
+            favicon={og.favicon}
+            description={og.description}
+          />
+        ) : null}
+      </>
+    ) : null;
+
+  if (draft.analyzing && !showMedia && !showDocCover) {
+    return (
+      <AnalyzeSkeleton
+        filename={draft.filename}
+        size={draft.size}
+        uploadRatio={uploadRatio}
+        onCancel={onCancel}
+        preview={
+          draft.url ? (
+            <a href={draft.url} className="scrap-card-link" target="_blank" rel="noreferrer">
+              {draft.url}
+            </a>
+          ) : null
+        }
+      />
+    );
   }
 
-  return (
-    <form
-      className="classify-draft-form"
-      onSubmit={(e) => {
-        e.preventDefault();
-        if (!draft.analyzing) onSave();
-      }}
-    >
-      <div className="list-tools-head">
-        <p className="list-tools-label">
-          {draft.analyzing
-            ? `${t(lang, draft.filename ? "uploadingFile" : "analyzing")}${pct}`
-            : t(lang, "classifyTitle")}
-        </p>
-      </div>
-      {draft.analyzing ? (
-        <>
-          {draft.filename ? (
-            <p className="scrap-card-file m-0">
-              {draft.filename} · {formatBytes(draft.size)}
-            </p>
-          ) : null}
-          <div className="classify-draft-skeleton-bar w-2/5" />
-          <div className="classify-draft-skeleton-bar w-4/5" />
-        </>
-      ) : (
-        <p className="classify-draft-detected">{detectedLabel(lang, draft.type)}</p>
-      )}
-      {draft.url ? (
-        <a href={draft.url} className="scrap-card-link" target="_blank" rel="noreferrer">
-          {draft.url}
-        </a>
-      ) : null}
+  const resultBlock = (
+    <>
+      {previewBlock}
       <label className="grid gap-1">
         <span className="list-tools-label">{t(lang, "untitled")}</span>
         <input
@@ -177,15 +259,26 @@ export function DraftCard({ draft, uploadRatio = null, onChange, onSave, onCance
       </label>
       <p className="scrap-card-tags">
         {(draft.tags.length ? draft.tags : [draft.type]).map((tag) => (
-          <span key={tag} className="scrap-tag">
+          <span key={tag} className="scrap-tag detail-tag-chip">
             {tag === draft.type ? typeLabel(lang, tag) : tag}
           </span>
         ))}
       </p>
       {draft.filename ? (
-        <p className="scrap-card-file">
-          {draft.filename} · {formatBytes(draft.size)}
-        </p>
+        <div className="inline-action-row">
+          <p className="scrap-card-file min-w-0 flex-1">
+            <span className="truncate">
+              {draft.filename}
+              {draft.size ? ` · ${formatBytes(draft.size)}` : ""}
+            </span>
+          </p>
+          {draft.dataUrl ? (
+            <a href={draft.dataUrl} className="inline-action" download={draft.filename || undefined}>
+              <Download className="size-4" strokeWidth={1.8} />
+              {t(lang, "downloadFile")}
+            </a>
+          ) : null}
+        </div>
       ) : null}
       {!draft.analyzing && draft.text ? (
         <div className="draft-ai-block">
@@ -215,16 +308,54 @@ export function DraftCard({ draft, uploadRatio = null, onChange, onSave, onCance
           {t(lang, "save")}
         </button>
       </div>
-      {showMedia ? (
-        <DraftMedia
-          src={thumb}
-          kind={og?.image ? "image" : mediaKind || "image"}
-          siteName={og?.siteName}
-          domain={draft.domain}
-          favicon={og?.favicon}
-          description={og?.description}
-        />
+    </>
+  );
+
+  return (
+    <form
+      className="classify-draft-form"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!draft.analyzing) onSave();
+      }}
+    >
+      {!draft.analyzing ? (
+        <div className="list-tools-head">
+          <p className="list-tools-label">{t(lang, "classifyDone")}</p>
+        </div>
       ) : null}
+      {draft.analyzing ? (
+        <>
+          {draft.filename ? (
+            <p className="scrap-card-file m-0">
+              {draft.filename} · {formatBytes(draft.size)}
+            </p>
+          ) : null}
+          {ratio != null ? (
+            <div
+              className="upload-progress"
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={ratio}
+              aria-valuetext={uploadLabel}
+            >
+              <div className="upload-progress-track">
+                <div className="upload-progress-fill" style={{ width: `${ratio}%` }} />
+                <span className="upload-progress-label">{uploadLabel}</span>
+              </div>
+            </div>
+          ) : null}
+          {previewBlock ? <div className="classify-draft-preview">{previewBlock}</div> : null}
+          <ClassifyBusyOverlay onCancel={onCancel} />
+        </>
+      ) : (
+        <>
+          <p className="classify-draft-detected">{detectedLabel(lang, draft.type)}</p>
+          {draft.classifyFallback ? <p className="classify-draft-fallback">{t(lang, "classifyFallback")}</p> : null}
+          {resultBlock}
+        </>
+      )}
     </form>
   );
 }

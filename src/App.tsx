@@ -69,7 +69,7 @@ function Home() {
   }, []);
 
   return (
-    <div className="grid min-h-dvh grid-rows-[auto_1fr]">
+    <div className={"grid min-h-dvh " + (user ? "grid-rows-[auto_1fr]" : "grid-rows-[auto_1fr_auto]")}>
       <a
         href="#main"
         className="absolute left-3 top-[-40px] z-20 rounded-[14px] bg-ink px-3 py-2 text-enamel focus:top-3"
@@ -83,12 +83,10 @@ function Home() {
         ) : user ? (
           <Shelf onEnter={() => openSheet(setEnter)} />
         ) : (
-          <>
-            <Intro onEnter={() => openSheet(setEnter)} />
-            <Footer />
-          </>
+          <Intro onEnter={() => openSheet(setEnter)} />
         )}
       </main>
+      {!user ? <Footer /> : null}
       <AuthSheet open={enter} onClose={() => setEnter(false)} />
       <SettingsSheet open={settings} onClose={() => setSettings(false)} />
       <GuestMigrateSheet open={migrate} onClose={() => setMigrate(false)} />

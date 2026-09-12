@@ -10,6 +10,7 @@ type Payload = {
   mime?: string;
   filename?: string;
   lang?: Lang;
+  signal?: AbortSignal;
 };
 
 export async function requestAnalyze(payload: Payload): Promise<AnalyzeResult> {
@@ -56,10 +57,16 @@ export async function requestAnalyze(payload: Payload): Promise<AnalyzeResult> {
         Authorization: "Bearer " + token,
       },
       body: JSON.stringify({
-        ...payload,
+        kind: payload.kind,
+        text: payload.text,
+        mediaPath: payload.mediaPath,
+        mime: payload.mime,
+        filename: payload.filename,
         lang: payload.lang === "en" ? "en" : "ko",
       }),
+      signal: payload.signal,
     });
+    if (payload.signal?.aborted) throw new DOMException("Aborted", "AbortError");
     if (!res.ok) return fallback();
     const data = (await res.json()) as AnalyzeResult;
     if (!data || !data.type) return fallback();
@@ -71,7 +78,9 @@ export async function requestAnalyze(payload: Payload): Promise<AnalyzeResult> {
       summary,
       analysis,
     };
-  } catch {
+  } catch (err) {
+    if (err instanceof DOMException && err.name === "AbortError") throw err;
+    if (err instanceof Error && err.name === "AbortError") throw err;
     return fallback();
   }
 }

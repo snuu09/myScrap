@@ -1,9 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bookmark, LayoutList, PanelsTopLeft, X } from "lucide-react";
+import { LayoutList, PanelsTopLeft } from "lucide-react";
 import { typeLabel } from "../i18n";
 import { usePrefs, type ShelfLayout } from "../context/Prefs";
-import { useDialog } from "../lib/dialog";
 import { useT } from "../lib/useT";
 import { AdSlot } from "./AdSlot";
 import { DayFilterChip, DayFilterPanel } from "./DayFilter";
@@ -23,6 +22,72 @@ const LAYOUTS: { id: ShelfLayout; icon: typeof LayoutList; labelKey: "layoutList
   { id: "gallery", icon: PanelsTopLeft, labelKey: "layoutGallery" },
 ];
 
+function thumbCandidates(item: Scrap, mediaKind: ReturnType<typeof mediaKindOf>) {
+  const media =
+    item.dataUrl && (mediaKind === "image" || mediaKind === "video") ? item.dataUrl : "";
+  return [item.posterUrl, item.og?.image || "", media].filter(Boolean);
+}
+
+function ScrapCardThumb({
+  item,
+  mediaKind,
+  title,
+  showFileMark,
+  gallery,
+}: {
+  item: Scrap;
+  mediaKind: ReturnType<typeof mediaKindOf>;
+  title: string;
+  showFileMark: boolean;
+  gallery: boolean;
+}) {
+  const { lang } = usePrefs();
+  const candidates = thumbCandidates(item, mediaKind);
+  const [exhausted, setExhausted] = useState(false);
+  const primary = candidates[0] || "";
+  const fallbacks = candidates.slice(1);
+  const thumbIsCover = Boolean(item.posterUrl || item.og?.image);
+  const candidateKey = candidates.join("|");
+
+  useEffect(() => {
+    setExhausted(false);
+  }, [item.id, candidateKey]);
+
+  if (!primary || exhausted) {
+    if (!gallery) return null;
+    return (
+      <div className="scrap-book-cover" aria-hidden>
+        <span className="scrap-book-cover-spine" />
+        <span className="scrap-book-cover-face">
+          {showFileMark ? (
+            <DocumentMark
+              extension={item.extension}
+              mime={item.mime}
+              type={item.type}
+              filename={item.filename}
+              size="lg"
+            />
+          ) : (
+            <span className="scrap-book-cover-type">{typeLabel(lang, item.type)}</span>
+          )}
+          <span className="scrap-book-cover-title">{title}</span>
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <ScrapMedia
+      key={primary + fallbacks.join("|")}
+      src={primary}
+      fallbackSrcs={fallbacks}
+      kind={thumbIsCover ? "image" : mediaKind || "image"}
+      controls={false}
+      onExhausted={() => setExhausted(true)}
+    />
+  );
+}
+
 type Props = {
   scraps: Scrap[];
   visible: Scrap[];
@@ -34,7 +99,6 @@ type Props = {
   onDayFilter: (value: string | null) => void;
   onCalendarOpen: (open: boolean) => void;
   onClearFilters: () => void;
-  onPeel: (scrap: Scrap) => void;
 };
 
 export function ScrapList({
@@ -48,12 +112,10 @@ export function ScrapList({
   onDayFilter,
   onCalendarOpen,
   onClearFilters,
-  onPeel,
 }: Props) {
   const { lang, shelfLayout, setShelfLayout } = usePrefs();
   const t = useT();
   const navigate = useNavigate();
-  const { confirm } = useDialog();
   const filtersActive = typeFilter !== "all" || Boolean(dayFilter) || calendarOpen;
   const compact = shelfLayout !== "list";
 
@@ -74,10 +136,19 @@ export function ScrapList({
     if (count === 0) onType("all");
   }, [loading, typeFilter, scraps, onType]);
 
-  async function askPeel(item: Scrap) {
-    if (await confirm({ body: t("peelConfirm"), danger: true, confirmLabel: t("deleteItem") })) {
-      onPeel(item);
-    }
+  const shelfEmpty = !loading && !scraps.length;
+
+  if (shelfEmpty) {
+    return (
+      <div className="shelf-door">
+        <section className="list-body" aria-live="polite">
+          <div className="shelf-empty">
+            <p className="shelf-empty-title">{t("empty")}</p>
+            <p className="shelf-empty-hint">{t("emptyHint")}</p>
+          </div>
+        </section>
+      </div>
+    );
   }
 
   return (
@@ -132,11 +203,6 @@ export function ScrapList({
       <section className="list-body" aria-live="polite">
         {loading ? (
           <ScrapListSkeleton layout={shelfLayout} />
-        ) : !scraps.length ? (
-          <div className="shelf-empty">
-            <p className="shelf-empty-title">{t("empty")}</p>
-            <p className="shelf-empty-hint">{t("emptyHint")}</p>
-          </div>
         ) : !visible.length ? (
           <div className="shelf-empty shelf-empty--compact">
             <p className="shelf-empty-title">{t("noMatches")}</p>
@@ -145,12 +211,12 @@ export function ScrapList({
           <ul className={"scrap-list scrap-list--" + shelfLayout}>
             {visible.map((item) => {
               const mediaKind = mediaKindOf(item.type, item.mime);
-              const thumb =
-                item.og?.image ||
-                (item.dataUrl && (mediaKind === "image" || mediaKind === "video") ? item.dataUrl : "");
+              const candidates = thumbCandidates(item, mediaKind);
+              const thumb = candidates[0] || "";
               const unread = !item.readAt;
               const title = item.title || item.og?.title || t("untitled");
-              const isDoc = item.type === "document" || Boolean(item.filename);
+              const isDoc = item.type === "document";
+              const showFileMark = isDoc || item.type === "image" || item.type === "video" || item.type === "audio";
               return (
                 <li
                   key={item.id}
@@ -161,38 +227,27 @@ export function ScrapList({
                     (!thumb && shelfLayout === "gallery" ? " scrap-card--no-media" : "")
                   }
                 >
-                  {item.bookmarked ? (
-                    <span className="scrap-bookmark-ribbon" aria-hidden>
-                      <Bookmark className="size-3.5" strokeWidth={2.2} fill="currentColor" />
-                    </span>
-                  ) : null}
+                  {item.bookmarked ? <span className="scrap-bookmark-ribbon" aria-hidden /> : null}
                   <button type="button" className="scrap-card-hit" onClick={() => navigate(`/scrap/${item.id}`)}>
-                    {thumb ? (
-                      <ScrapMedia
-                        key={thumb}
-                        src={thumb}
-                        kind={item.og?.image ? "image" : mediaKind || "image"}
-                        controls={false}
-                      />
-                    ) : shelfLayout === "gallery" ? (
-                      <div className="scrap-book-cover" aria-hidden>
-                        <span className="scrap-book-cover-spine" />
-                        <span className="scrap-book-cover-face">
-                          {isDoc ? (
-                            <DocumentMark extension={item.extension} mime={item.mime} type={item.type} size="lg" />
-                          ) : (
-                            <span className="scrap-book-cover-type">{typeLabel(lang, item.type)}</span>
-                          )}
-                          <span className="scrap-book-cover-title">{title}</span>
-                        </span>
-                      </div>
-                    ) : null}
+                    <ScrapCardThumb
+                      item={item}
+                      mediaKind={mediaKind}
+                      title={title}
+                      showFileMark={showFileMark}
+                      gallery={shelfLayout === "gallery"}
+                    />
                     <div className="scrap-card-body">
                       <div className="scrap-card-head">
                         <div className="min-w-0 flex-1">
-                          {shelfLayout === "list" && !thumb && isDoc ? (
+                          {shelfLayout === "list" && !thumb && showFileMark ? (
                             <div className="scrap-card-doc-row">
-                              <DocumentMark extension={item.extension} mime={item.mime} type={item.type} size="sm" />
+                              <DocumentMark
+                                extension={item.extension}
+                                mime={item.mime}
+                                type={item.type}
+                                filename={item.filename}
+                                size="sm"
+                              />
                               <p className="scrap-card-title">
                                 {unread ? <span className="scrap-unread-dot" aria-hidden /> : null}
                                 {title}
@@ -210,27 +265,6 @@ export function ScrapList({
                             </p>
                           ) : null}
                         </div>
-                        <IconTip label={t("deleteItem")} placement="below">
-                          <span
-                            role="button"
-                            tabIndex={0}
-                            className="scrap-card-peel"
-                            aria-label={t("deleteItem")}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              void askPeel(item);
-                            }}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" || e.key === " ") {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                void askPeel(item);
-                              }
-                            }}
-                          >
-                            <X className="size-[18px]" strokeWidth={1.8} />
-                          </span>
-                        </IconTip>
                       </div>
                       {!compact ? (
                         <>
@@ -241,11 +275,12 @@ export function ScrapList({
                           {item.url ? <span className="scrap-card-link">{t("openLink")}</span> : null}
                           {item.filename ? (
                             <p className="scrap-card-file">
-                              {isDoc ? (
+                              {showFileMark ? (
                                 <DocumentMark
                                   extension={item.extension}
                                   mime={item.mime}
                                   type={item.type}
+                                  filename={item.filename}
                                   size="sm"
                                   className="scrap-card-file-mark"
                                 />
@@ -256,12 +291,20 @@ export function ScrapList({
                           {item.memo ? <p className="scrap-card-memo">{item.memo}</p> : null}
                           <p className="scrap-card-tags">
                             {item.tags.map((tag) => (
-                              <span key={tag} className="scrap-tag">
+                              <span key={tag} className="scrap-tag detail-tag-chip">
                                 {tag}
                               </span>
                             ))}
                           </p>
                         </>
+                      ) : item.type === "image" && item.tags.length ? (
+                        <p className="scrap-card-tags">
+                          {item.tags.map((tag) => (
+                            <span key={tag} className="scrap-tag detail-tag-chip">
+                              {tag}
+                            </span>
+                          ))}
+                        </p>
                       ) : null}
                     </div>
                   </button>

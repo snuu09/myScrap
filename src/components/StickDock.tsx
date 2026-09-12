@@ -4,6 +4,7 @@ import { ArrowUp, Camera, Clipboard, FileUp, ImageIcon, Plus } from "lucide-reac
 import { t } from "../i18n";
 import { usePrefs } from "../context/Prefs";
 import { useDialog } from "../lib/dialog";
+import { isImeComposing } from "../lib/ime";
 import { IconTip } from "./IconTip";
 
 export const CLOSE_OVERLAYS_EVENT = "mybrary:close-overlays";
@@ -45,6 +46,10 @@ export function StickDock({ value, onChange, onSubmitText, onFiles, dropping, di
     window.addEventListener(CLOSE_OVERLAYS_EVENT, onCloseOverlays);
     return () => window.removeEventListener(CLOSE_OVERLAYS_EVENT, onCloseOverlays);
   }, []);
+
+  useEffect(() => {
+    if (draftSlot) setMenu(false);
+  }, [draftSlot]);
 
   useEffect(() => {
     if (!menu) return;
@@ -126,11 +131,15 @@ export function StickDock({ value, onChange, onSubmitText, onFiles, dropping, di
           onClick={() => setMenu(false)}
         />
       ) : null}
-      <div className="stick-float" aria-label={t(lang, "composerLabel")}>
+      {draftSlot ? <div className="classify-draft-scrim" aria-hidden /> : null}
+      <div
+        className={"stick-float" + (draftSlot ? " stick-float--sheet" : "")}
+        aria-label={t(lang, "composerLabel")}
+      >
         <div className="stick-float-inner">
           {dropping ? <div className="stick-float-drop">{t(lang, "dropOverlay")}</div> : null}
           {draftSlot ? (
-            <section className="classify-draft classify-draft--dock" aria-label={t(lang, "classifyTitle")}>
+            <section className="classify-draft classify-draft--sheet" aria-label={t(lang, "classifyTitle")}>
               {draftSlot}
             </section>
           ) : null}
@@ -220,6 +229,7 @@ export function StickDock({ value, onChange, onSubmitText, onFiles, dropping, di
                 onChange={(e) => onChange(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
+                    if (isImeComposing(e)) return;
                     e.preventDefault();
                     void submit();
                   }

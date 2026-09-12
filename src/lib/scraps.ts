@@ -73,6 +73,38 @@ export function mediaObjectPath(userId: string, scrap: Scrap) {
   return userId + "/" + scrap.id + "/media." + extFor(scrap);
 }
 
+export function posterObjectPath(userId: string, scrapId: string) {
+  return posterPagePath(userId, scrapId, 1);
+}
+
+export function posterPagePath(userId: string, scrapId: string, index: number) {
+  return userId + "/" + scrapId + "/poster-" + index + ".jpg";
+}
+
+export function isPagedPosterPath(path: string) {
+  return /\/poster-\d+\.jpg$/.test(String(path || ""));
+}
+
+/** Storage paths for cover pages. Legacy `poster.jpg` stays a single file. */
+export function posterPathsFor(scrap: Pick<Scrap, "id" | "posterPath" | "pages">) {
+  const path = scrap.posterPath || "";
+  if (!path) return [];
+  if (!isPagedPosterPath(path)) return [path];
+  const [userId, scrapId] = path.split("/");
+  if (!userId || !scrapId) return [path];
+  const count = Math.max(1, Number(scrap.pages) || 1);
+  return Array.from({ length: count }, (_, i) => posterPagePath(userId, scrapId, i + 1));
+}
+
+function posterCleanupPaths(userId: string, scrap: Pick<Scrap, "id" | "posterPath" | "pages">) {
+  const paths = new Set<string>();
+  if (scrap.posterPath) paths.add(scrap.posterPath);
+  paths.add(userId + "/" + scrap.id + "/poster.jpg");
+  const count = Math.max(4, Number(scrap.pages) || 0);
+  for (let i = 1; i <= count; i++) paths.add(posterPagePath(userId, scrap.id, i));
+  return [...paths];
+}
+
 type SignedCacheEntry = { url: string; expiresAt: number };
 
 const signedUrlCache = new Map<string, SignedCacheEntry>();
@@ -111,25 +143,32 @@ function needsSignedMedia(scrap: Scrap) {
   return true;
 }
 
-/** Batch-sign media paths and fill `dataUrl` (session-cached). */
+function needsSignedPoster(scrap: Scrap) {
+  if (!scrap.posterPath) return false;
+  const wanted = posterPathsFor(scrap);
+  if (!scrap.posterUrl) return true;
+  return wanted.length > 1 && scrap.posterUrls.length < wanted.length;
+}
+
+/** Batch-sign media + poster paths and fill `dataUrl` / `posterUrl` (session-cached). */
 export async function hydrateSignedMedia(scraps: Scrap[]): Promise<Scrap[]> {
   const supabase = getSupabase();
   if (!supabase || !scraps.length) return scraps;
 
-  const pathById = new Map<string, string>();
   const paths: string[] = [];
   const urlByPath = new Map<string, string>();
 
   for (const scrap of scraps) {
-    if (!needsSignedMedia(scrap)) continue;
-    const path = scrap.mediaPath;
-    const cached = cachedSignedUrl(path);
-    if (cached) {
-      urlByPath.set(path, cached);
-      continue;
-    }
-    if (!pathById.has(scrap.id)) {
-      pathById.set(scrap.id, path);
+    const candidates = [
+      needsSignedMedia(scrap) ? scrap.mediaPath : "",
+      ...(needsSignedPoster(scrap) ? posterPathsFor(scrap) : []),
+    ].filter(Boolean);
+    for (const path of candidates) {
+      const cached = cachedSignedUrl(path);
+      if (cached) {
+        urlByPath.set(path, cached);
+        continue;
+      }
       if (!paths.includes(path)) paths.push(path);
     }
   }
@@ -155,10 +194,18 @@ export async function hydrateSignedMedia(scraps: Scrap[]): Promise<Scrap[]> {
   if (!urlByPath.size) return scraps;
 
   return scraps.map((scrap) => {
-    if (!needsSignedMedia(scrap)) return scrap;
-    const url = urlByPath.get(scrap.mediaPath);
-    if (!url) return scrap;
-    return { ...scrap, dataUrl: url, storedMedia: true };
+    let next = scrap;
+    if (needsSignedMedia(scrap)) {
+      const url = urlByPath.get(scrap.mediaPath);
+      if (url) next = { ...next, dataUrl: url, storedMedia: true };
+    }
+    if (scrap.posterPath) {
+      const urls = posterPathsFor(scrap)
+        .map((path) => urlByPath.get(path) || "")
+        .filter(Boolean);
+      if (urls.length) next = { ...next, posterUrl: urls[0], posterUrls: urls };
+    }
+    return next;
   });
 }
 
@@ -178,7 +225,7 @@ function toRow(userId: string, scrap: Scrap): Row {
     extension: scrap.extension || "",
     size: Number(scrap.size) || 0,
     preview_text: scrap.previewText || "",
-    pages: 0,
+    pages: Math.max(0, Number(scrap.pages) || 0),
     og: scrap.og,
     og_status: scrap.ogStatus || "",
     sample: false,
@@ -188,7 +235,7 @@ function toRow(userId: string, scrap: Scrap): Row {
     error: scrap.error || "",
     memo: scrap.memo || "",
     media_path: scrap.mediaPath || null,
-    poster_path: null,
+    poster_path: scrap.posterPath || null,
     bookmarked: !!scrap.bookmarked,
     read_at: scrap.readAt ? new Date(scrap.readAt).toISOString() : null,
     remind_at: scrap.remindAt ? new Date(scrap.remindAt).toISOString() : null,
@@ -197,6 +244,7 @@ function toRow(userId: string, scrap: Scrap): Row {
 
 function fromRow(row: Row): Scrap {
   const mediaPath = row.media_path || "";
+  const posterPath = row.poster_path || "";
   return {
     id: row.id,
     createdAt: Date.parse(row.created_at) || Date.now(),
@@ -211,6 +259,10 @@ function fromRow(row: Row): Scrap {
     extension: row.extension || "",
     size: Number(row.size) || 0,
     dataUrl: "",
+    posterPath,
+    posterUrl: "",
+    posterUrls: [],
+    pages: Math.max(0, Number(row.pages) || 0),
     previewText: row.preview_text || "",
     sample: !!row.sample,
     storedMedia: !!row.stored_media && !!mediaPath,
@@ -261,6 +313,45 @@ export async function uploadMedia(
   }
   const dataUrl = await signedUrl(path);
   return { mediaPath: path, dataUrl, storedMedia: !!dataUrl, skipped: false };
+}
+
+export async function uploadPoster(user: User, scrapId: string, blob: Blob) {
+  const uploaded = await uploadPosters(user, scrapId, [blob]);
+  return { posterPath: uploaded.posterPath, posterUrl: uploaded.posterUrl };
+}
+
+export async function uploadPosters(user: User, scrapId: string, blobs: Blob[]) {
+  const slice = blobs.filter(Boolean);
+  if (!slice.length) return { posterPath: "", posterUrl: "", posterUrls: [] as string[], pages: 0 };
+  if (isBrowseUser(user)) {
+    const posterUrls = await Promise.all(slice.map((blob) => blobToDataUrl(blob)));
+    return { posterPath: "", posterUrl: posterUrls[0] || "", posterUrls, pages: posterUrls.length };
+  }
+  const supabase = getSupabase();
+  if (!supabase) throw new Error("config");
+  const posterUrls: string[] = [];
+  let posterPath = "";
+  for (let i = 0; i < slice.length; i++) {
+    const path = posterPagePath(user.id, scrapId, i + 1);
+    const file = new File([slice[i]], "poster-" + (i + 1) + ".jpg", { type: "image/jpeg" });
+    const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
+      upsert: true,
+      contentType: "image/jpeg",
+    });
+    if (error) throw error;
+    if (i === 0) posterPath = path;
+    posterUrls.push(await signedUrl(path));
+  }
+  return { posterPath, posterUrl: posterUrls[0] || "", posterUrls, pages: posterUrls.length };
+}
+
+function blobToDataUrl(blob: Blob) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error("read"));
+    reader.readAsDataURL(blob);
+  });
 }
 
 function resumableEndpoint() {
@@ -346,6 +437,9 @@ export async function deleteScrap(user: User, scrap: Scrap) {
   const supabase = getSupabase();
   if (!supabase) throw new Error("config");
   await removeMedia(user, scrap.mediaPath);
+  for (const path of posterCleanupPaths(user.id, scrap)) {
+    await removeMedia(user, path);
+  }
   const { error } = await supabase.from("scraps").delete().eq("id", scrap.id).eq("user_id", user.id);
   if (error) throw error;
 }
@@ -376,10 +470,13 @@ export async function clearUserScraps(user: User) {
   }
   const supabase = getSupabase();
   if (!supabase) throw new Error("config");
-  const { data, error } = await supabase.from("scraps").select("id, media_path").eq("user_id", user.id);
+  const { data, error } = await supabase.from("scraps").select("id, media_path, poster_path, pages").eq("user_id", user.id);
   if (error) throw error;
   const paths = (data || [])
-    .map((row) => (row as { media_path: string | null }).media_path)
+    .flatMap((row) => {
+      const r = row as { id: string; media_path: string | null; poster_path: string | null; pages: number | null };
+      return [r.media_path, ...posterCleanupPaths(user.id, { id: r.id, posterPath: r.poster_path || "", pages: Number(r.pages) || 0 })];
+    })
     .filter((path): path is string => Boolean(path));
   for (let i = 0; i < paths.length; i += 50) {
     const chunk = paths.slice(i, i + 50);

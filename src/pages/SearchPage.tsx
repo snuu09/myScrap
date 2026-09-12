@@ -153,7 +153,11 @@ export function SearchPage() {
           <ul className="scrap-list scrap-list--list">
             {visible.map((item) => {
               const title = item.title || item.og?.title || t("untitled");
-              const isDoc = item.type === "document" || Boolean(item.filename);
+              const showFileMark =
+                item.type === "document" ||
+                item.type === "image" ||
+                item.type === "video" ||
+                item.type === "audio";
               return (
                 <li key={item.id} className="scrap-card">
                   <button
@@ -164,9 +168,15 @@ export function SearchPage() {
                     <div className="scrap-card-body">
                       <div className="scrap-card-head">
                         <div className="min-w-0 flex-1">
-                          {isDoc ? (
+                          {showFileMark ? (
                             <div className="scrap-card-doc-row">
-                              <DocumentMark extension={item.extension} mime={item.mime} type={item.type} size="sm" />
+                              <DocumentMark
+                                extension={item.extension}
+                                mime={item.mime}
+                                type={item.type}
+                                filename={item.filename}
+                                size="sm"
+                              />
                               <p className="scrap-card-title">{title}</p>
                             </div>
                           ) : (
@@ -179,6 +189,16 @@ export function SearchPage() {
                       </div>
                       {item.filename ? (
                         <p className="scrap-card-file">
+                          {showFileMark ? (
+                            <DocumentMark
+                              extension={item.extension}
+                              mime={item.mime}
+                              type={item.type}
+                              filename={item.filename}
+                              size="sm"
+                              className="scrap-card-file-mark"
+                            />
+                          ) : null}
                           {item.filename}
                           {item.size ? ` · ${formatBytes(item.size)}` : ""}
                         </p>

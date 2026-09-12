@@ -62,11 +62,11 @@ function readLook(): Look {
 function readShelfLayout(): ShelfLayout {
   try {
     const stored = localStorage.getItem("mybrary.shelfLayout");
-    if (stored === "gallery") return "gallery";
+    if (stored === "list") return "list";
   } catch {
     /* ignore */
   }
-  return "list";
+  return "gallery";
 }
 
 function applyChrome(theme: ThemeChoice, palette: Palette, look: Look, lang: Lang) {
@@ -80,7 +80,7 @@ function applyChrome(theme: ThemeChoice, palette: Palette, look: Look, lang: Lan
   document.documentElement.lang = lang;
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) {
-    if (look === "library") meta.setAttribute("content", dark ? "#1e1c19" : "#f3ebe0");
+    if (look === "library") meta.setAttribute("content", dark ? "#1e1c19" : "#ffffff");
     else meta.setAttribute("content", dark ? "#2a2420" : "#fff7f2");
   }
 }
@@ -131,7 +131,7 @@ export function PrefsProvider({ children }: { children: ReactNode }) {
         setLookState(next);
       },
       setShelfLayout(next) {
-        if (next === "list") localStorage.removeItem("mybrary.shelfLayout");
+        if (next === "gallery") localStorage.removeItem("mybrary.shelfLayout");
         else localStorage.setItem("mybrary.shelfLayout", next);
         setShelfLayoutState(next);
       },

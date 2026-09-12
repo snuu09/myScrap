@@ -13,8 +13,8 @@ export const PLAN_LIMITS: Record<
   PlanTier,
   { storageBytes: number | null; ads: boolean; trialLimited: boolean }
 > = {
-  free: { storageBytes: 100 * MB, ads: true, trialLimited: true },
-  standard: { storageBytes: 1024 * MB, ads: true, trialLimited: false },
+  free: { storageBytes: 100 * MB, ads: false, trialLimited: true },
+  standard: { storageBytes: 1024 * MB, ads: false, trialLimited: false },
   premium: { storageBytes: null, ads: false, trialLimited: false },
   admin: { storageBytes: null, ads: false, trialLimited: false },
 };

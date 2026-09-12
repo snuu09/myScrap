@@ -1,4 +1,7 @@
 import type { Config } from "@netlify/functions";
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
 
@@ -6,8 +9,43 @@ import { createClient } from "@supabase/supabase-js";
 const MODEL = "claude-sonnet-4-5";
 const BUCKET = "scrap-media";
 
+/** Fill process.env from repo-root .env when Netlify.env is empty (local Vite plugin). */
+let localEnvLoaded = false;
+function ensureLocalEnv() {
+  if (localEnvLoaded) return;
+  localEnvLoaded = true;
+  const candidates = [
+    resolve(dirname(fileURLToPath(import.meta.url)), "../../.env"),
+    resolve(process.cwd(), ".env"),
+  ];
+  for (const rootEnv of candidates) {
+    try {
+      const raw = readFileSync(rootEnv, "utf8");
+      for (const line of raw.split("\n")) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith("#")) continue;
+        const eq = trimmed.indexOf("=");
+        if (eq <= 0) continue;
+        const key = trimmed.slice(0, eq).trim();
+        let val = trimmed.slice(eq + 1).trim();
+        if (
+          (val.startsWith('"') && val.endsWith('"')) ||
+          (val.startsWith("'") && val.endsWith("'"))
+        ) {
+          val = val.slice(1, -1);
+        }
+        if (process.env[key] === undefined) process.env[key] = val;
+      }
+      return;
+    } catch {
+      // try next path
+    }
+  }
+}
+
 function env(name: string) {
-  return (Netlify.env.get(name) || "").trim();
+  ensureLocalEnv();
+  return (Netlify.env.get(name) || process.env[name] || "").trim();
 }
 
 function json(body: unknown, status = 200) {
