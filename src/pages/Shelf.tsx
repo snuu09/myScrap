@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowUp } from "lucide-react";
 import { useT } from "../lib/useT";
 import { usePrefs } from "../context/Prefs";
@@ -70,7 +70,8 @@ export function Shelf({ onEnter }: Props) {
   const { user } = useAuth();
   const { setScrapsForUsage, canUpload, canStick } = usePlan();
   const { alert, confirm } = useDialog();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const guest = isBrowseUser(user);
   const pendingWrite = useRef<(() => void) | null>(null);
   const [noticeOpen, setNoticeOpen] = useState(false);
@@ -79,7 +80,6 @@ export function Shelf({ onEnter }: Props) {
   const [draft, setDraft] = useState<Scrap | null>(null);
   const [uploadRatio, setUploadRatio] = useState<number | null>(null);
   const [composer, setComposer] = useState("");
-  const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<ScrapType | "all">("all");
   const [dayFilter, setDayFilter] = useState<string | null>(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -90,13 +90,12 @@ export function Shelf({ onEnter }: Props) {
   useEffect(() => {
     const q = searchParams.get("q");
     if (q == null) return;
-    setQuery(q);
-    setSearchParams({}, { replace: true });
-  }, [searchParams, setSearchParams]);
+    navigate("/search?q=" + encodeURIComponent(q), { replace: true });
+  }, [searchParams, navigate]);
 
   const visible = useMemo(
-    () => filterScraps(scraps, { query, type: typeFilter, day: dayFilter }),
-    [scraps, query, typeFilter, dayFilter],
+    () => filterScraps(scraps, { query: "", type: typeFilter, day: dayFilter }),
+    [scraps, typeFilter, dayFilter],
   );
 
   const refresh = useCallback(async () => {
@@ -434,7 +433,6 @@ export function Shelf({ onEnter }: Props) {
   }
 
   function clearFilters() {
-    setQuery("");
     setTypeFilter("all");
     setDayFilter(null);
     setCalendarOpen(false);
@@ -480,11 +478,9 @@ export function Shelf({ onEnter }: Props) {
           scraps={scraps}
           visible={visible}
           loading={!listReady}
-          query={query}
           typeFilter={typeFilter}
           dayFilter={dayFilter}
           calendarOpen={calendarOpen}
-          onQuery={setQuery}
           onType={setTypeFilter}
           onDayFilter={setDayFilter}
           onCalendarOpen={setCalendarOpen}

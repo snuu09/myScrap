@@ -15,6 +15,7 @@ import { Intro } from "./pages/Intro";
 import { Shelf } from "./pages/Shelf";
 import { Dashboard } from "./pages/Dashboard";
 import { ScrapDetail } from "./pages/ScrapDetail";
+import { SearchPage } from "./pages/SearchPage";
 import { Legal } from "./pages/Legal";
 import { hydrateSignedMedia, loadScraps } from "./lib/scraps";
 import { guestMigrateAsked, hasLocalScraps } from "./lib/localScraps";
@@ -183,6 +184,40 @@ function ScrapDetailPage() {
   );
 }
 
+function SearchPageShell() {
+  const { user, ready } = useAuth();
+  const [enter, setEnter] = useState(false);
+  const [settings, setSettings] = useState(false);
+
+  useEffect(() => {
+    function onCloseOverlays() {
+      setEnter(false);
+      setSettings(false);
+    }
+    window.addEventListener(CLOSE_OVERLAYS_EVENT, onCloseOverlays);
+    return () => window.removeEventListener(CLOSE_OVERLAYS_EVENT, onCloseOverlays);
+  }, []);
+
+  if (!ready) {
+    return <AuthWaiting />;
+  }
+  if (!user) {
+    return <Navigate to="/" replace />;
+  }
+
+  return (
+    <div className="grid min-h-dvh grid-rows-[auto_1fr_auto]">
+      <Header onEnter={() => openSheet(setEnter)} onSettings={() => openSheet(setSettings)} />
+      <main id="main" className="min-h-0">
+        <SearchPage />
+      </main>
+      <Footer />
+      <AuthSheet open={enter} onClose={() => setEnter(false)} />
+      <SettingsSheet open={settings} onClose={() => setSettings(false)} />
+    </div>
+  );
+}
+
 function LegalLayout() {
   const { lang } = usePrefs();
   const { recoveryPending } = useAuth();
@@ -226,6 +261,7 @@ export default function App() {
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/search" element={<SearchPageShell />} />
                 <Route path="/scrap/:id" element={<ScrapDetailPage />} />
                 <Route path="/terms" element={<LegalLayout />} />
                 <Route path="/privacy" element={<LegalLayout />} />

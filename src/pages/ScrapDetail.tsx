@@ -30,6 +30,7 @@ import { SiteIcon } from "../components/SiteIcon";
 import { IconTip } from "../components/IconTip";
 import { formatWhen } from "../lib/time";
 import { formatBytes, mediaKindOf } from "../lib/tagger";
+import { DocumentMark } from "../components/DocumentMark";
 import type { Scrap } from "../lib/types";
 
 function NeighborPreview({ scrap, label, onClick, disabled }: { scrap: Scrap | null; label: string; onClick: () => void; disabled: boolean }) {
@@ -462,6 +463,15 @@ export function ScrapDetail() {
         ) : null}
         {item.filename ? (
           <p className="scrap-card-file">
+            {(item.type === "document" || item.filename) && (
+              <DocumentMark
+                extension={item.extension}
+                mime={item.mime}
+                type={item.type}
+                size="sm"
+                className="scrap-card-file-mark"
+              />
+            )}
             {item.filename} · {formatBytes(item.size)}
           </p>
         ) : null}
@@ -522,7 +532,7 @@ export function ScrapDetail() {
                   key={tag}
                   type="button"
                   className="scrap-tag scrap-tag--btn"
-                  onClick={() => navigate(`/?q=${encodeURIComponent(tag)}`)}
+                  onClick={() => navigate(`/search?q=${encodeURIComponent(tag)}`)}
                 >
                   {tag}
                 </button>

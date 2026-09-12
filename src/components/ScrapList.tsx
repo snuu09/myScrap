@@ -7,9 +7,11 @@ import { useDialog } from "../lib/dialog";
 import { useT } from "../lib/useT";
 import { AdSlot } from "./AdSlot";
 import { DayFilterChip, DayFilterPanel } from "./DayFilter";
+import { DocumentMark } from "./DocumentMark";
 import { IconTip } from "./IconTip";
 import { ScrapListSkeleton } from "./ScrapListSkeleton";
 import { ScrapMedia } from "./ScrapMedia";
+import { TypeBookCarousel } from "./TypeBookCarousel";
 import type { Scrap, ScrapType } from "../lib/types";
 import { formatWhen } from "../lib/time";
 import { formatBytes, mediaKindOf } from "../lib/tagger";
@@ -25,11 +27,9 @@ type Props = {
   scraps: Scrap[];
   visible: Scrap[];
   loading?: boolean;
-  query: string;
   typeFilter: ScrapType | "all";
   dayFilter: string | null;
   calendarOpen: boolean;
-  onQuery: (value: string) => void;
   onType: (value: ScrapType | "all") => void;
   onDayFilter: (value: string | null) => void;
   onCalendarOpen: (open: boolean) => void;
@@ -41,11 +41,9 @@ export function ScrapList({
   scraps,
   visible,
   loading = false,
-  query,
   typeFilter,
   dayFilter,
   calendarOpen,
-  onQuery,
   onType,
   onDayFilter,
   onCalendarOpen,
@@ -56,7 +54,7 @@ export function ScrapList({
   const t = useT();
   const navigate = useNavigate();
   const { confirm } = useDialog();
-  const filtersActive = Boolean(query.trim()) || typeFilter !== "all" || Boolean(dayFilter) || calendarOpen;
+  const filtersActive = typeFilter !== "all" || Boolean(dayFilter) || calendarOpen;
   const compact = shelfLayout !== "list";
 
   const typeCounts = (() => {
@@ -84,9 +82,19 @@ export function ScrapList({
 
   return (
     <div className="shelf-door">
-      <section className="list-tools" aria-label={t("searchLabel")}>
+      <TypeBookCarousel
+        types={visibleTypes}
+        counts={typeCounts}
+        active={typeFilter}
+        loading={loading}
+        onSelect={onType}
+      />
+
+      <section className="list-tools list-tools--slim" aria-label={t("layoutSwitch")}>
         <div className="list-tools-head">
-          <p className="list-tools-label">{t("searchLabel")}</p>
+          <div className="list-tools-chips list-tools-chips--slim" role="group" aria-label={t("filterByDay")}>
+            <DayFilterChip dayFilter={dayFilter} open={calendarOpen} onOpenChange={onCalendarOpen} />
+          </div>
           <div className="list-tools-head-actions">
             <div className="layout-seg" role="group" aria-label={t("layoutSwitch")}>
               {LAYOUTS.map(({ id, icon: Icon, labelKey }) => (
@@ -109,48 +117,6 @@ export function ScrapList({
               </button>
             ) : null}
           </div>
-        </div>
-        <div className="list-tools-search-wrap">
-          <input
-            value={query}
-            onChange={(e) => onQuery(e.target.value)}
-            placeholder={t("searchPlaceholder")}
-            className="list-tools-search"
-            aria-label={t("searchLabel")}
-            disabled={loading}
-          />
-          {query ? (
-            <IconTip label={t("clearSearch")}>
-              <button
-                type="button"
-                className="list-tools-search-clear"
-                aria-label={t("clearSearch")}
-                onClick={() => onQuery("")}
-              >
-                <X className="size-[18px]" strokeWidth={1.8} />
-              </button>
-            </IconTip>
-          ) : null}
-        </div>
-        <div className="list-tools-chips" role="group" aria-label={t("filterAll")}>
-          <button type="button" className="chip-filter" aria-pressed={typeFilter === "all"} onClick={() => onType("all")} disabled={loading}>
-            {t("filterAll")}
-            <span className="chip-filter-count">{loading ? "…" : typeCounts.all}</span>
-          </button>
-          {visibleTypes.map((type) => (
-            <button
-              key={type}
-              type="button"
-              className="chip-filter"
-              aria-pressed={typeFilter === type}
-              onClick={() => onType(type)}
-              disabled={loading}
-            >
-              {typeLabel(lang, type)}
-              <span className="chip-filter-count">{loading ? "…" : typeCounts[type] || 0}</span>
-            </button>
-          ))}
-          <DayFilterChip dayFilter={dayFilter} open={calendarOpen} onOpenChange={onCalendarOpen} />
         </div>
         <DayFilterPanel
           scraps={scraps}
@@ -184,6 +150,7 @@ export function ScrapList({
                 (item.dataUrl && (mediaKind === "image" || mediaKind === "video") ? item.dataUrl : "");
               const unread = !item.readAt;
               const title = item.title || item.og?.title || t("untitled");
+              const isDoc = item.type === "document" || Boolean(item.filename);
               return (
                 <li
                   key={item.id}
@@ -208,17 +175,35 @@ export function ScrapList({
                         controls={false}
                       />
                     ) : shelfLayout === "gallery" ? (
-                      <div className="scrap-card-media-frame scrap-card-media-frame--placeholder" aria-hidden>
-                        <span className="scrap-card-placeholder-type">{typeLabel(lang, item.type)}</span>
+                      <div className="scrap-book-cover" aria-hidden>
+                        <span className="scrap-book-cover-spine" />
+                        <span className="scrap-book-cover-face">
+                          {isDoc ? (
+                            <DocumentMark extension={item.extension} mime={item.mime} type={item.type} size="lg" />
+                          ) : (
+                            <span className="scrap-book-cover-type">{typeLabel(lang, item.type)}</span>
+                          )}
+                          <span className="scrap-book-cover-title">{title}</span>
+                        </span>
                       </div>
                     ) : null}
                     <div className="scrap-card-body">
                       <div className="scrap-card-head">
                         <div className="min-w-0 flex-1">
-                          <p className="scrap-card-title">
-                            {unread ? <span className="scrap-unread-dot" aria-hidden /> : null}
-                            {title}
-                          </p>
+                          {shelfLayout === "list" && !thumb && isDoc ? (
+                            <div className="scrap-card-doc-row">
+                              <DocumentMark extension={item.extension} mime={item.mime} type={item.type} size="sm" />
+                              <p className="scrap-card-title">
+                                {unread ? <span className="scrap-unread-dot" aria-hidden /> : null}
+                                {title}
+                              </p>
+                            </div>
+                          ) : (
+                            <p className="scrap-card-title">
+                              {unread ? <span className="scrap-unread-dot" aria-hidden /> : null}
+                              {title}
+                            </p>
+                          )}
                           {shelfLayout !== "gallery" ? (
                             <p className="scrap-card-meta">
                               {typeLabel(lang, item.type)} · {formatWhen(item.createdAt, lang)}
@@ -256,6 +241,15 @@ export function ScrapList({
                           {item.url ? <span className="scrap-card-link">{t("openLink")}</span> : null}
                           {item.filename ? (
                             <p className="scrap-card-file">
+                              {isDoc ? (
+                                <DocumentMark
+                                  extension={item.extension}
+                                  mime={item.mime}
+                                  type={item.type}
+                                  size="sm"
+                                  className="scrap-card-file-mark"
+                                />
+                              ) : null}
                               {item.filename} · {formatBytes(item.size)}
                             </p>
                           ) : null}
