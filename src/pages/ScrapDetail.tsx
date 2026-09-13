@@ -7,12 +7,15 @@ import {
   BellOff,
   BookOpen,
   BookOpenCheck,
+  ChevronLeft,
+  ChevronRight,
   Download,
   ExternalLink,
   Library,
   Pencil,
   Share2,
   Sparkles,
+  Trash2,
   X,
 } from "lucide-react";
 import { typeLabel } from "../i18n";
@@ -39,22 +42,30 @@ import { isImeComposing } from "../lib/ime";
 import { DocumentMark } from "../components/DocumentMark";
 import type { Scrap } from "../lib/types";
 
-function NeighborPreview({ scrap, label, onClick }: { scrap: Scrap | null; label: string; onClick: () => void }) {
+function neighborCover(scrap: Scrap) {
+  return scrap.posterUrl || scrap.og?.image || (scrap.dataUrl && (scrap.type === "image" || scrap.type === "video") ? scrap.dataUrl : "");
+}
+
+function NeighborPeek({
+  scrap,
+  label,
+  side,
+  onClick,
+}: {
+  scrap: Scrap;
+  label: string;
+  side: "prev" | "next";
+  onClick: () => void;
+}) {
   const t = useT();
-  if (!scrap) return null;
-  const thumb = scrap.posterUrl || scrap.og?.image || (scrap.dataUrl && (scrap.type === "image" || scrap.type === "video") ? scrap.dataUrl : "");
+  const thumb = neighborCover(scrap);
+  const Icon = side === "prev" ? ChevronLeft : ChevronRight;
   return (
-    <button type="button" className="neighbor-preview" onClick={onClick} aria-label={label}>
-      {thumb ? <img src={thumb} alt="" className="neighbor-preview-thumb" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} /> : null}
-      <span className="neighbor-preview-body">
-        <span className="neighbor-preview-label">{label}</span>
-        <span className="neighbor-preview-title">{scrap.title || t("untitled")}</span>
-        {scrap.domain || scrap.og?.siteName ? (
-          <span className="neighbor-preview-site">
-            <SiteIcon domain={scrap.domain} favicon={scrap.og?.favicon} className="neighbor-preview-icon" size={12} />
-            {scrap.og?.siteName || scrap.domain}
-          </span>
-        ) : null}
+    <button type="button" className={"detail-peek detail-peek--" + side} onClick={onClick} aria-label={label}>
+      {thumb ? <img src={thumb} alt="" className="detail-peek-cover" /> : <span className="detail-peek-cover" />}
+      <span className="detail-peek-title">{scrap.title || t("untitled")}</span>
+      <span className="detail-peek-chevron" aria-hidden>
+        <Icon className="size-[18px]" strokeWidth={1.8} />
       </span>
     </button>
   );
@@ -469,13 +480,19 @@ export function ScrapDetail() {
   const showPlayable = playable;
 
   return (
-    <div className="dashboard-door">
+    <div className="dashboard-door dashboard-door--detail">
       <div className="dashboard-head">
         <BackToShelf />
       </div>
 
       {error ? <p className="m-0 text-[0.8125rem] text-danger">{error}</p> : null}
 
+      <div className="detail-stage">
+        <div className="detail-peek-slot detail-peek-slot--prev">
+          {!editing && prev ? (
+            <NeighborPeek scrap={prev} side="prev" label={t("prevScrap")} onClick={() => navigate(`/scrap/${prev.id}`)} />
+          ) : null}
+        </div>
       <article className="dashboard-panel" aria-labelledby="scrap-detail-title">
         {editing ? (
           <label className="grid gap-1">
@@ -524,7 +541,7 @@ export function ScrapDetail() {
             ) : null}
             <IconTip label={t("deleteItem")}>
               <button type="button" className="detail-action" aria-label={t("deleteItem")} disabled={busy} onClick={() => void peel()}>
-                <X className="size-5" strokeWidth={1.8} />
+                <Trash2 className="size-5" strokeWidth={1.8} />
               </button>
             </IconTip>
             <IconTip label={t("bookmark")}>
@@ -732,21 +749,12 @@ export function ScrapDetail() {
           </>
         )}
       </article>
-
-      {!editing && (prev || next) ? (
-        <div className="neighbor-row neighbor-row--below">
-          <NeighborPreview
-            scrap={prev}
-            label={t("prevScrap")}
-            onClick={() => prev && navigate(`/scrap/${prev.id}`)}
-          />
-          <NeighborPreview
-            scrap={next}
-            label={t("nextScrap")}
-            onClick={() => next && navigate(`/scrap/${next.id}`)}
-          />
+        <div className="detail-peek-slot detail-peek-slot--next">
+          {!editing && next ? (
+            <NeighborPeek scrap={next} side="next" label={t("nextScrap")} onClick={() => navigate(`/scrap/${next.id}`)} />
+          ) : null}
         </div>
-      ) : null}
+      </div>
 
       <RemindSheet
         open={remindOpen}

@@ -356,7 +356,20 @@ export function AuthSheet({ open, onClose }: Props) {
 
         {isChooser ? (
           <div className="flex flex-col gap-2">
-            {localCount > 0 ? <p className="auth-callout">{t(lang, "guestResume", { n: localCount }, look)}</p> : null}
+            {localCount > 0 ? (
+              <div className="auth-resume">
+                <p className="auth-callout">{t(lang, "guestResume", { n: localCount }, look)}</p>
+                <button
+                  type="button"
+                  disabled={busy}
+                  aria-busy={busyKind === "browse"}
+                  className={"auth-btn-secondary" + progressClass("browse")}
+                  onClick={() => void onBrowse()}
+                >
+                  {t(lang, "guestResumeCta")}
+                </button>
+              </div>
+            ) : null}
             <button
               type="button"
               disabled={busy}
@@ -379,15 +392,17 @@ export function AuthSheet({ open, onClose }: Props) {
             >
               {t(lang, "emailSignIn")}
             </button>
-            <button
-              type="button"
-              disabled={busy}
-              aria-busy={busyKind === "browse"}
-              className={"auth-btn-secondary" + progressClass("browse")}
-              onClick={() => void onBrowse()}
-            >
-              {localCount > 0 ? t(lang, "guestResumeCta") : t(lang, "browse")}
-            </button>
+            {localCount > 0 ? null : (
+              <button
+                type="button"
+                disabled={busy}
+                aria-busy={busyKind === "browse"}
+                className={"auth-btn-secondary" + progressClass("browse")}
+                onClick={() => void onBrowse()}
+              >
+                {t(lang, "browse")}
+              </button>
+            )}
             {feedback}
             <button
               type="button"

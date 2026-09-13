@@ -77,7 +77,7 @@ function Home() {
         {t(lang, "skip")}
       </a>
       <Header onEnter={() => openSheet(setEnter)} onSettings={() => openSheet(setSettings)} />
-      <main id="main" className={user ? "min-h-0" : "min-h-0 p-0"}>
+      <main id="main" className={user ? "flex min-h-0 flex-col" : "min-h-0 p-0"}>
         {!ready ? (
           <AuthWaiting />
         ) : user ? (
@@ -177,17 +177,6 @@ function ScrapDetailPage() {
 
 function SearchPageShell() {
   const { user, ready } = useAuth();
-  const [enter, setEnter] = useState(false);
-  const [settings, setSettings] = useState(false);
-
-  useEffect(() => {
-    function onCloseOverlays() {
-      setEnter(false);
-      setSettings(false);
-    }
-    window.addEventListener(CLOSE_OVERLAYS_EVENT, onCloseOverlays);
-    return () => window.removeEventListener(CLOSE_OVERLAYS_EVENT, onCloseOverlays);
-  }, []);
 
   if (!ready) {
     return <AuthWaiting />;
@@ -197,14 +186,11 @@ function SearchPageShell() {
   }
 
   return (
-    <div className="grid min-h-dvh grid-rows-[auto_1fr_auto]">
-      <Header onEnter={() => openSheet(setEnter)} onSettings={() => openSheet(setSettings)} />
+    <div className="grid min-h-dvh grid-rows-[1fr_auto]">
       <main id="main" className="min-h-0">
         <SearchPage />
       </main>
       <Footer />
-      <AuthSheet open={enter} onClose={() => setEnter(false)} />
-      <SettingsSheet open={settings} onClose={() => setSettings(false)} />
     </div>
   );
 }

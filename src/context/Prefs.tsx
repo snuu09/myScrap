@@ -4,7 +4,7 @@ import type { Lang } from "../i18n";
 export type ThemeChoice = "light" | "dark" | "system";
 export type Palette = "kitchen" | "basalt";
 export type Look = "fridge" | "library";
-export type ShelfLayout = "list" | "gallery";
+export type ShelfLayout = "list" | "gallery" | "accordion";
 
 type Prefs = {
   lang: Lang;
@@ -67,7 +67,7 @@ function readShelfLayout(): ShelfLayout {
       localStorage.setItem("mybrary.shelfLayoutDefault", "gallery");
     }
     const stored = localStorage.getItem("mybrary.shelfLayout");
-    if (stored === "list") return "list";
+    if (stored === "list" || stored === "accordion") return stored;
   } catch {
     /* ignore */
   }

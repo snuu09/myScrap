@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, X } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronUp, X } from "lucide-react";
 import { typeLabel } from "../i18n";
 import { useAuth } from "../context/Auth";
 import { usePrefs } from "../context/Prefs";
@@ -177,18 +177,30 @@ export function SearchPage() {
             <button
               key={tag}
               type="button"
-              className="chip-filter"
+              className="scrap-tag scrap-tag--btn detail-tag-chip search-tag-chip"
               aria-pressed={tagFilter.includes(tag)}
               onClick={() => toggleTag(tag)}
             >
               {tag}
-              <span className="chip-filter-count">{count}</span>
+              <span className="search-tag-count">{count}</span>
             </button>
           ))}
           {tagCounts.length > 8 ? (
-            <button type="button" className="auth-link-utility" onClick={() => setTagsOpen((open) => !open)}>
-              {t(tagsOpen ? "tagsLess" : "tagsMore")}
-            </button>
+            <IconTip label={t(tagsOpen ? "tagsLess" : "tagsMore")}>
+              <button
+                type="button"
+                className="search-tag-more"
+                aria-expanded={tagsOpen}
+                aria-label={t(tagsOpen ? "tagsLess" : "tagsMore")}
+                onClick={() => setTagsOpen((open) => !open)}
+              >
+                {tagsOpen ? (
+                  <ChevronUp className="size-[18px]" strokeWidth={1.8} />
+                ) : (
+                  <ChevronDown className="size-[18px]" strokeWidth={1.8} />
+                )}
+              </button>
+            </IconTip>
           ) : null}
         </div>
       ) : null}

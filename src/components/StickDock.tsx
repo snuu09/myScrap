@@ -18,12 +18,15 @@ type Props = {
   disabled?: boolean;
   disabledHint?: string;
   draftSlot?: ReactNode;
+  below?: ReactNode;
 };
 
-export function StickDock({ value, onChange, onSubmitText, onFiles, dropping, disabled, disabledHint, draftSlot }: Props) {
+export function StickDock({ value, onChange, onSubmitText, onFiles, dropping, disabled, disabledHint, draftSlot, below }: Props) {
   const { lang } = usePrefs();
   const { alert } = useDialog();
   const [menu, setMenu] = useState(false);
+  const [over, setOver] = useState(false);
+  const [yielding, setYielding] = useState(false);
   const photoRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
@@ -45,6 +48,29 @@ export function StickDock({ value, onChange, onSubmitText, onFiles, dropping, di
     }
     window.addEventListener(CLOSE_OVERLAYS_EVENT, onCloseOverlays);
     return () => window.removeEventListener(CLOSE_OVERLAYS_EVENT, onCloseOverlays);
+  }, []);
+
+  useEffect(() => {
+    let last = window.scrollY;
+    let timer = 0;
+    function onScroll() {
+      const y = window.scrollY;
+      const down = y > last + 4;
+      const up = y < last - 4;
+      last = y;
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      const nearBottom = max - y < 160;
+      setOver(y > 24);
+      if (up || nearBottom || y <= 48) setYielding(false);
+      else if (down) setYielding(true);
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => setYielding(false), 180);
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.clearTimeout(timer);
+    };
   }, []);
 
   useEffect(() => {
@@ -133,7 +159,12 @@ export function StickDock({ value, onChange, onSubmitText, onFiles, dropping, di
       ) : null}
       {draftSlot ? <div className="classify-draft-scrim" aria-hidden /> : null}
       <div
-        className={"stick-float" + (draftSlot ? " stick-float--sheet" : "")}
+        className={
+          "stick-float" +
+          (draftSlot ? " stick-float--sheet" : "") +
+          (!draftSlot && over ? " stick-float--over" : "") +
+          (!draftSlot && yielding ? " stick-float--yielding" : "")
+        }
         aria-label={t(lang, "composerLabel")}
       >
         <div className="stick-float-inner">
@@ -250,6 +281,7 @@ export function StickDock({ value, onChange, onSubmitText, onFiles, dropping, di
               </IconTip>
             </div>
           </div>
+          {below}
           <input
             ref={photoRef}
             className="sr-only"

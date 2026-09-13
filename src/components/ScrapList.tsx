@@ -1,6 +1,6 @@
 import { useEffect, useState, type RefObject } from "react";
 import { useNavigate } from "react-router-dom";
-import { LayoutList, PanelsTopLeft } from "lucide-react";
+import { ChevronDown, LayoutList, PanelsTopLeft, Rows3 } from "lucide-react";
 import { typeLabel } from "../i18n";
 import { usePrefs, type ShelfLayout } from "../context/Prefs";
 import { useT } from "../lib/useT";
@@ -16,9 +16,10 @@ import { formatBytes, mediaKindOf } from "../lib/tagger";
 
 const TYPES: ScrapType[] = ["text", "image", "video", "audio", "link", "document"];
 
-const LAYOUTS: { id: ShelfLayout; icon: typeof LayoutList; labelKey: "layoutList" | "layoutGallery" }[] = [
+const LAYOUTS: { id: ShelfLayout; icon: typeof LayoutList; labelKey: "layoutList" | "layoutGallery" | "layoutAccordion" }[] = [
   { id: "gallery", icon: PanelsTopLeft, labelKey: "layoutGallery" },
   { id: "list", icon: LayoutList, labelKey: "layoutList" },
+  { id: "accordion", icon: Rows3, labelKey: "layoutAccordion" },
 ];
 
 function shelfThumb(url: string) {
@@ -126,6 +127,172 @@ function ScrapCardThumb({
   );
 }
 
+function ShelfRow({
+  item,
+  index,
+  gallery,
+  compact,
+}: {
+  item: Scrap;
+  index: number;
+  gallery: boolean;
+  compact: boolean;
+}) {
+  const { lang } = usePrefs();
+  const t = useT();
+  const navigate = useNavigate();
+  const mediaKind = mediaKindOf(item.type, item.mime);
+  const candidates = thumbCandidates(item, mediaKind);
+  const thumb = candidates[0] || "";
+  const unread = !item.readAt;
+  const title = item.title || item.og?.title || t("untitled");
+  const showFileMark = item.type === "document" || item.type === "image" || item.type === "video" || item.type === "audio";
+
+  return (
+    <li
+      className={
+        "scrap-card" +
+        (unread ? " scrap-card--unread" : "") +
+        (item.bookmarked ? " scrap-card--bookmarked" : "") +
+        (gallery ? " scrap-card--book" : "")
+      }
+    >
+      {item.bookmarked ? <span className="scrap-bookmark-ribbon" aria-hidden /> : null}
+      <button type="button" className="scrap-card-hit" onClick={() => navigate(`/scrap/${item.id}`)}>
+        <ScrapCardThumb
+          item={item}
+          mediaKind={mediaKind}
+          title={title}
+          unread={unread}
+          showFileMark={showFileMark}
+          gallery={gallery}
+          priority={gallery && index < 9}
+        />
+        <div className="scrap-card-body">
+          <div className="scrap-card-head">
+            <div className="min-w-0 flex-1">
+              {!gallery && !thumb && showFileMark ? (
+                <div className="scrap-card-doc-row">
+                  <DocumentMark
+                    extension={item.extension}
+                    mime={item.mime}
+                    type={item.type}
+                    filename={item.filename}
+                    size="sm"
+                  />
+                  <p className="scrap-card-title">
+                    {unread ? <span className="scrap-unread-dot" aria-hidden /> : null}
+                    {title}
+                  </p>
+                </div>
+              ) : (
+                <p className="scrap-card-title">
+                  {unread ? <span className="scrap-unread-dot" aria-hidden /> : null}
+                  {title}
+                </p>
+              )}
+              {!gallery ? (
+                <p className="scrap-card-meta">
+                  {typeLabel(lang, item.type)} · {formatWhen(item.createdAt, lang)}
+                </p>
+              ) : null}
+            </div>
+          </div>
+          {!compact ? (
+            <>
+              {item.og?.description ? <p className="scrap-card-text">{item.og.description}</p> : null}
+              {item.text && item.type !== "image" && !item.og?.description ? (
+                <p className="scrap-card-text">{item.text}</p>
+              ) : null}
+              {item.filename ? (
+                <p className="scrap-card-file">
+                  {showFileMark ? (
+                    <DocumentMark
+                      extension={item.extension}
+                      mime={item.mime}
+                      type={item.type}
+                      filename={item.filename}
+                      size="sm"
+                      className="scrap-card-file-mark"
+                    />
+                  ) : null}
+                  {item.filename} · {formatBytes(item.size)}
+                </p>
+              ) : null}
+              {item.memo ? <p className="scrap-card-memo">{item.memo}</p> : null}
+              <p className="scrap-card-tags">
+                {item.tags.map((tag) => (
+                  <span key={tag} className="scrap-tag detail-tag-chip">
+                    {tag}
+                  </span>
+                ))}
+              </p>
+            </>
+          ) : item.type === "image" && item.tags.length ? (
+            <p className="scrap-card-tags">
+              {item.tags.map((tag) => (
+                <span key={tag} className="scrap-tag detail-tag-chip">
+                  {tag}
+                </span>
+              ))}
+            </p>
+          ) : null}
+        </div>
+      </button>
+    </li>
+  );
+}
+
+function ShelfAccordion({ visible }: { visible: Scrap[] }) {
+  const { lang } = usePrefs();
+  const [closed, setClosed] = useState<ReadonlySet<ScrapType>>(() => new Set());
+  const groups = TYPES.map((type) => ({
+    type,
+    items: visible.filter((item) => item.type === type),
+  })).filter((group) => group.items.length > 0);
+
+  function toggle(type: ScrapType) {
+    setClosed((cur) => {
+      const next = new Set(cur);
+      if (next.has(type)) next.delete(type);
+      else next.add(type);
+      return next;
+    });
+  }
+
+  let index = 0;
+  return (
+    <div className="shelf-accordion">
+      {groups.map((group) => {
+        const open = !closed.has(group.type);
+        const start = index;
+        index += group.items.length;
+        return (
+          <section key={group.type} className="shelf-accordion-group">
+            <button
+              type="button"
+              className="shelf-accordion-head"
+              aria-expanded={open}
+              onClick={() => toggle(group.type)}
+            >
+              <span>{typeLabel(lang, group.type)}</span>
+              <span className="shelf-accordion-count">{group.items.length}</span>
+              <ChevronDown className={"size-[18px] shelf-accordion-chevron" + (open ? " is-open" : "")} strokeWidth={1.8} />
+            </button>
+            {open ? (
+              <ul className="scrap-list scrap-list--list">
+                {group.items.map((item, i) => (
+                  <ShelfRow key={item.id} item={item} index={start + i} gallery={false} compact={false} />
+                ))}
+              </ul>
+            ) : null}
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
 type Props = {
   scraps: Scrap[];
   visible: Scrap[];
@@ -149,11 +316,10 @@ export function ScrapList({
   onLoadMore,
   sentinelRef,
 }: Props) {
-  const { lang, shelfLayout, setShelfLayout } = usePrefs();
+  const { shelfLayout, setShelfLayout } = usePrefs();
   const t = useT();
-  const navigate = useNavigate();
   const filtersActive = typeFilter !== "all";
-  const compact = shelfLayout !== "list";
+  const gallery = shelfLayout === "gallery";
 
   const typeCounts = (() => {
     const counts: Record<string, number> = { all: scraps.length };
@@ -233,112 +399,13 @@ export function ScrapList({
           <div className="shelf-empty shelf-empty--compact">
             <p className="shelf-empty-title">{t("noMatches")}</p>
           </div>
+        ) : shelfLayout === "accordion" ? (
+          <ShelfAccordion visible={visible} />
         ) : (
           <ul className={"scrap-list scrap-list--" + shelfLayout}>
-            {visible.map((item, index) => {
-              const mediaKind = mediaKindOf(item.type, item.mime);
-              const candidates = thumbCandidates(item, mediaKind);
-              const thumb = candidates[0] || "";
-              const unread = !item.readAt;
-              const title = item.title || item.og?.title || t("untitled");
-              const isDoc = item.type === "document";
-              const showFileMark = isDoc || item.type === "image" || item.type === "video" || item.type === "audio";
-              return (
-                <li
-                  key={item.id}
-                  className={
-                    "scrap-card" +
-                    (unread ? " scrap-card--unread" : "") +
-                    (item.bookmarked ? " scrap-card--bookmarked" : "") +
-                    (shelfLayout === "gallery" ? " scrap-card--book" : "")
-                  }
-                >
-                  {item.bookmarked ? <span className="scrap-bookmark-ribbon" aria-hidden /> : null}
-                  <button type="button" className="scrap-card-hit" onClick={() => navigate(`/scrap/${item.id}`)}>
-                    <ScrapCardThumb
-                      item={item}
-                      mediaKind={mediaKind}
-                      title={title}
-                      unread={unread}
-                      showFileMark={showFileMark}
-                      gallery={shelfLayout === "gallery"}
-                      priority={shelfLayout === "gallery" && index < 9}
-                    />
-                    <div className="scrap-card-body">
-                      <div className="scrap-card-head">
-                        <div className="min-w-0 flex-1">
-                          {shelfLayout === "list" && !thumb && showFileMark ? (
-                            <div className="scrap-card-doc-row">
-                              <DocumentMark
-                                extension={item.extension}
-                                mime={item.mime}
-                                type={item.type}
-                                filename={item.filename}
-                                size="sm"
-                              />
-                              <p className="scrap-card-title">
-                                {unread ? <span className="scrap-unread-dot" aria-hidden /> : null}
-                                {title}
-                              </p>
-                            </div>
-                          ) : (
-                            <p className="scrap-card-title">
-                              {unread ? <span className="scrap-unread-dot" aria-hidden /> : null}
-                              {title}
-                            </p>
-                          )}
-                          {shelfLayout !== "gallery" ? (
-                            <p className="scrap-card-meta">
-                              {typeLabel(lang, item.type)} · {formatWhen(item.createdAt, lang)}
-                            </p>
-                          ) : null}
-                        </div>
-                      </div>
-                      {!compact ? (
-                        <>
-                          {item.og?.description ? <p className="scrap-card-text">{item.og.description}</p> : null}
-                          {item.text && item.type !== "image" && !item.og?.description ? (
-                            <p className="scrap-card-text">{item.text}</p>
-                          ) : null}
-                          {item.url ? <span className="scrap-card-link">{t("openLink")}</span> : null}
-                          {item.filename ? (
-                            <p className="scrap-card-file">
-                              {showFileMark ? (
-                                <DocumentMark
-                                  extension={item.extension}
-                                  mime={item.mime}
-                                  type={item.type}
-                                  filename={item.filename}
-                                  size="sm"
-                                  className="scrap-card-file-mark"
-                                />
-                              ) : null}
-                              {item.filename} · {formatBytes(item.size)}
-                            </p>
-                          ) : null}
-                          {item.memo ? <p className="scrap-card-memo">{item.memo}</p> : null}
-                          <p className="scrap-card-tags">
-                            {item.tags.map((tag) => (
-                              <span key={tag} className="scrap-tag detail-tag-chip">
-                                {tag}
-                              </span>
-                            ))}
-                          </p>
-                        </>
-                      ) : item.type === "image" && item.tags.length ? (
-                        <p className="scrap-card-tags">
-                          {item.tags.map((tag) => (
-                            <span key={tag} className="scrap-tag detail-tag-chip">
-                              {tag}
-                            </span>
-                          ))}
-                        </p>
-                      ) : null}
-                    </div>
-                  </button>
-                </li>
-              );
-            })}
+            {visible.map((item, index) => (
+              <ShelfRow key={item.id} item={item} index={index} gallery={gallery} compact={gallery} />
+            ))}
           </ul>
         )}
         {hasMore ? (

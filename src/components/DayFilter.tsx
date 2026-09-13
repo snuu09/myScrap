@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import { t } from "../i18n";
 import { usePrefs } from "../context/Prefs";
+import { IconTip } from "./IconTip";
 import { dayKey, monthGrid, monthsWithScraps, scrapsByDay } from "../lib/scrapFilters";
 import type { Scrap } from "../lib/types";
 
@@ -16,14 +17,17 @@ type SharedProps = {
 export function DayFilterChip({ dayFilter, open, onOpenChange }: Pick<SharedProps, "dayFilter" | "open" | "onOpenChange">) {
   const { lang } = usePrefs();
   return (
-    <button
-      type="button"
-      className="chip-filter"
-      aria-pressed={open || Boolean(dayFilter)}
-      onClick={() => onOpenChange(!open)}
-    >
-      {t(lang, "filterByDay")}
-    </button>
+    <IconTip label={t(lang, "filterByDay")}>
+      <button
+        type="button"
+        className="search-cal-btn"
+        aria-pressed={open || Boolean(dayFilter)}
+        aria-label={t(lang, "filterByDay")}
+        onClick={() => onOpenChange(!open)}
+      >
+        <CalendarDays className="size-[22px]" strokeWidth={1.8} />
+      </button>
+    </IconTip>
   );
 }
 
