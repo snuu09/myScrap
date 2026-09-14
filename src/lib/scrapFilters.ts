@@ -1,8 +1,8 @@
-import type { Scrap, ScrapType } from "./types";
+import type { Scrap } from "./types";
 
 export type ScrapFilterState = {
   query: string;
-  type: ScrapType | "all";
+  type: string;
   day: string | null;
   tags?: string[];
 };
@@ -49,7 +49,7 @@ export function aggregateStats(scraps: Scrap[]) {
     }
     if (item.storedMedia || item.mediaPath) totalBytes += Number(item.size) || 0;
   }
-  const topTags = [...byTag.entries()].sort((a, b) => b[1] - a[1]).slice(0, 12);
+  const topTags = [...byTag.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
   const topDays = [...scrapsByDay(scraps).entries()].sort((a, b) => b[1] - a[1]).slice(0, 7);
   return { byType, byTag: topTags, totalBytes, topDays, totalCount: scraps.length };
 }

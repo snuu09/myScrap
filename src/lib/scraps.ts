@@ -10,6 +10,7 @@ import {
   localUsage,
   saveLocalScrap,
 } from "./localScraps";
+import { parseRevisions } from "./revisions";
 import type { Scrap } from "./types";
 
 const BUCKET = "scrap-media";
@@ -46,6 +47,7 @@ type Row = {
   bookmarked?: boolean;
   read_at?: string | null;
   remind_at?: string | null;
+  revisions?: unknown;
 };
 
 function parseOg(raw: unknown): Scrap["og"] {
@@ -251,6 +253,7 @@ function toRow(userId: string, scrap: Scrap): Row {
     bookmarked: !!scrap.bookmarked,
     read_at: scrap.readAt ? new Date(scrap.readAt).toISOString() : null,
     remind_at: scrap.remindAt ? new Date(scrap.remindAt).toISOString() : null,
+    revisions: parseRevisions(scrap.revisions),
   };
 }
 
@@ -287,6 +290,7 @@ function fromRow(row: Row): Scrap {
     remindAt: row.remind_at ? Date.parse(row.remind_at) || null : null,
     og: parseOg(row.og),
     ogStatus: row.og_status || "",
+    revisions: parseRevisions(row.revisions),
   };
 }
 

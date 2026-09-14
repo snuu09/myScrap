@@ -49,7 +49,7 @@ const ko: Dict = {
   paletteKitchen: "기본",
   paletteBasalt: "현무암",
   lookSwitch: "디자인",
-  lookFridge: "기본",
+  lookGlass: "글라스",
   lookLibrary: "책장",
   settings: "설정",
   close: "닫기",
@@ -142,6 +142,7 @@ const ko: Dict = {
   searchOpen: "조각 찾기로 이동",
   searchPageTitle: "조각 찾기",
   clearSearch: "검색어 지우기",
+  clearTags: "선택한 태그 해제",
   filterAll: "전체",
   typeBooksPrev: "이전 분류",
   typeBooksNext: "다음 분류",
@@ -178,6 +179,28 @@ const ko: Dict = {
   previewPagesLimited: "이 형식은 브라우저에서 모든 페이지를 그릴 수 없어 표지만 보여 줍니다.",
   dashboard: "대시보드",
   dashboardTitle: "대시보드",
+  settingsAccount: "계정",
+  settingsLookGroup: "보기",
+  rowMenu: "관리",
+  viewInSearch: "검색에서 보기",
+  addType: "유형 추가",
+  typeName: "유형 이름",
+  renameType: "유형 이름 바꾸기",
+  deleteType: "유형 지우기",
+  typeDeleteConfirm: "이 유형의 항목은 지우지 않고, 유형만 비웁니다. 지울까요?",
+  typeDeleteEmptyConfirm: "이 유형 이름을 지울까요?",
+  historyTitle: "이력",
+  historyEdit: "수정",
+  historyAi: "AI 분석",
+  historyCompare: "비교",
+  historyRevert: "되돌리기",
+  historyDelete: "이력 삭제",
+  historyNow: "지금",
+  historyThen: "그때",
+  historyTags: "태그",
+  historyMemo: "메모",
+  historyBody: "본문",
+  relatedTitle: "비슷한 페이지",
   back: "뒤로",
   renameTag: "태그 이름 바꾸기",
   deleteTag: "태그 지우기",
@@ -303,7 +326,7 @@ const en: Dict = {
   paletteKitchen: "Default",
   paletteBasalt: "Basalt",
   lookSwitch: "Design",
-  lookFridge: "Fridge",
+  lookGlass: "Glass",
   lookLibrary: "Library",
   settings: "Settings",
   close: "Close",
@@ -396,6 +419,7 @@ const en: Dict = {
   searchOpen: "Go to find scraps",
   searchPageTitle: "Find scraps",
   clearSearch: "Clear search",
+  clearTags: "Clear selected tags",
   filterAll: "All",
   typeBooksPrev: "Previous types",
   typeBooksNext: "Next types",
@@ -432,6 +456,28 @@ const en: Dict = {
   previewPagesLimited: "This format cannot be drawn page by page in the browser, so only the cover is shown.",
   dashboard: "Dashboard",
   dashboardTitle: "Dashboard",
+  settingsAccount: "Account",
+  settingsLookGroup: "Appearance",
+  rowMenu: "Manage",
+  viewInSearch: "Open in search",
+  addType: "Add type",
+  typeName: "Type name",
+  renameType: "Rename type",
+  deleteType: "Delete type",
+  typeDeleteConfirm: "Items stay. Only the type is cleared. Delete it?",
+  typeDeleteEmptyConfirm: "Delete this type name?",
+  historyTitle: "History",
+  historyEdit: "Edit",
+  historyAi: "AI analysis",
+  historyCompare: "Compare",
+  historyRevert: "Restore",
+  historyDelete: "Delete history",
+  historyNow: "Now",
+  historyThen: "Then",
+  historyTags: "Tags",
+  historyMemo: "Memo",
+  historyBody: "Body",
+  relatedTitle: "Related pages",
   back: "Back",
   renameTag: "Rename tag",
   deleteTag: "Remove tag",
@@ -510,7 +556,7 @@ const en: Dict = {
   addTag: "Add tag",
 };
 
-/** Unit nouns when Look = library (fridge keeps base dict). */
+/** Unit nouns when Look = library (glass keeps base dict). */
 const koLibrary: Dict = {
   footerNoteCloud: "꽂은 페이지는 계정에 저장됩니다.",
   searchLabel: "페이지 찾기",
@@ -584,7 +630,7 @@ const enLibrary: Dict = {
 const tables: Record<Lang, Dict> = { ko, en };
 const libraryTables: Record<Lang, Dict> = { ko: koLibrary, en: enLibrary };
 
-export type LookVocab = "fridge" | "library";
+export type LookVocab = "glass" | "library";
 
 function applyVars(value: string, vars?: Record<string, string | number>) {
   if (!vars) return value;
@@ -611,7 +657,8 @@ export function typeLabel(lang: Lang, type: string) {
     document: "typeDocument",
     unknown: "typeUnknown",
   };
-  return t(lang, map[type] || "typeUnknown");
+  if (!map[type]) return type;
+  return t(lang, map[type]);
 }
 
 export function detectedLabel(lang: Lang, type: string) {

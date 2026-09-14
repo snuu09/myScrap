@@ -1,17 +1,17 @@
-import { useEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { typeLabel } from "../i18n";
+import { spineColor } from "../lib/typeColor";
+import { DocumentMark } from "./DocumentMark";
 import { usePrefs } from "../context/Prefs";
 import { useT } from "../lib/useT";
-import type { ScrapType } from "../lib/types";
-
 type Props = {
-  types: ScrapType[];
+  types: string[];
   counts: Record<string, number>;
-  active: ScrapType | "all";
+  active: string;
   loading?: boolean;
   contained?: boolean;
-  onSelect: (value: ScrapType | "all") => void;
+  onSelect: (value: string) => void;
 };
 
 /** Horizontal type books. Breaks out of the 40rem column; page scroll stays vertical. */
@@ -20,16 +20,17 @@ export function TypeBookCarousel({ types, counts, active, loading, contained, on
   const t = useT();
   const trackRef = useRef<HTMLDivElement>(null);
   const [ends, setEnds] = useState({ left: false, right: false });
-  const books: { id: ScrapType | "all"; label: string; count: number }[] = [
+  const [fit, setFit] = useState(false);
+  const books: { id: string; label: string; count: number }[] = [
     { id: "all", label: t("filterAll"), count: counts.all || 0 },
     ...types.map((type) => ({
-      id: type as ScrapType | "all",
+      id: type,
       label: typeLabel(lang, type),
       count: counts[type] || 0,
     })),
   ];
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = trackRef.current;
     if (!el) return;
     function sync() {
@@ -38,16 +39,30 @@ export function TypeBookCarousel({ types, counts, active, loading, contained, on
       const left = node.scrollLeft > 8;
       const right = node.scrollLeft + node.clientWidth < node.scrollWidth - 8;
       setEnds({ left, right });
+      if (contained) return;
+      const door = node.closest(".shelf-door");
+      if (!(door instanceof HTMLElement)) return;
+      const books = [...node.querySelectorAll(".type-book")];
+      const doorStyle = getComputedStyle(door);
+      const content =
+        door.clientWidth - parseFloat(doorStyle.paddingLeft) - parseFloat(doorStyle.paddingRight);
+      const gap = parseFloat(getComputedStyle(node).columnGap) || 0;
+      const needed = books.reduce((sum, book, index) => {
+        return sum + book.getBoundingClientRect().width + (index ? gap : 0);
+      }, 0);
+      setFit(needed > 0 && needed + 8 <= content);
     }
     sync();
     el.addEventListener("scroll", sync, { passive: true });
     const observer = new ResizeObserver(sync);
     observer.observe(el);
+    const door = el.closest(".shelf-door");
+    if (door) observer.observe(door);
     return () => {
       el.removeEventListener("scroll", sync);
       observer.disconnect();
     };
-  }, [books.length, loading]);
+  }, [books.length, loading, contained]);
 
   function scrollByDir(dir: -1 | 1) {
     const el = trackRef.current;
@@ -60,7 +75,14 @@ export function TypeBookCarousel({ types, counts, active, loading, contained, on
   }
 
   return (
-    <section className={"type-book-carousel" + (contained ? " type-book-carousel--contained" : "")} aria-label={t("filterAll")}>
+    <section
+      className={
+        "type-book-carousel" +
+        (contained ? " type-book-carousel--contained" : "") +
+        (!contained && fit ? " type-book-carousel--fit" : "")
+      }
+      aria-label={t("filterAll")}
+    >
       {ends.left ? (
         <button
           type="button"
@@ -80,12 +102,14 @@ export function TypeBookCarousel({ types, counts, active, loading, contained, on
               type="button"
               role="listitem"
               className={"type-book" + (pressed ? " type-book--active" : "")}
+              style={{ ["--spine" as string]: spineColor(book.id) }}
               aria-pressed={pressed}
               disabled={loading}
               onClick={() => onSelect(book.id)}
             >
               <span className="type-book-spine" aria-hidden />
               <span className="type-book-cover">
+                {book.id !== "all" ? <DocumentMark type={book.id} size="sm" /> : null}
                 <span className="type-book-title">{book.label}</span>
                 <span className="type-book-count">{loading ? "…" : book.count}</span>
               </span>

@@ -7,6 +7,7 @@ import type { PlanTier } from "../lib/plans";
 
 type Props = {
   showAdsNote?: boolean;
+  planUpgradeHint?: boolean;
 };
 
 function planName(lang: "ko" | "en", tier: PlanTier | undefined) {
@@ -54,7 +55,7 @@ export function StorageGauge({
   );
 }
 
-export function PlanUsageBlock({ showAdsNote = false }: Props) {
+export function PlanUsageBlock({ showAdsNote = false, planUpgradeHint = true }: Props) {
   const { lang } = usePrefs();
   const { profile, usageBytes, storageLimit, trialDaysLeft, trialExpired, showAds } = usePlan();
 
@@ -84,7 +85,7 @@ export function PlanUsageBlock({ showAdsNote = false }: Props) {
       {showAdsNote && showAds ? (
         <span className="plan-ads-note">{t(lang, "adPlaceholder")}</span>
       ) : null}
-      <span className="plan-upgrade-hint">{t(lang, "planUpgradeHint")}</span>
+      {planUpgradeHint ? <span className="plan-upgrade-hint">{t(lang, "planUpgradeHint")}</span> : null}
     </div>
   );
 }

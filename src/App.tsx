@@ -18,6 +18,7 @@ import { ScrapDetail } from "./pages/ScrapDetail";
 import { SearchPage } from "./pages/SearchPage";
 import { Legal } from "./pages/Legal";
 import { loadScraps } from "./lib/scraps";
+import { ARRIVE_GENIE_EVENT, takeArriveGenie, takeSkipPageGenie } from "./lib/pageGenie";
 import { guestMigrateAsked, hasLocalScraps } from "./lib/localScraps";
 import type { Scrap } from "./lib/types";
 import { DialogProvider } from "./lib/dialog";
@@ -58,6 +59,7 @@ function Home() {
   }, [user]);
 
   const endReveal = useCallback(() => setReveal(false), []);
+  const arrive = useArriveClass();
 
   useEffect(() => {
     function onCloseOverlays() {
@@ -76,7 +78,7 @@ function Home() {
         {t(lang, "skip")}
       </a>
       <Header onEnter={() => openSheet(setEnter)} onSettings={() => navigate("/settings")} />
-      <main id="main" className={user ? "flex min-h-0 flex-col" : "min-h-0 p-0"}>
+      <main id="main" className={(user ? "flex min-h-0 flex-col" : "min-h-0 p-0") + arrive}>
         {!ready ? (
           <AuthWaiting />
         ) : user ? (
@@ -93,11 +95,48 @@ function Home() {
   );
 }
 
+function useArriveClass() {
+  const [on, setOn] = useState(() => takeArriveGenie());
+  useEffect(() => {
+    function replay() {
+      setOn(false);
+      requestAnimationFrame(() => requestAnimationFrame(() => setOn(true)));
+    }
+    function onArrive() {
+      takeArriveGenie();
+      replay();
+    }
+    window.addEventListener(ARRIVE_GENIE_EVENT, onArrive);
+    return () => window.removeEventListener(ARRIVE_GENIE_EVENT, onArrive);
+  }, []);
+  return on ? " page-genie" : "";
+}
+
+function usePageGenie(honorSkip = false) {
+  const skip = useRef(honorSkip ? takeSkipPageGenie() : false);
+  const [genie, setGenie] = useState(!skip.current);
+  useEffect(() => {
+    function replay() {
+      setGenie(false);
+      requestAnimationFrame(() => requestAnimationFrame(() => setGenie(true)));
+    }
+    function onArrive() {
+      takeArriveGenie();
+      replay();
+    }
+    window.addEventListener(ARRIVE_GENIE_EVENT, onArrive);
+    if (takeArriveGenie()) replay();
+    return () => window.removeEventListener(ARRIVE_GENIE_EVENT, onArrive);
+  }, []);
+  return genie ? " page-genie" : "";
+}
+
 function DashboardPage() {
   const { user, ready } = useAuth();
   const { lang } = usePrefs();
   const navigate = useNavigate();
   const { setScrapsForUsage } = usePlan();
+  const pageGenie = usePageGenie();
   const [scraps, setScraps] = useState<Scrap[]>([]);
   const [enter, setEnter] = useState(false);
 
@@ -133,7 +172,7 @@ function DashboardPage() {
         onSettings={() => navigate("/settings")}
         back={{ label: t(lang, "backToShelf"), to: "/" }}
       />
-      <main id="main" className="min-h-0">
+      <main id="main" className={"min-h-0" + pageGenie}>
         <Dashboard scraps={scraps} onScrapsChange={setScraps} />
       </main>
       <Footer />
@@ -147,6 +186,7 @@ function ScrapDetailPage() {
   const { lang } = usePrefs();
   const navigate = useNavigate();
   const [enter, setEnter] = useState(false);
+  const pageGenie = usePageGenie(true);
 
   useEffect(() => {
     function onCloseOverlays() {
@@ -170,7 +210,7 @@ function ScrapDetailPage() {
         onSettings={() => navigate("/settings")}
         back={{ label: t(lang, "backToShelf"), to: "/" }}
       />
-      <main id="main" className="flex min-h-0 flex-col">
+      <main id="main" className={"flex min-h-0 flex-col" + pageGenie}>
         <ScrapDetail />
       </main>
       <Footer />
@@ -184,6 +224,7 @@ function SearchPageShell() {
   const { lang } = usePrefs();
   const navigate = useNavigate();
   const [enter, setEnter] = useState(false);
+  const pageGenie = usePageGenie();
 
   if (!ready) {
     return <AuthWaiting />;
@@ -199,7 +240,7 @@ function SearchPageShell() {
         onSettings={() => navigate("/settings")}
         back={{ label: t(lang, "backToShelf"), to: "/" }}
       />
-      <main id="main" className="min-h-0">
+      <main id="main" className={"min-h-0" + pageGenie}>
         <SearchPage />
       </main>
       <Footer />
@@ -213,6 +254,7 @@ function SettingsLayout() {
   const { recoveryPending } = useAuth();
   const navigate = useNavigate();
   const [enter, setEnter] = useState(false);
+  const pageGenie = usePageGenie();
 
   useEffect(() => {
     if (recoveryPending) setEnter(true);
@@ -238,7 +280,7 @@ function SettingsLayout() {
         onSettings={() => navigate("/settings")}
         back={{ label: t(lang, "back"), onBack: goBack }}
       />
-      <main id="main" className="min-h-0">
+      <main id="main" className={"min-h-0" + pageGenie}>
         <SettingsPage />
       </main>
       <Footer />

@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ArrowLeft, BarChart3, Library, Menu, LogIn, Search } from "lucide-react";
+import { ArrowLeft, BarChart3, Menu, LogIn, Search } from "lucide-react";
 import { t } from "../i18n";
 import { usePrefs } from "../context/Prefs";
 import { useAuth } from "../context/Auth";
@@ -24,31 +24,39 @@ export function Header({ onEnter, onSettings, back }: Props) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const BackIcon = back?.to ? Library : ArrowLeft;
-
+  const searching = pathname === "/search";
   return (
-    <header className="sticky top-0 z-30 flex min-h-[60px] items-center justify-between gap-3 border-b border-paper-line/60 bg-enamel px-[var(--gutter,clamp(16px,4vw,40px))] py-2.5 pt-[max(0.625rem,env(safe-area-inset-top))]">
-      {back ? (
-        <IconTip label={back.label}>
-          {back.to ? (
-            <Link to={back.to} className="auth-back-btn no-underline" aria-label={back.label}>
-              <BackIcon className="size-[22px]" strokeWidth={1.8} />
-            </Link>
-          ) : (
-            <button type="button" className="auth-back-btn" aria-label={back.label} onClick={back.onBack}>
-              <BackIcon className="size-[22px]" strokeWidth={1.8} />
-            </button>
-          )}
-        </IconTip>
-      ) : (
-        <Link to="/" className="flex shrink-0 items-center gap-2.5 text-ink no-underline">
-          <img src="/assets/favicon.svg" width={22} height={22} alt="" className="size-[22px] rounded-[6px]" />
-          <span className="text-[1.125rem] font-extrabold tracking-[-0.03em] max-[420px]:sr-only">
-            {t(lang, "appName")}
-          </span>
-        </Link>
-      )}
-      {user && pathname !== "/search" ? (
+    <header
+      className={
+        "sticky top-0 z-30 flex min-h-[60px] items-center border-b border-paper-line/60 bg-enamel px-[var(--gutter,clamp(16px,4vw,40px))] py-2.5 pt-[max(0.625rem,env(safe-area-inset-top))]" +
+        (searching ? " header--search gap-2" : " justify-between gap-3")
+      }
+    >
+      <div className="header-brand">
+        {back ? (
+          <IconTip label={back.label}>
+            {back.to ? (
+              <Link to={back.to} className="header-back no-underline" aria-label={back.label}>
+                <ArrowLeft className="size-[22px]" strokeWidth={1.8} />
+              </Link>
+            ) : (
+              <button type="button" className="header-back" aria-label={back.label} onClick={back.onBack}>
+                <ArrowLeft className="size-[22px]" strokeWidth={1.8} />
+              </button>
+            )}
+          </IconTip>
+        ) : null}
+        {searching ? null : (
+          <Link to="/" className="flex shrink-0 items-center gap-2.5 text-ink no-underline">
+            <img src="/assets/favicon.svg" width={22} height={22} alt="" className="size-[22px] rounded-[6px]" />
+            <span className="text-[1.125rem] font-extrabold tracking-[-0.03em] max-[420px]:sr-only">
+              {t(lang, "appName")}
+            </span>
+          </Link>
+        )}
+      </div>
+      {searching ? <div id="search-header-slot" className="header-search-slot" /> : null}
+      {user && !searching ? (
         <button
           type="button"
           className="header-search"
@@ -59,6 +67,7 @@ export function Header({ onEnter, onSettings, back }: Props) {
           <span className="header-search-text">{tLook("searchPlaceholder")}</span>
         </button>
       ) : null}
+      {searching ? null : (
       <div className="flex shrink-0 items-center gap-2">
         {!user ? (
           <button
@@ -87,6 +96,7 @@ export function Header({ onEnter, onSettings, back }: Props) {
           <Menu className="size-[22px]" strokeWidth={1.8} />
         </button>
       </div>
+      )}
     </header>
   );
 }

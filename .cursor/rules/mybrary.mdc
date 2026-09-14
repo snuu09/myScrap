@@ -23,6 +23,6 @@ Shelf and search lists page in (24, then more). Sign media only for the visible 
 - Dualize taggers: Claude in the function, MIME/URL fallback only in `src/lib/tagger.ts`
 - Invent customers, testimonials, download counts, or a 사업자등록번호
 - Use em-dashes in product copy
-- Purple/glass SaaS, Inter as the UI face, Notion sidebar
+- Purple glass SaaS kits, Inter as the UI face, Notion sidebar. Strong `.liquid-glass` stays on button clusters (layout switcher, detail actions, settings tracks, and other control groups). Glass look may lay a weaker blur on cards and bordered panels. Do not put that blur on the hero.
 
 Read [ARCHITECTURE.md](ARCHITECTURE.md), [PRODUCT.md](PRODUCT.md), [DESIGN.md](DESIGN.md). Env names: [`.env.example`](.env.example).

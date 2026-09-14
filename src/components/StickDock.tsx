@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { AnimationEvent, ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { ArrowUp, Camera, Clipboard, FileUp, ImageIcon, Plus } from "lucide-react";
 import { t } from "../i18n";
@@ -6,6 +6,7 @@ import { usePrefs } from "../context/Prefs";
 import { useDialog } from "../lib/dialog";
 import { isImeComposing } from "../lib/ime";
 import { IconTip } from "./IconTip";
+import { sheetGenieClass, usePresence } from "../lib/presence";
 
 export const CLOSE_OVERLAYS_EVENT = "mybrary:close-overlays";
 
@@ -25,12 +26,20 @@ export function StickDock({ value, onChange, onSubmitText, onFiles, dropping, di
   const { lang } = usePrefs();
   const { alert } = useDialog();
   const [menu, setMenu] = useState(false);
+  const [menuClosing, setMenuClosing] = useState(false);
+  const menuRef = useRef(false);
+  const menuClosingRef = useRef(false);
+  menuRef.current = menu;
+  menuClosingRef.current = menuClosing;
   const [over, setOver] = useState(false);
   const [yielding, setYielding] = useState(false);
   const photoRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
   const fieldRef = useRef<HTMLTextAreaElement>(null);
+  const draftHeld = useRef(draftSlot);
+  if (draftSlot) draftHeld.current = draftSlot;
+  const draftPresence = usePresence(Boolean(draftSlot));
   const canSend = Boolean(value.trim()) && !disabled;
   const expanded = value.includes("\n") || value.length > 48;
 
@@ -38,13 +47,39 @@ export function StickDock({ value, onChange, onSubmitText, onFiles, dropping, di
     const el = fieldRef.current;
     if (!el) return;
     el.style.height = "auto";
-    const next = expanded ? Math.min(el.scrollHeight, 160) : Math.min(el.scrollHeight, 36);
-    el.style.height = `${Math.max(next, 36)}px`;
+    const floor = value ? 36 : 48;
+    const next = expanded ? Math.min(el.scrollHeight, 160) : Math.min(el.scrollHeight, floor);
+    el.style.height = `${Math.max(next, floor)}px`;
   }, [value, expanded]);
+
+  function closeMenu() {
+    if (!menuRef.current || menuClosingRef.current) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setMenu(false);
+      setMenuClosing(false);
+      return;
+    }
+    setMenuClosing(true);
+    window.setTimeout(() => {
+      if (!menuClosingRef.current) return;
+      setMenu(false);
+      setMenuClosing(false);
+    }, 420);
+  }
+
+  function onMenuEnd(event: AnimationEvent<HTMLDivElement>) {
+    if (!menuClosingRef.current) return;
+    const item = event.target;
+    if (!(item instanceof HTMLElement) || !item.classList.contains("composer-chat-menu-item")) return;
+    if (item !== item.parentElement?.lastElementChild) return;
+    if (event.animationName !== "composer-item-out") return;
+    setMenu(false);
+    setMenuClosing(false);
+  }
 
   useEffect(() => {
     function onCloseOverlays() {
-      setMenu(false);
+      closeMenu();
     }
     window.addEventListener(CLOSE_OVERLAYS_EVENT, onCloseOverlays);
     return () => window.removeEventListener(CLOSE_OVERLAYS_EVENT, onCloseOverlays);
@@ -74,7 +109,7 @@ export function StickDock({ value, onChange, onSubmitText, onFiles, dropping, di
   }, []);
 
   useEffect(() => {
-    if (draftSlot) setMenu(false);
+    if (draftSlot) closeMenu();
   }, [draftSlot]);
 
   useEffect(() => {
@@ -114,7 +149,7 @@ export function StickDock({ value, onChange, onSubmitText, onFiles, dropping, di
   useEffect(() => {
     if (!menu) return;
     function onKey(ev: KeyboardEvent) {
-      if (ev.key === "Escape") setMenu(false);
+      if (ev.key === "Escape") closeMenu();
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -172,6 +207,7 @@ export function StickDock({ value, onChange, onSubmitText, onFiles, dropping, di
   async function openMenu() {
     if (await guardDisabled()) return;
     window.dispatchEvent(new Event(CLOSE_OVERLAYS_EVENT));
+    setMenuClosing(false);
     setMenu(true);
   }
 
@@ -188,24 +224,28 @@ export function StickDock({ value, onChange, onSubmitText, onFiles, dropping, di
           type="button"
           className="stick-menu-scrim"
           aria-label={t(lang, "close")}
-          onClick={() => setMenu(false)}
+          onClick={() => closeMenu()}
         />
       ) : null}
-      {draftSlot ? <div className="classify-draft-scrim" aria-hidden /> : null}
+      {draftPresence.shown ? <div className="classify-draft-scrim" aria-hidden /> : null}
       <div
         className={
           "stick-float" +
-          (draftSlot ? " stick-float--sheet" : "") +
-          (!draftSlot && over ? " stick-float--over" : "") +
-          (!draftSlot && yielding ? " stick-float--yielding" : "")
+          (draftPresence.shown ? " stick-float--sheet" : "") +
+          (!draftPresence.shown && over ? " stick-float--over" : "") +
+          (!draftPresence.shown && yielding ? " stick-float--yielding" : "")
         }
         aria-label={t(lang, "composerLabel")}
       >
         <div className="stick-float-inner">
           {dropping ? <div className="stick-float-drop">{t(lang, "dropOverlay")}</div> : null}
-          {draftSlot ? (
-            <section className="classify-draft classify-draft--sheet" aria-label={t(lang, "classifyTitle")}>
-              {draftSlot}
+          {draftPresence.shown ? (
+            <section
+              className={"classify-draft classify-draft--sheet" + sheetGenieClass(draftPresence.closing)}
+              aria-label={t(lang, "classifyTitle")}
+              onAnimationEnd={(event) => draftPresence.onEnd(event, "sheet-genie-out")}
+            >
+              {draftSlot ?? draftHeld.current}
             </section>
           ) : null}
           <div
@@ -222,11 +262,11 @@ export function StickDock({ value, onChange, onSubmitText, onFiles, dropping, di
                     type="button"
                     className="composer-chat-plus"
                     aria-label={t(lang, "addMenu")}
-                    aria-expanded={menu}
+                    aria-expanded={menu && !menuClosing}
                     aria-haspopup="menu"
                     disabled={disabled}
                     onClick={() => {
-                      if (menu) setMenu(false);
+                      if (menu && !menuClosing) closeMenu();
                       else void openMenu();
                     }}
                   >
@@ -234,13 +274,17 @@ export function StickDock({ value, onChange, onSubmitText, onFiles, dropping, di
                   </button>
                 </IconTip>
                 {menu ? (
-                  <div className="composer-chat-menu" role="menu">
+                  <div
+                    className={"composer-chat-menu" + (menuClosing ? " is-out" : "")}
+                    role="menu"
+                    onAnimationEnd={onMenuEnd}
+                  >
                     <button
                       type="button"
                       role="menuitem"
                       className="composer-chat-menu-item"
                       onClick={() => {
-                        setMenu(false);
+                        closeMenu();
                         void readClipboard();
                       }}
                     >
@@ -252,7 +296,7 @@ export function StickDock({ value, onChange, onSubmitText, onFiles, dropping, di
                       className="composer-chat-menu-item hidden max-[720px]:flex"
                       onClick={() => {
                         cameraRef.current?.click();
-                        setMenu(false);
+                        closeMenu();
                       }}
                     >
                       <Camera className="size-4" /> {t(lang, "camera")}
@@ -263,7 +307,7 @@ export function StickDock({ value, onChange, onSubmitText, onFiles, dropping, di
                       className="composer-chat-menu-item"
                       onClick={() => {
                         photoRef.current?.click();
-                        setMenu(false);
+                        closeMenu();
                       }}
                     >
                       <ImageIcon className="size-4" /> {t(lang, "photo")}
@@ -274,7 +318,7 @@ export function StickDock({ value, onChange, onSubmitText, onFiles, dropping, di
                       className="composer-chat-menu-item"
                       onClick={() => {
                         fileRef.current?.click();
-                        setMenu(false);
+                        closeMenu();
                       }}
                     >
                       <FileUp className="size-4" /> {t(lang, "file")}
@@ -285,12 +329,18 @@ export function StickDock({ value, onChange, onSubmitText, onFiles, dropping, di
               <label className="sr-only" htmlFor="composer">
                 {t(lang, "composerLabel")}
               </label>
+              <div className={"composer-chat-field-wrap" + (value ? "" : " is-empty")}>
+              {!value ? (
+                <span className="composer-chat-hint" aria-hidden>
+                  {t(lang, "placeholder")}
+                </span>
+              ) : null}
               <textarea
                 id="composer"
                 ref={fieldRef}
                 rows={1}
                 value={value}
-                placeholder={t(lang, "placeholder")}
+                placeholder=""
                 onChange={(e) => onChange(e.target.value)}
                 onPaste={(e) => {
                   if (!e.clipboardData.files?.length) return;
@@ -307,6 +357,7 @@ export function StickDock({ value, onChange, onSubmitText, onFiles, dropping, di
                 className="composer-chat-field"
                 disabled={disabled}
               />
+              </div>
               <IconTip label={t(lang, "send")}>
                 <button
                   type="button"

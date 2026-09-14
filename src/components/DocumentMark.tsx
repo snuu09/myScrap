@@ -1,14 +1,16 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  CircleHelp,
   File,
   FileSpreadsheet,
   FileText,
   Film,
   ImageIcon,
+  Link2,
   Music,
   Presentation,
+  StickyNote,
 } from "lucide-react";
-import type { ScrapType } from "../lib/types";
 import { extOf, mediaKindOf } from "../lib/tagger";
 
 type MarkStyle = { Icon: LucideIcon; bg: string; fg: string };
@@ -17,7 +19,7 @@ const IMAGE_EXT = ["jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "avif", 
 const VIDEO_EXT = ["mp4", "mov", "webm", "m4v", "mkv", "ogv"];
 const AUDIO_EXT = ["mp3", "wav", "m4a", "aac", "ogg", "flac"];
 
-function markForMedia(type: ScrapType | undefined, mime: string, ext: string): MarkStyle | null {
+function markForMedia(type: string | undefined, mime: string, ext: string): MarkStyle | null {
   const kind = mediaKindOf(type || "", mime);
   if (kind === "image" || IMAGE_EXT.includes(ext)) {
     return { Icon: ImageIcon, bg: "#3d6b8a", fg: "#f2f8fc" };
@@ -28,6 +30,13 @@ function markForMedia(type: ScrapType | undefined, mime: string, ext: string): M
   if (kind === "audio" || AUDIO_EXT.includes(ext)) {
     return { Icon: Music, bg: "#4a7a62", fg: "#f2faf6" };
   }
+  return null;
+}
+
+function markForType(type: string | undefined): MarkStyle | null {
+  if (type === "text") return { Icon: StickyNote, bg: "#8a6a3d", fg: "#faf6ef" };
+  if (type === "link") return { Icon: Link2, bg: "#3d5c8a", fg: "#f2f6fc" };
+  if (type === "unknown") return { Icon: CircleHelp, bg: "#6e665c", fg: "#f7f3ee" };
   return null;
 }
 
@@ -60,7 +69,7 @@ function markForExt(extension: string, mime = ""): MarkStyle {
 type Props = {
   extension?: string;
   mime?: string;
-  type?: ScrapType;
+  type?: string;
   filename?: string;
   className?: string;
   size?: "sm" | "md" | "lg";
@@ -81,11 +90,9 @@ export function DocumentMark({
     .toLowerCase()
     .replace(/^\./, "");
   const media = markForMedia(type, mime, ext);
-  let mark: MarkStyle | null = media;
-  if (!mark) {
-    if (type && type !== "document") return null;
-    if (type === "document" || ext || mime) mark = markForExt(ext, mime);
-  }
+  let mark: MarkStyle | null = media || markForType(type);
+  if (!mark && (type === "document" || ext || mime)) mark = markForExt(ext, mime);
+  if (!mark && type) mark = { Icon: StickyNote, bg: "#8a6a3d", fg: "#faf6ef" };
   if (!mark) return null;
 
   const { Icon } = mark;

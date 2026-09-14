@@ -7,6 +7,7 @@ import { migrateLocalScraps } from "../lib/guestMigrate";
 import { localScrapCount, markGuestMigrateAsked } from "../lib/localScraps";
 import { SCRAPS_CHANGED_EVENT } from "../lib/scraps";
 import { useDialog } from "../lib/dialog";
+import { sheetGenieClass, usePresence } from "../lib/presence";
 
 type Props = { open: boolean; onClose: () => void };
 
@@ -18,8 +19,9 @@ export function GuestMigrateSheet({ open, onClose }: Props) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [count] = useState(() => localScrapCount());
+  const presence = usePresence(open);
 
-  if (!open) return null;
+  if (!presence.shown) return null;
 
   function keepLocal() {
     markGuestMigrateAsked();
@@ -61,11 +63,16 @@ export function GuestMigrateSheet({ open, onClose }: Props) {
       className="fixed inset-0 z-40 bg-[color-mix(in_srgb,var(--color-ink)_24%,transparent)]"
       onClick={busy ? undefined : keepLocal}
     >
+      <div className="sheet-stage">
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="guest-migrate-title"
-        className="absolute left-1/2 top-1/2 w-[min(24rem,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 rounded-[32px] border border-paper-line bg-login-wall p-3.5 shadow-[var(--shadow-sheet)]"
+        className={
+          "sheet-panel w-[min(24rem,calc(100vw-24px))] rounded-[32px] border border-paper-line bg-login-wall p-3.5 shadow-[var(--shadow-sheet)]" +
+          sheetGenieClass(presence.closing)
+        }
+        onAnimationEnd={(event) => presence.onEnd(event, "sheet-genie-out")}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-2 flex items-center justify-between gap-1">
@@ -92,6 +99,7 @@ export function GuestMigrateSheet({ open, onClose }: Props) {
           </button>
           {message ? <p className="auth-feedback-error">{message}</p> : null}
         </div>
+      </div>
       </div>
     </div>
   );

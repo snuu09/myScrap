@@ -5,6 +5,9 @@ import { usePrefs } from "../context/Prefs";
 import { useAuth } from "../context/Auth";
 import { localScrapCount } from "../lib/localScraps";
 import { GoogleMark } from "./GoogleMark";
+import { GlassCluster } from "./GlassCluster";
+import { markArriveGenie } from "../lib/pageGenie";
+import { sheetGenieClass, usePresence } from "../lib/presence";
 
 type Props = { open: boolean; onClose: () => void };
 type Mode = "chooser" | "in" | "up" | "findId" | "resetPassword" | "newPassword";
@@ -78,21 +81,22 @@ export function AuthSheet({ open, onClose }: Props) {
     if (open && recoveryPending) setMode("newPassword");
   }, [open, recoveryPending]);
 
-  useEffect(() => {
-    if (!open) {
-      setMode("chooser");
-      setEmail("");
-      setPassword("");
-      setConfirm("");
-      setMessage("");
-      setSuccess("");
-      setFields({});
-      setBusy(false);
-      setBusyKind(null);
-    }
-  }, [open]);
+  const presence = usePresence(open);
 
-  if (!open) return null;
+  useEffect(() => {
+    if (presence.shown) return;
+    setMode("chooser");
+    setEmail("");
+    setPassword("");
+    setConfirm("");
+    setMessage("");
+    setSuccess("");
+    setFields({});
+    setBusy(false);
+    setBusyKind(null);
+  }, [presence.shown]);
+
+  if (!presence.shown) return null;
 
   function startBusy(kind: "google" | "browse" | "submit") {
     setBusy(true);
@@ -177,6 +181,7 @@ export function AuthSheet({ open, onClose }: Props) {
           return;
         }
         clearRecoveryPending();
+        markArriveGenie();
         onClose();
       } finally {
         endBusy();
@@ -213,6 +218,7 @@ export function AuthSheet({ open, onClose }: Props) {
           setMessage(t(lang, "signUpOk"));
           return;
         }
+        markArriveGenie();
         onClose();
         return;
       }
@@ -221,6 +227,7 @@ export function AuthSheet({ open, onClose }: Props) {
         setMessage(authMessage(result.error));
         return;
       }
+      markArriveGenie();
       onClose();
     } finally {
       endBusy();
@@ -259,6 +266,7 @@ export function AuthSheet({ open, onClose }: Props) {
         setMessage(authMessage(result.error));
         return;
       }
+      markArriveGenie();
       onClose();
     } finally {
       endBusy();
@@ -326,7 +334,11 @@ export function AuthSheet({ open, onClose }: Props) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="auth-title"
-        className="absolute top-[60px] right-[var(--gutter,clamp(16px,4vw,40px))] w-[min(22rem,calc(100vw-24px))] rounded-[32px] border border-paper-line bg-login-wall p-3.5 shadow-[var(--shadow-sheet)]"
+        className={
+          "absolute top-[60px] right-[var(--gutter,clamp(16px,4vw,40px))] w-[min(22rem,calc(100vw-24px))] rounded-[32px] border border-paper-line bg-login-wall p-3.5 shadow-[var(--shadow-sheet)]" +
+          sheetGenieClass(presence.closing, "corner")
+        }
+        onAnimationEnd={(event) => presence.onEnd(event, "sheet-genie-out")}
         onClick={(e) => e.stopPropagation()}
       >
         <div className={`mb-3 flex items-center gap-1 ${showBack ? "" : "justify-between"}`}>
@@ -359,6 +371,47 @@ export function AuthSheet({ open, onClose }: Props) {
             {localCount > 0 ? (
               <div className="auth-resume">
                 <p className="auth-callout">{t(lang, "guestResume", { n: localCount }, look)}</p>
+                <GlassCluster className="liquid-solo">
+                  <button
+                    type="button"
+                    disabled={busy}
+                    aria-busy={busyKind === "browse"}
+                    className={"auth-btn-secondary" + progressClass("browse")}
+                    onClick={() => void onBrowse()}
+                  >
+                    {t(lang, "guestResumeCta")}
+                  </button>
+                </GlassCluster>
+              </div>
+            ) : null}
+            <GlassCluster className="liquid-solo">
+              <button
+                type="button"
+                disabled={busy}
+                aria-busy={busyKind === "google"}
+                className={"auth-btn-tertiary" + progressClass("google")}
+                onClick={() => void onGoogle()}
+              >
+                <GoogleMark />
+                {t(lang, "googleContinue")}
+              </button>
+            </GlassCluster>
+            <GlassCluster className="liquid-solo" magnet ripple>
+              <button
+                type="button"
+                disabled={busy}
+                className="auth-btn-primary"
+                onClick={() => {
+                  setMode("in");
+                  setMessage("");
+                  setFields({});
+                }}
+              >
+                {t(lang, "emailSignIn")}
+              </button>
+            </GlassCluster>
+            {localCount > 0 ? null : (
+              <GlassCluster className="liquid-solo">
                 <button
                   type="button"
                   disabled={busy}
@@ -366,42 +419,9 @@ export function AuthSheet({ open, onClose }: Props) {
                   className={"auth-btn-secondary" + progressClass("browse")}
                   onClick={() => void onBrowse()}
                 >
-                  {t(lang, "guestResumeCta")}
+                  {t(lang, "browse")}
                 </button>
-              </div>
-            ) : null}
-            <button
-              type="button"
-              disabled={busy}
-              aria-busy={busyKind === "google"}
-              className={"auth-btn-tertiary" + progressClass("google")}
-              onClick={() => void onGoogle()}
-            >
-              <GoogleMark />
-              {t(lang, "googleContinue")}
-            </button>
-            <button
-              type="button"
-              disabled={busy}
-              className="auth-btn-primary"
-              onClick={() => {
-                setMode("in");
-                setMessage("");
-                setFields({});
-              }}
-            >
-              {t(lang, "emailSignIn")}
-            </button>
-            {localCount > 0 ? null : (
-              <button
-                type="button"
-                disabled={busy}
-                aria-busy={busyKind === "browse"}
-                className={"auth-btn-secondary" + progressClass("browse")}
-                onClick={() => void onBrowse()}
-              >
-                {t(lang, "browse")}
-              </button>
+              </GlassCluster>
             )}
             {feedback}
             <button
@@ -478,30 +498,34 @@ export function AuthSheet({ open, onClose }: Props) {
             {mode === "up" || mode === "newPassword" ? <ConfirmField /> : null}
 
             <div className="flex flex-col gap-2">
-              <button
-                type="submit"
-                disabled={busy}
-                aria-busy={busyKind === "submit"}
-                className={"auth-btn-primary" + progressClass("submit")}
-              >
-                {submitLabel}
-              </button>
+              <GlassCluster className="liquid-solo" magnet ripple>
+                <button
+                  type="submit"
+                  disabled={busy}
+                  aria-busy={busyKind === "submit"}
+                  className={"auth-btn-primary" + progressClass("submit")}
+                >
+                  {submitLabel}
+                </button>
+              </GlassCluster>
               {feedback}
             </div>
 
             {isRecovery ? (
               <>
                 <AuthDivider lang={lang} />
-                <button
-                  type="button"
-                  disabled={busy}
-                  aria-busy={busyKind === "google"}
-                  className={"auth-btn-tertiary" + progressClass("google")}
-                  onClick={() => void onGoogle()}
-                >
-                  <GoogleMark />
-                  {t(lang, "googleContinue")}
-                </button>
+                <GlassCluster className="liquid-solo">
+                  <button
+                    type="button"
+                    disabled={busy}
+                    aria-busy={busyKind === "google"}
+                    className={"auth-btn-tertiary" + progressClass("google")}
+                    onClick={() => void onGoogle()}
+                  >
+                    <GoogleMark />
+                    {t(lang, "googleContinue")}
+                  </button>
+                </GlassCluster>
               </>
             ) : null}
 

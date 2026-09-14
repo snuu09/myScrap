@@ -1,4 +1,4 @@
-import { useEffect, useState, type RefObject } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type AnimationEvent, type RefObject } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronDown, LayoutList, PanelsTopLeft, Rows3 } from "lucide-react";
 import { typeLabel } from "../i18n";
@@ -10,9 +10,13 @@ import { IconTip } from "./IconTip";
 import { ScrapListSkeleton } from "./ScrapListSkeleton";
 import { ScrapMedia } from "./ScrapMedia";
 import { TypeBookCarousel } from "./TypeBookCarousel";
+import { GlassCluster } from "./GlassCluster";
 import type { Scrap, ScrapType } from "../lib/types";
 import { formatWhen } from "../lib/time";
 import { formatBytes, mediaKindOf } from "../lib/tagger";
+import { spineColor, typeBookIds } from "../lib/typeColor";
+import { scrapFaceTitle } from "../lib/scrapFace";
+import { prefersReducedMotion } from "../lib/presence";
 
 const TYPES: ScrapType[] = ["text", "image", "video", "audio", "link", "document"];
 
@@ -77,15 +81,12 @@ function ScrapCardThumb({
       ) : (
         <span className="scrap-book-cover-type">{typeLabel(lang, item.type)}</span>
       )}
-      <span className="scrap-book-cover-title">
-        {unread ? <span className="scrap-unread-dot" aria-hidden /> : null}
-        {title}
-      </span>
+      <span className="scrap-book-cover-title">{title}</span>
+      <span className="scrap-book-cover-date">{formatWhen(item.createdAt, lang)}</span>
     </span>
   );
 
   if (!primary || exhausted) {
-    if (!gallery) return null;
     return (
       <div className="scrap-book-cover">
         <span className="scrap-book-cover-spine" />
@@ -108,15 +109,6 @@ function ScrapCardThumb({
     />
   );
 
-  if (!gallery) {
-    return (
-      <div className="scrap-book-cover scrap-book-cover--compact">
-        <span className="scrap-book-cover-spine" />
-        <span className="scrap-book-cover-face">{media}</span>
-      </div>
-    );
-  }
-
   return (
     <div className="scrap-book-cover">
       <span className="scrap-book-cover-spine" />
@@ -128,26 +120,98 @@ function ScrapCardThumb({
   );
 }
 
+export function ScrapBookCard({
+  item,
+  index,
+  priority = false,
+  row = false,
+}: {
+  item: Scrap;
+  index: number;
+  priority?: boolean;
+  row?: boolean;
+}) {
+  if (row) return <ScrapRow item={item} index={index} priority={priority} />;
+  return <ShelfRow item={item} index={index} gallery priority={priority} compact />;
+}
+
+function ScrapRow({ item, index, priority = false }: { item: Scrap; index: number; priority?: boolean }) {
+  const { lang } = usePrefs();
+  const t = useT();
+  const navigate = useNavigate();
+  const mediaKind = mediaKindOf(item.type, item.mime);
+  const title = scrapFaceTitle(item, t("untitled"));
+  const candidates = thumbCandidates(item, mediaKind);
+  const [exhausted, setExhausted] = useState(false);
+  const primary = candidates[0] || "";
+  const candidateKey = candidates.join("|");
+
+  useEffect(() => {
+    setExhausted(false);
+  }, [item.id, candidateKey]);
+
+  const showPhoto = Boolean(primary) && !exhausted;
+
+  return (
+    <li className="scrap-card scrap-card--row" style={{ ["--spine" as string]: spineColor(item.type) }}>
+      {item.bookmarked ? <span className="scrap-bookmark-ribbon" aria-hidden /> : null}
+      <span className="scrap-row-pages" aria-hidden />
+      <button type="button" className="scrap-card-hit" onClick={() => navigate(`/scrap/${item.id}`)}>
+        <span className="scrap-row-book">
+          <span className="scrap-row-face">
+            {showPhoto ? (
+              <ScrapMedia
+                key={primary}
+                src={primary}
+                fallbackSrcs={candidates.slice(1)}
+                kind={item.posterUrl || item.og?.image ? "image" : mediaKind || "image"}
+                controls={false}
+                priority={priority || index < 9}
+                onExhausted={() => setExhausted(true)}
+                className="scrap-book-photo"
+                frameClassName="scrap-row-photo"
+              />
+            ) : null}
+          </span>
+        </span>
+        <span className="scrap-row-copy">
+          <span className="scrap-row-title">{title}</span>
+          <span className="scrap-row-meta">
+            <DocumentMark
+              extension={item.extension}
+              mime={item.mime}
+              type={item.type}
+              filename={item.filename}
+              size="sm"
+            />
+            <span className="scrap-book-cover-date">{formatWhen(item.createdAt, lang)}</span>
+          </span>
+        </span>
+      </button>
+    </li>
+  );
+}
+
 function ShelfRow({
   item,
   index,
   gallery,
   compact,
+  priority = false,
 }: {
   item: Scrap;
   index: number;
   gallery: boolean;
   compact: boolean;
+  priority?: boolean;
 }) {
   const { lang } = usePrefs();
   const t = useT();
   const navigate = useNavigate();
   const mediaKind = mediaKindOf(item.type, item.mime);
-  const candidates = thumbCandidates(item, mediaKind);
-  const thumb = candidates[0] || "";
   const unread = !item.readAt;
-  const title = item.title || item.og?.title || t("untitled");
-  const showFileMark = item.type === "document" || item.type === "image" || item.type === "video" || item.type === "audio";
+  const title = scrapFaceTitle(item, t("untitled"));
+  const showFileMark = Boolean(item.type);
 
   return (
     <li
@@ -155,8 +219,9 @@ function ShelfRow({
         "scrap-card" +
         (unread ? " scrap-card--unread" : "") +
         (item.bookmarked ? " scrap-card--bookmarked" : "") +
-        (gallery ? " scrap-card--book" : "")
+        " scrap-card--book"
       }
+      style={{ ["--spine" as string]: spineColor(item.type) }}
     >
       {item.bookmarked ? <span className="scrap-bookmark-ribbon" aria-hidden /> : null}
       <button type="button" className="scrap-card-hit" onClick={() => navigate(`/scrap/${item.id}`)}>
@@ -166,25 +231,23 @@ function ShelfRow({
           title={title}
           unread={unread}
           showFileMark={showFileMark}
-          gallery={gallery}
-          priority={gallery && index < 9}
+          gallery
+          priority={priority || index < 9}
         />
         <div className="scrap-card-body">
           <div className="scrap-card-head">
             <div className="min-w-0 flex-1">
-              {!gallery && !thumb && showFileMark ? (
+              {!gallery ? (
                 <div className="scrap-card-doc-row">
-                  <DocumentMark
-                    extension={item.extension}
-                    mime={item.mime}
-                    type={item.type}
-                    filename={item.filename}
-                    size="sm"
-                  />
-                  <p className="scrap-card-title">
-                    {unread ? <span className="scrap-unread-dot" aria-hidden /> : null}
-                    {title}
-                  </p>
+                  <div className="min-w-0">
+                    <p className="scrap-card-title">
+                      {unread ? <span className="scrap-unread-dot" aria-hidden /> : null}
+                      {title}
+                    </p>
+                    <p className="scrap-card-meta">
+                      {typeLabel(lang, item.type)} · {formatWhen(item.createdAt, lang)}
+                    </p>
+                  </div>
                 </div>
               ) : (
                 <p className="scrap-card-title">
@@ -192,11 +255,6 @@ function ShelfRow({
                   {title}
                 </p>
               )}
-              {!gallery ? (
-                <p className="scrap-card-meta">
-                  {typeLabel(lang, item.type)} · {formatWhen(item.createdAt, lang)}
-                </p>
-              ) : null}
             </div>
           </div>
           {!compact ? (
@@ -229,14 +287,6 @@ function ShelfRow({
                 ))}
               </p>
             </>
-          ) : item.type === "image" && item.tags.length ? (
-            <p className="scrap-card-tags">
-              {item.tags.map((tag) => (
-                <span key={tag} className="scrap-tag detail-tag-chip">
-                  {tag}
-                </span>
-              ))}
-            </p>
           ) : null}
         </div>
       </button>
@@ -244,19 +294,146 @@ function ShelfRow({
   );
 }
 
-function ShelfAccordion({ visible }: { visible: Scrap[] }) {
-  const { lang } = usePrefs();
-  const [closed, setClosed] = useState<ReadonlySet<ScrapType>>(() => new Set());
-  const groups = TYPES.map((type) => ({
-    type,
-    items: visible.filter((item) => item.type === type),
-  })).filter((group) => group.items.length > 0);
+export function LayoutSwitch() {
+  const { shelfLayout, setShelfLayout } = usePrefs();
+  const t = useT();
+  return (
+    <section className="list-tools list-tools--slim" aria-label={t("layoutSwitch")}>
+      <div className="list-tools-head">
+        <div className="list-tools-head-actions">
+          <GlassCluster className="layout-seg" label={t("layoutSwitch")} restOnPressed>
+            {LAYOUTS.map(({ id, icon: Icon, labelKey }) => (
+              <IconTip key={id} label={t(labelKey)}>
+                <button
+                  type="button"
+                  className="layout-seg-btn"
+                  aria-pressed={shelfLayout === id}
+                  aria-label={t(labelKey)}
+                  onClick={() => setShelfLayout(id)}
+                >
+                  <Icon className="size-[18px]" strokeWidth={1.8} />
+                </button>
+              </IconTip>
+            ))}
+          </GlassCluster>
+        </div>
+      </div>
+    </section>
+  );
+}
 
-  function toggle(type: ScrapType) {
-    setClosed((cur) => {
+function AccordionGroup({
+  type,
+  items,
+  start,
+  open,
+  onOpen,
+  onClose,
+}: {
+  type: string;
+  items: Scrap[];
+  start: number;
+  open: boolean;
+  onOpen: () => void;
+  onClose: () => void;
+}) {
+  const { lang } = usePrefs();
+  const [slotOpen, setSlotOpen] = useState(false);
+  const [closing, setClosing] = useState(false);
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+  const shown = open || closing;
+
+  useLayoutEffect(() => {
+    if (!open) {
+      setSlotOpen(false);
+      return;
+    }
+    if (prefersReducedMotion()) {
+      setSlotOpen(true);
+      return;
+    }
+    const id = requestAnimationFrame(() => setSlotOpen(true));
+    return () => cancelAnimationFrame(id);
+  }, [open]);
+
+  function finishClose() {
+    setClosing(false);
+    closeRef.current();
+  }
+
+  function toggle() {
+    if (!open) {
+      setClosing(false);
+      onOpen();
+      return;
+    }
+    if (prefersReducedMotion()) {
+      onClose();
+      return;
+    }
+    setClosing(true);
+  }
+
+  function onFoldEnd(event: AnimationEvent<HTMLUListElement>) {
+    if (event.target !== event.currentTarget) return;
+    if (!closing || event.animationName !== "accordion-fold") return;
+    finishClose();
+  }
+
+  useEffect(() => {
+    if (!closing) return;
+    const id = window.setTimeout(finishClose, 420);
+    return () => window.clearTimeout(id);
+  }, [closing]);
+
+  return (
+    <section className="shelf-accordion-group">
+      <button
+        type="button"
+        className="shelf-accordion-head"
+        aria-expanded={open && !closing}
+        onClick={toggle}
+      >
+        <span>{typeLabel(lang, type)}</span>
+        <span className="shelf-accordion-count">{items.length}</span>
+        <ChevronDown className={"size-[18px] shelf-accordion-chevron" + (open && !closing ? " is-open" : "")} strokeWidth={1.8} />
+      </button>
+      {shown ? (
+        <div className={"shelf-accordion-slot" + (slotOpen && !closing ? " is-open" : "")}>
+          <div className="shelf-accordion-slot-inner">
+            <ul
+              className={"scrap-list scrap-list--list shelf-accordion-body" + (closing ? " is-closing" : "")}
+              onAnimationEnd={onFoldEnd}
+            >
+              {items.map((item, i) => (
+                <ScrapBookCard key={item.id} item={item} index={start + i} row />
+              ))}
+            </ul>
+          </div>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+export function ShelfAccordion({ visible }: { visible: Scrap[] }) {
+  const [opened, setOpened] = useState<ReadonlySet<string>>(() => new Set());
+  const extras = [...new Set(visible.map((item) => item.type))].filter((type) => !TYPES.includes(type as ScrapType)).sort();
+  const groups = [...TYPES, ...extras]
+    .map((type) => ({
+      type,
+      items: visible.filter((item) => item.type === type),
+    }))
+    .filter((group) => group.items.length > 0);
+
+  function setGroup(type: string, nextOpen: boolean) {
+    setOpened((cur) => {
+      const has = cur.has(type);
+      if (has === nextOpen) return cur;
       const next = new Set(cur);
-      if (next.has(type)) next.delete(type);
-      else next.add(type);
+      if (nextOpen) next.add(type);
+      else next.delete(type);
       return next;
     });
   }
@@ -265,29 +442,18 @@ function ShelfAccordion({ visible }: { visible: Scrap[] }) {
   return (
     <div className="shelf-accordion">
       {groups.map((group) => {
-        const open = !closed.has(group.type);
         const start = index;
         index += group.items.length;
         return (
-          <section key={group.type} className="shelf-accordion-group">
-            <button
-              type="button"
-              className="shelf-accordion-head"
-              aria-expanded={open}
-              onClick={() => toggle(group.type)}
-            >
-              <span>{typeLabel(lang, group.type)}</span>
-              <span className="shelf-accordion-count">{group.items.length}</span>
-              <ChevronDown className={"size-[18px] shelf-accordion-chevron" + (open ? " is-open" : "")} strokeWidth={1.8} />
-            </button>
-            {open ? (
-              <ul className="scrap-list scrap-list--list">
-                {group.items.map((item, i) => (
-                  <ShelfRow key={item.id} item={item} index={start + i} gallery={false} compact={false} />
-                ))}
-              </ul>
-            ) : null}
-          </section>
+          <AccordionGroup
+            key={group.type}
+            type={group.type}
+            items={group.items}
+            start={start}
+            open={opened.has(group.type)}
+            onOpen={() => setGroup(group.type, true)}
+            onClose={() => setGroup(group.type, false)}
+          />
         );
       })}
     </div>
@@ -298,8 +464,8 @@ type Props = {
   scraps: Scrap[];
   visible: Scrap[];
   loading?: boolean;
-  typeFilter: ScrapType | "all";
-  onType: (value: ScrapType | "all") => void;
+  typeFilter: string;
+  onType: (value: string) => void;
   hasMore?: boolean;
   onLoadMore?: () => void;
   sentinelRef?: RefObject<HTMLDivElement | null>;
@@ -328,7 +494,7 @@ export function ScrapList({
     return counts;
   })();
 
-  const visibleTypes = loading ? TYPES : TYPES.filter((type) => (typeCounts[type] || 0) > 0);
+  const visibleTypes = typeBookIds(typeCounts, TYPES, loading);
 
   useEffect(() => {
     if (loading || typeFilter === "all") return;
@@ -361,27 +527,7 @@ export function ScrapList({
         onSelect={onType}
       />
 
-      <section className="list-tools list-tools--slim" aria-label={t("layoutSwitch")}>
-        <div className="list-tools-head">
-          <div className="list-tools-head-actions">
-            <div className="layout-seg" role="group" aria-label={t("layoutSwitch")}>
-              {LAYOUTS.map(({ id, icon: Icon, labelKey }) => (
-                <IconTip key={id} label={t(labelKey)}>
-                  <button
-                    type="button"
-                    className="layout-seg-btn"
-                    aria-pressed={shelfLayout === id}
-                    aria-label={t(labelKey)}
-                    onClick={() => setShelfLayout(id)}
-                  >
-                    <Icon className="size-[18px]" strokeWidth={1.8} />
-                  </button>
-                </IconTip>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
+      <LayoutSwitch />
 
       <AdSlot />
 
@@ -397,7 +543,7 @@ export function ScrapList({
         ) : (
           <ul className={"scrap-list scrap-list--" + shelfLayout}>
             {visible.map((item, index) => (
-              <ShelfRow key={item.id} item={item} index={index} gallery={gallery} compact={gallery} />
+              <ScrapBookCard key={item.id} item={item} index={index} row={!gallery} />
             ))}
           </ul>
         )}

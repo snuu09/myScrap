@@ -11,6 +11,8 @@ type Payload = {
   mime?: string;
   filename?: string;
   lang?: Lang;
+  ogTitle?: string;
+  ogDescription?: string;
   signal?: AbortSignal;
 };
 
@@ -74,6 +76,8 @@ async function postAnalyze(token: string, payload: Payload) {
       mime: payload.mime,
       filename: payload.filename,
       lang: payload.lang === "en" ? "en" : "ko",
+      ogTitle: payload.ogTitle || "",
+      ogDescription: payload.ogDescription || "",
     }),
     signal: payload.signal,
   });

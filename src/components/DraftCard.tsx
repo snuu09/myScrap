@@ -1,11 +1,13 @@
 import { useState, type ReactNode } from "react";
-import { Download, ExternalLink, Sparkles, X } from "lucide-react";
+import { Download, ExternalLink, X } from "lucide-react";
 import { t, typeLabel, detectedLabel } from "../i18n";
 import { usePrefs } from "../context/Prefs";
 import { SiteIcon } from "./SiteIcon";
 import { DocPreview } from "./DocPreview";
 import { isImeComposing } from "../lib/ime";
 import { urlCaution } from "../lib/urlRisk";
+import { AiProgress } from "./AiProgress";
+import { GlassCluster, TagCluster } from "./GlassCluster";
 import type { Scrap, ScrapType } from "../lib/types";
 import { formatBytes, isPdf, mediaKindOf } from "../lib/tagger";
 
@@ -33,11 +35,12 @@ function ClassifyBusyOverlay({
       {children ? <div className="classify-busy-content">{children}</div> : null}
       <div className="classify-busy-dim" aria-hidden />
       <div className="classify-busy-status">
-        <Sparkles className="classify-busy-icon size-8" strokeWidth={1.6} aria-hidden />
+        <AiProgress />
         <p className="classify-busy-label">{t(lang, "classifyRunningBusy")}</p>
       </div>
-      <button type="button" className="auth-link-utility classify-busy-cancel" onClick={onCancel}>
-        {t(lang, "cancel")}
+      <button type="button" className="classify-busy-cancel" onClick={onCancel} aria-label={t(lang, "cancel")}>
+        <X className="size-5" strokeWidth={1.8} />
+        <span className="sr-only">{t(lang, "cancel")}</span>
       </button>
     </div>
   );
@@ -213,15 +216,17 @@ export function DraftCard({ draft, uploadRatio = null, queueLabel = "", onChange
             <a href={draft.url} className="scrap-card-link min-w-0 flex-1 truncate" target="_blank" rel="noreferrer">
               {draft.url}
             </a>
-            <a
-              href={draft.url}
-              className="inline-action"
-              target="_blank"
-              rel="noreferrer"
-              aria-label={t(lang, "openLink")}
-            >
-              <ExternalLink className="size-4" strokeWidth={1.8} />
-            </a>
+            <GlassCluster className="liquid-hit">
+              <a
+                href={draft.url}
+                className="inline-action"
+                target="_blank"
+                rel="noreferrer"
+                aria-label={t(lang, "openLink")}
+              >
+                <ExternalLink className="size-4" strokeWidth={1.8} />
+              </a>
+            </GlassCluster>
           </div>
         ) : null}
         {showDocCover ? (
@@ -302,6 +307,7 @@ export function DraftCard({ draft, uploadRatio = null, queueLabel = "", onChange
       <div className="grid gap-1">
         <span className="list-tools-label">{t(lang, "addTag")}</span>
         <div className="scrap-card-tags">
+          {draft.tags.length ? <TagCluster>
           {draft.tags.map((tag) => (
             <button
               key={tag}
@@ -314,6 +320,7 @@ export function DraftCard({ draft, uploadRatio = null, queueLabel = "", onChange
               <X className="ml-1 inline size-3" strokeWidth={2} />
             </button>
           ))}
+          </TagCluster> : null}
         </div>
         <input
           value={tagDraft}
@@ -341,14 +348,16 @@ export function DraftCard({ draft, uploadRatio = null, queueLabel = "", onChange
             </span>
           </p>
           {draft.dataUrl ? (
-            <a
-              href={draft.dataUrl}
-              className="inline-action"
-              download={draft.filename || undefined}
-              aria-label={t(lang, "downloadFile")}
-            >
-              <Download className="size-4" strokeWidth={1.8} />
-            </a>
+            <GlassCluster className="liquid-hit">
+              <a
+                href={draft.dataUrl}
+                className="inline-action"
+                download={draft.filename || undefined}
+                aria-label={t(lang, "downloadFile")}
+              >
+                <Download className="size-4" strokeWidth={1.8} />
+              </a>
+            </GlassCluster>
           ) : null}
         </div>
       ) : null}

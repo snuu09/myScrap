@@ -50,7 +50,7 @@ flowchart TB
 | --- | --- | --- |
 | View | [`src/pages/`](src/pages/), [`src/components/`](src/components/), [`src/index.css`](src/index.css) | Intro, shelf, legal, DESIGN tokens |
 | App | [`src/App.tsx`](src/App.tsx) | Routes, sheets, session gate |
-| Prefs | [`src/context/Prefs.tsx`](src/context/Prefs.tsx) | Language, Look (fridge\|library, default library), theme, palette, shelf layout (gallery default, list or accordion) on this device |
+| Prefs | [`src/context/Prefs.tsx`](src/context/Prefs.tsx) | Language, Look (glass\|library, default glass), theme, palette, shelf layout (gallery default, list or accordion) on this device |
 | Auth | [`src/context/Auth.tsx`](src/context/Auth.tsx), [`src/lib/supabase.ts`](src/lib/supabase.ts) | Email / password, Google, 둘러보기, find/reset email flows |
 | Plan | [`src/context/Plan.tsx`](src/context/Plan.tsx), [`src/lib/plans.ts`](src/lib/plans.ts), [`src/lib/profiles.ts`](src/lib/profiles.ts) | Tier limits, trial, storage usage, ad flag, upload gates |
 | Filters | [`src/lib/scrapFilters.ts`](src/lib/scrapFilters.ts) | Shared query/type/day filter and dashboard aggregates |

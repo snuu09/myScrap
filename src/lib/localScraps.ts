@@ -33,6 +33,7 @@ function normalize(item: Scrap): Scrap {
     posterUrl: item.posterUrl || "",
     posterUrls: Array.isArray(item.posterUrls) ? item.posterUrls.filter(Boolean) : item.posterUrl ? [item.posterUrl] : [],
     pages: Number(item.pages) || 0,
+    revisions: Array.isArray(item.revisions) ? item.revisions : [],
   };
 }
 

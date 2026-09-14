@@ -34,7 +34,8 @@ function systemPrompt(lang: string) {
   return (
     "You classify personal scraps for MyBrary, a private shelf. Reply with JSON only: " +
     '{"type":"text|image|video|audio|link|document","tags":["..."],"title":"...","body":"...","summary":"...","analysis":"...","url":"","domain":""}. ' +
-    "type is the primary kind. tags are short lowercase labels including the type. title is a short shelf label. " +
+    "type is the primary kind. tags are short lowercase labels including the type. " +
+    "title is a shelf label of at most 32 characters. Shorten a long page title. Never use the raw URL or domain as the title when a page title or description is given. If there is no short title, use the first sentence of the description. " +
     "body is a one-line description. summary is 1-2 sentences. analysis is 2-4 sentences about what it contains and why it is worth keeping. " +
     "Write title, body, summary, and analysis in " +
     language +
@@ -78,6 +79,8 @@ Deno.serve(async (req) => {
     mime?: string;
     filename?: string;
     lang?: string;
+    ogTitle?: string;
+    ogDescription?: string;
   };
   try {
     payload = await req.json();
@@ -121,9 +124,16 @@ Deno.serve(async (req) => {
         typeFromMime(mime, filename),
     });
   } else {
+    const ogHint =
+      payload.ogTitle || payload.ogDescription
+        ? "\nPage title: " +
+          String(payload.ogTitle || "").slice(0, 180) +
+          "\nPage description: " +
+          String(payload.ogDescription || "").slice(0, 400)
+        : "";
     content.push({
       type: "text",
-      text: "Classify and analyze this paste:\n" + (text || "(empty)"),
+      text: "Classify and analyze this paste:\n" + (text || "(empty)") + ogHint,
     });
   }
 
@@ -167,7 +177,7 @@ Deno.serve(async (req) => {
     return json({
       type,
       tags,
-      title: String(parsed.title || filename || "").slice(0, 80),
+      title: String(parsed.title || filename || "").slice(0, 40),
       body: String(parsed.body || summary || text || "").slice(0, 400),
       summary,
       analysis,

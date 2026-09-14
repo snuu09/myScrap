@@ -1,5 +1,16 @@
 export type ScrapType = "text" | "image" | "video" | "audio" | "link" | "document" | "unknown";
 
+export type ScrapRevision = {
+  id: string;
+  at: number;
+  kind: "edit" | "ai";
+  title: string;
+  memo: string;
+  tags: string[];
+  type: string;
+  text: string;
+};
+
 export type ScrapOg = {
   title: string;
   description: string;
@@ -12,7 +23,7 @@ export type Scrap = {
   id: string;
   createdAt: number;
   updatedAt: number;
-  type: ScrapType;
+  type: string;
   tags: string[];
   title: string;
   text: string;
@@ -47,6 +58,8 @@ export type Scrap = {
   remindAt: number | null;
   og: ScrapOg | null;
   ogStatus: string;
+  /** Prior title, memo, tags, type, and body. Newest first. */
+  revisions?: ScrapRevision[];
 };
 
 export type AnalyzeResult = {

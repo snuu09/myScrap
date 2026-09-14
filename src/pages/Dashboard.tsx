@@ -1,19 +1,78 @@
-import { useState } from "react";
+import { useEffect, useRef, useState, type AnimationEvent, type ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Pencil, X } from "lucide-react";
+import { ChevronDown, MoreHorizontal } from "lucide-react";
 import { typeLabel } from "../i18n";
 import { useAuth } from "../context/Auth";
 import { usePrefs } from "../context/Prefs";
 import { useT } from "../lib/useT";
 import { PlanUsageBlock } from "../components/PlanUsageBlock";
-import { IconTip } from "../components/IconTip";
+import { GlassCluster } from "../components/GlassCluster";
 import { aggregateStats } from "../lib/scrapFilters";
 import { saveScrap } from "../lib/scraps";
+import { loadTypeCatalog, mergeTypeNames, saveTypeCatalog } from "../lib/typeCatalog";
 import { useDialog } from "../lib/dialog";
 import { formatWhen } from "../lib/time";
-import type { Scrap, ScrapType } from "../lib/types";
+import { prefersReducedMotion, sheetGenieClass, usePresence } from "../lib/presence";
+import type { Scrap } from "../lib/types";
 
 type Props = { scraps: Scrap[]; onScrapsChange: (next: Scrap[]) => void };
+
+function RowMenu({
+  open,
+  label,
+  onToggle,
+  children,
+}: {
+  open: boolean;
+  label: string;
+  onToggle: () => void;
+  children: ReactNode;
+}) {
+  const root = useRef<HTMLDivElement>(null);
+  const presence = usePresence(open);
+
+  useEffect(() => {
+    if (!open) return;
+    function onDoc(event: MouseEvent) {
+      if (!root.current?.contains(event.target as Node)) onToggle();
+    }
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") onToggle();
+    }
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open, onToggle]);
+
+  return (
+    <div className="dashboard-row-menu" ref={root}>
+      <GlassCluster className="liquid-hit" label={label}>
+        <button
+          type="button"
+          className="dashboard-row-menu-btn"
+          aria-label={label}
+          aria-expanded={open}
+          aria-haspopup="menu"
+          onClick={onToggle}
+        >
+          <MoreHorizontal className="size-4" strokeWidth={1.8} />
+        </button>
+      </GlassCluster>
+      {presence.shown ? (
+        <div
+          className={"dashboard-row-menu-pop" + sheetGenieClass(presence.closing, "corner")}
+          role="menu"
+          onAnimationEnd={(event) => presence.onEnd(event, "sheet-genie-out")}
+        >
+          <GlassCluster className="dashboard-menu-cluster">{children}</GlassCluster>
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
 function replaceTag(tags: string[], from: string, to: string) {
   const next: string[] = [];
@@ -33,10 +92,34 @@ export function Dashboard({ scraps, onScrapsChange }: Props) {
   const navigate = useNavigate();
   const stats = aggregateStats(scraps);
   const recent = [...scraps].sort((a, b) => b.createdAt - a.createdAt).slice(0, 10);
-  const typeEntries = [...stats.byType.entries()];
+  const [catalog, setCatalog] = useState<string[]>([]);
   const [editingTag, setEditingTag] = useState("");
+  const [editingType, setEditingType] = useState("");
   const [tagDraft, setTagDraft] = useState("");
+  const [typeDraft, setTypeDraft] = useState("");
+  const [addingType, setAddingType] = useState(false);
+  const [addClosing, setAddClosing] = useState(false);
+  const [editClosing, setEditClosing] = useState(false);
+  const [arrived, setArrived] = useState("");
+  const [leaving, setLeaving] = useState<{ kind: "type" | "tag"; name: string } | null>(null);
+  const [typesOpen, setTypesOpen] = useState(false);
+  const [tagsOpen, setTagsOpen] = useState(false);
+  const [menu, setMenu] = useState("");
   const [busy, setBusy] = useState(false);
+  const pendingEdit = useRef<(() => Promise<void>) | null>(null);
+  const leaveJob = useRef<(() => Promise<void>) | null>(null);
+  const leaveLock = useRef(false);
+
+  useEffect(() => {
+    if (!user) return;
+    let alive = true;
+    void loadTypeCatalog(user).then((names) => {
+      if (alive) setCatalog(names);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [user]);
 
   async function persistTag(from: string, to: string) {
     if (!user || busy) return;
@@ -57,6 +140,10 @@ export function Dashboard({ scraps, onScrapsChange }: Props) {
       setTagDraft("");
     } catch {
       await alert(t("syncError"));
+      if (to) {
+        setEditingTag(from);
+        setTagDraft(to);
+      }
     } finally {
       setBusy(false);
     }
@@ -65,17 +152,193 @@ export function Dashboard({ scraps, onScrapsChange }: Props) {
   async function removeTag(tag: string) {
     const ok = await confirm({ body: t("tagDeleteConfirm"), danger: true, confirmLabel: t("deleteTag") });
     if (!ok) return;
-    await persistTag(tag, "");
+    beginLeave("tag", tag, () => persistTag(tag, ""));
   }
 
-  function commitRename() {
-    const next = tagDraft.trim();
-    if (!editingTag || !next || next === editingTag) {
-      setEditingTag("");
-      setTagDraft("");
+  const typeNames = mergeTypeNames(
+    catalog,
+    scraps.map((item) => item.type),
+  );
+  const unknownCount = scraps.filter((item) => item.type === "unknown").length;
+  const typeRows = unknownCount ? [...typeNames, "unknown"] : typeNames;
+  const shownTypes = typesOpen ? typeRows : typeRows.slice(0, 6);
+  const shownTags = tagsOpen ? stats.byTag : stats.byTag.slice(0, 8);
+
+  async function writeCatalog(names: string[]) {
+    if (!user) return;
+    setCatalog(names);
+    await saveTypeCatalog(user, names);
+  }
+
+  async function renameType(from: string, to: string) {
+    if (!user || busy) return;
+    const nextName = to.trim();
+    if (!from || !nextName || nextName === from) {
+      setEditingType("");
+      setTypeDraft("");
       return;
     }
-    void persistTag(editingTag, next);
+    setBusy(true);
+    const next = scraps.map((item) => (item.type === from ? { ...item, type: nextName } : item));
+    try {
+      for (const item of next) {
+        if (item.type !== nextName || !scraps.some((scrap) => scrap.id === item.id && scrap.type === from)) continue;
+        await saveScrap(user, item);
+      }
+      await writeCatalog(
+        catalog.includes(from) ? catalog.map((name) => (name === from ? nextName : name)) : [...catalog, nextName],
+      );
+      onScrapsChange(next);
+      setEditingType("");
+      setTypeDraft("");
+    } catch {
+      await alert(t("syncError"));
+      setEditingType(from);
+      setTypeDraft(to);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function removeType(name: string) {
+    if (!user || busy) return;
+    const count = scraps.filter((item) => item.type === name).length;
+    const ok = await confirm({
+      body: t(count ? "typeDeleteConfirm" : "typeDeleteEmptyConfirm"),
+      danger: true,
+      confirmLabel: t("deleteType"),
+    });
+    if (!ok) return;
+    beginLeave("type", name, () => commitRemoveType(name));
+  }
+
+  async function commitRemoveType(name: string) {
+    if (!user) return;
+    const count = scraps.filter((item) => item.type === name).length;
+    setBusy(true);
+    const next = scraps.map((item) => (item.type === name ? { ...item, type: "unknown" } : item));
+    try {
+      if (count) {
+        for (const item of next) {
+          if (item.type !== "unknown" || !scraps.some((scrap) => scrap.id === item.id && scrap.type === name)) continue;
+          await saveScrap(user, item);
+        }
+        onScrapsChange(next);
+      }
+      await writeCatalog(catalog.filter((row) => row !== name));
+    } catch {
+      await alert(t("syncError"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function addType(name: string) {
+    if (!user || busy) return;
+    const nextName = name.trim();
+    if (!nextName || catalog.includes(nextName) || typeNames.includes(nextName)) {
+      cancelAdd();
+      return;
+    }
+    setBusy(true);
+    try {
+      await writeCatalog([...catalog, nextName]);
+      setAddingType(false);
+      setAddClosing(false);
+      setTypeDraft("");
+      setTypesOpen(true);
+      setArrived(nextName);
+    } catch {
+      await alert(t("syncError"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function cancelAdd() {
+    if (prefersReducedMotion()) {
+      setAddingType(false);
+      setTypeDraft("");
+      setAddClosing(false);
+      return;
+    }
+    setAddClosing(true);
+  }
+
+  function finishAddClose(event?: AnimationEvent<HTMLFormElement>) {
+    if (event && (event.target !== event.currentTarget || event.animationName !== "accordion-fold")) return;
+    setAddingType(false);
+    setTypeDraft("");
+    setAddClosing(false);
+  }
+
+  function requestEditClose(job?: () => Promise<void>) {
+    pendingEdit.current = job ?? null;
+    if (prefersReducedMotion()) {
+      finishEditClose();
+      return;
+    }
+    setEditClosing(true);
+  }
+
+  function finishEditClose(event?: AnimationEvent<HTMLFormElement>) {
+    if (event && (event.target !== event.currentTarget || event.animationName !== "accordion-fold")) return;
+    const job = pendingEdit.current;
+    pendingEdit.current = null;
+    setEditClosing(false);
+    setEditingType("");
+    setEditingTag("");
+    setTypeDraft("");
+    setTagDraft("");
+    if (job) void job();
+  }
+
+  function beginLeave(kind: "type" | "tag", name: string, job: () => Promise<void>) {
+    if (prefersReducedMotion()) {
+      void job();
+      return;
+    }
+    leaveJob.current = job;
+    leaveLock.current = false;
+    setLeaving({ kind, name });
+  }
+
+  async function finishLeave(event?: AnimationEvent<HTMLLIElement>) {
+    if (event && (event.target !== event.currentTarget || event.animationName !== "accordion-fold")) return;
+    if (!leaving || leaveLock.current) return;
+    leaveLock.current = true;
+    const job = leaveJob.current;
+    leaveJob.current = null;
+    try {
+      await job?.();
+    } finally {
+      setLeaving(null);
+      leaveLock.current = false;
+    }
+  }
+
+  useEffect(() => {
+    if (!addClosing && !editClosing && !leaving) return;
+    const id = window.setTimeout(() => {
+      if (addClosing) finishAddClose();
+      if (editClosing) finishEditClose();
+      if (leaving) void finishLeave();
+    }, 420);
+    return () => window.clearTimeout(id);
+  }, [addClosing, editClosing, leaving]);
+
+  function rowClass(kind: "type" | "tag", name: string) {
+    if (leaving?.kind === kind && leaving.name === name) return "dashboard-fold is-out";
+    if (kind === "type" && arrived === name) return "dashboard-row-in";
+    return "";
+  }
+
+  function onRowEnd(event: AnimationEvent<HTMLLIElement>, kind: "type" | "tag", name: string) {
+    if (event.target !== event.currentTarget) return;
+    if (event.animationName === "accordion-fold" && leaving?.kind === kind && leaving.name === name) {
+      void finishLeave(event);
+    }
+    if (event.animationName === "accordion-unfold" && kind === "type" && arrived === name) setArrived("");
   }
 
   return (
@@ -86,103 +349,249 @@ export function Dashboard({ scraps, onScrapsChange }: Props) {
 
       <section className="dashboard-panel" aria-label={t("planLabel")}>
         <p className="list-tools-label">{t("planLabel")}</p>
-        <PlanUsageBlock />
+        <PlanUsageBlock planUpgradeHint={false} />
       </section>
 
       <section className="dashboard-panel" aria-label={t("statsByType")}>
         <p className="list-tools-label">{t("statsByType")}</p>
-        {typeEntries.length ? (
-          <div className="dashboard-chips">
-            {typeEntries.map(([type, count]) => (
-              <button
-                key={type}
-                type="button"
-                className="dashboard-chip"
-                onClick={() => navigate("/search?type=" + encodeURIComponent(type))}
-              >
-                {typeLabel(lang, type as ScrapType)} {count}
-              </button>
-            ))}
-          </div>
+        {typeRows.length ? (
+          <ul className="dashboard-manage-list">
+            {shownTypes.map((type) =>
+              editingType === type ? (
+                <li key={type}>
+                  <form
+                    className={"dashboard-tag-edit dashboard-fold" + (editClosing ? " is-out" : "")}
+                    onAnimationEnd={finishEditClose}
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      const next = typeDraft.trim();
+                      if (!next || next === type) requestEditClose();
+                      else requestEditClose(() => renameType(type, next));
+                    }}
+                  >
+                    <input
+                      value={typeDraft}
+                      onChange={(e) => setTypeDraft(e.target.value)}
+                      className="dashboard-tag-input"
+                      aria-label={t("renameType")}
+                      disabled={busy || editClosing}
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === "Escape") requestEditClose();
+                      }}
+                    />
+                  </form>
+                </li>
+              ) : (
+                <li
+                  key={type}
+                  className={"dashboard-manage-row " + rowClass("type", type)}
+                  onAnimationEnd={(event) => onRowEnd(event, "type", type)}
+                >
+                  <button
+                    type="button"
+                    className="dashboard-manage-main"
+                    onClick={() => navigate("/search?type=" + encodeURIComponent(type))}
+                  >
+                    <span>{typeLabel(lang, type)}</span>
+                    <strong>{stats.byType.get(type) || 0}</strong>
+                  </button>
+                  <RowMenu
+                    open={menu === "type:" + type}
+                    label={t("rowMenu")}
+                    onToggle={() => setMenu((current) => (current === "type:" + type ? "" : "type:" + type))}
+                  >
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => navigate("/search?type=" + encodeURIComponent(type))}
+                    >
+                      {t("viewInSearch")}
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      disabled={busy}
+                      onClick={() => {
+                        setMenu("");
+                        setEditClosing(false);
+                        setEditingType(type);
+                        setTypeDraft(type);
+                      }}
+                    >
+                      {t("renameType")}
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      disabled={busy}
+                      onClick={() => {
+                        setMenu("");
+                        void removeType(type);
+                      }}
+                    >
+                      {t("deleteType")}
+                    </button>
+                  </RowMenu>
+                </li>
+              ),
+            )}
+          </ul>
         ) : (
           <div className="shelf-empty shelf-empty--compact">
             <p className="shelf-empty-title">—</p>
           </div>
+        )}
+        {typeRows.length > 6 ? (
+          <GlassCluster className="liquid-hit liquid-hit--wide">
+            <button
+              type="button"
+              className="dashboard-expand"
+              aria-expanded={typesOpen}
+              onClick={() => setTypesOpen((open) => !open)}
+            >
+              <ChevronDown className={"size-[18px]" + (typesOpen ? " is-open" : "")} strokeWidth={1.8} />
+              <span className="sr-only">{t(typesOpen ? "tagsLess" : "tagsMore")}</span>
+            </button>
+          </GlassCluster>
+        ) : null}
+        {addingType ? (
+          <form
+            className={"dashboard-add-form dashboard-fold" + (addClosing ? " is-out" : "")}
+            onAnimationEnd={finishAddClose}
+            onSubmit={(e) => {
+              e.preventDefault();
+              void addType(typeDraft);
+            }}
+          >
+            <input
+              value={typeDraft}
+              onChange={(e) => setTypeDraft(e.target.value)}
+              className="dashboard-tag-input"
+              aria-label={t("typeName")}
+              placeholder={t("typeName")}
+              disabled={busy || addClosing}
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === "Escape") cancelAdd();
+              }}
+            />
+            <button type="button" className="dashboard-add-cancel" disabled={busy || addClosing} onClick={cancelAdd}>
+              {t("cancel")}
+            </button>
+          </form>
+        ) : (
+          <GlassCluster className="liquid-hit liquid-hit--wide">
+            <button type="button" className="dashboard-add-type" disabled={busy} onClick={() => setAddingType(true)}>
+              {t("addType")}
+            </button>
+          </GlassCluster>
         )}
       </section>
 
       <section className="dashboard-panel" aria-label={t("statsByTag")}>
         <p className="list-tools-label">{t("statsByTag")}</p>
         {stats.byTag.length ? (
-          <div className="dashboard-chips">
-            {stats.byTag.map(([tag, count]) =>
+          <ul className="dashboard-manage-list">
+            {shownTags.map(([tag, count]) =>
               editingTag === tag ? (
-                <form
-                  key={tag}
-                  className="dashboard-tag-edit"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    commitRename();
-                  }}
-                >
-                  <input
-                    value={tagDraft}
-                    onChange={(e) => setTagDraft(e.target.value)}
-                    className="dashboard-tag-input"
-                    aria-label={t("renameTag")}
-                    disabled={busy}
-                    autoFocus
-                    onKeyDown={(e) => {
-                      if (e.key === "Escape") {
-                        setEditingTag("");
-                        setTagDraft("");
-                      }
+                <li key={tag}>
+                  <form
+                    className={"dashboard-tag-edit dashboard-fold" + (editClosing ? " is-out" : "")}
+                    onAnimationEnd={finishEditClose}
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      const next = tagDraft.trim();
+                      if (!next || next === tag) requestEditClose();
+                      else requestEditClose(() => persistTag(tag, next));
                     }}
-                  />
-                </form>
+                  >
+                    <input
+                      value={tagDraft}
+                      onChange={(e) => setTagDraft(e.target.value)}
+                      className="dashboard-tag-input"
+                      aria-label={t("renameTag")}
+                      disabled={busy || editClosing}
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === "Escape") requestEditClose();
+                      }}
+                    />
+                  </form>
+                </li>
               ) : (
-                <span key={tag} className="dashboard-tag-manage">
+                <li
+                  key={tag}
+                  className={"dashboard-manage-row " + rowClass("tag", tag)}
+                  onAnimationEnd={(event) => onRowEnd(event, "tag", tag)}
+                >
                   <button
                     type="button"
-                    className="dashboard-chip"
+                    className="dashboard-manage-main"
                     onClick={() => navigate("/search?tag=" + encodeURIComponent(tag))}
                   >
-                    {tag} {count}
+                    <span>{tag}</span>
+                    <strong>{count}</strong>
                   </button>
-                  <IconTip label={t("renameTag")}>
+                  <RowMenu
+                    open={menu === "tag:" + tag}
+                    label={t("rowMenu")}
+                    onToggle={() => setMenu((current) => (current === "tag:" + tag ? "" : "tag:" + tag))}
+                  >
                     <button
                       type="button"
-                      className="dashboard-tag-action"
-                      aria-label={t("renameTag")}
+                      role="menuitem"
+                      onClick={() => navigate("/search?tag=" + encodeURIComponent(tag))}
+                    >
+                      {t("viewInSearch")}
+                    </button>
+                    <button
+                      type="button"
+                      role="menuitem"
                       disabled={busy}
                       onClick={() => {
+                        setMenu("");
+                        setEditClosing(false);
                         setEditingTag(tag);
                         setTagDraft(tag);
                       }}
                     >
-                      <Pencil className="size-3.5" strokeWidth={1.8} />
+                      {t("renameTag")}
                     </button>
-                  </IconTip>
-                  <IconTip label={t("deleteTag")}>
                     <button
                       type="button"
-                      className="dashboard-tag-action"
-                      aria-label={t("deleteTag")}
+                      role="menuitem"
                       disabled={busy}
-                      onClick={() => void removeTag(tag)}
+                      onClick={() => {
+                        setMenu("");
+                        void removeTag(tag);
+                      }}
                     >
-                      <X className="size-3.5" strokeWidth={1.8} />
+                      {t("deleteTag")}
                     </button>
-                  </IconTip>
-                </span>
+                  </RowMenu>
+                </li>
               ),
             )}
-          </div>
+          </ul>
         ) : (
           <div className="shelf-empty shelf-empty--compact">
             <p className="shelf-empty-title">—</p>
           </div>
         )}
+        {stats.byTag.length > 8 ? (
+          <GlassCluster className="liquid-hit liquid-hit--wide">
+            <button
+              type="button"
+              className="dashboard-expand"
+              aria-expanded={tagsOpen}
+              onClick={() => setTagsOpen((open) => !open)}
+            >
+              <ChevronDown className={"size-[18px]" + (tagsOpen ? " is-open" : "")} strokeWidth={1.8} />
+              <span className="sr-only">{t(tagsOpen ? "tagsLess" : "tagsMore")}</span>
+            </button>
+          </GlassCluster>
+        ) : null}
       </section>
 
       <section className="dashboard-panel" aria-label={t("statsTimeline")}>
@@ -212,9 +621,15 @@ export function Dashboard({ scraps, onScrapsChange }: Props) {
         {stats.topDays.length ? (
           <ul className="dashboard-day-list">
             {stats.topDays.map(([day, count]) => (
-              <li key={day} className="dashboard-day-row">
-                <span>{day}</span>
-                <strong>{count}</strong>
+              <li key={day}>
+                <button
+                  type="button"
+                  className="dashboard-day-row"
+                  onClick={() => navigate("/search?day=" + encodeURIComponent(day))}
+                >
+                  <span>{day}</span>
+                  <strong>{count}</strong>
+                </button>
               </li>
             ))}
           </ul>

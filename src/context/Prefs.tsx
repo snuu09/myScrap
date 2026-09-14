@@ -3,7 +3,7 @@ import type { Lang } from "../i18n";
 
 export type ThemeChoice = "light" | "dark" | "system";
 export type Palette = "kitchen" | "basalt";
-export type Look = "fridge" | "library";
+export type Look = "glass" | "library";
 export type ShelfLayout = "list" | "gallery" | "accordion";
 
 type Prefs = {
@@ -52,11 +52,13 @@ function readPalette(): Palette {
 
 function readLook(): Look {
   try {
-    if (localStorage.getItem("mybrary.look") === "fridge") return "fridge";
+    const stored = localStorage.getItem("mybrary.look");
+    if (stored === "library") return "library";
+    if (stored === "fridge") localStorage.removeItem("mybrary.look");
   } catch {
     /* ignore */
   }
-  return "library";
+  return "glass";
 }
 
 function readShelfLayout(): ShelfLayout {
@@ -131,7 +133,7 @@ export function PrefsProvider({ children }: { children: ReactNode }) {
         setPaletteState(next);
       },
       setLook(next) {
-        if (next === "fridge") localStorage.setItem("mybrary.look", next);
+        if (next === "library") localStorage.setItem("mybrary.look", next);
         else localStorage.removeItem("mybrary.look");
         setLookState(next);
       },

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import {
   Bookmark,
@@ -33,16 +34,22 @@ import { fetchOgPreview, youtubeEmbedUrl } from "../lib/og";
 import { needsOgCoverSnapshot, snapshotOgCover } from "../lib/ogCover";
 import { useDialog } from "../lib/dialog";
 import { useT } from "../lib/useT";
+import { markSkipPageGenie, takeSkipPageGenie } from "../lib/pageGenie";
 import { SiteIcon } from "../components/SiteIcon";
 import { IconTip } from "../components/IconTip";
+import { GlassCluster, TagCluster } from "../components/GlassCluster";
 import { formatWhen } from "../lib/time";
 import { formatBytes, isPdf, mediaKindOf } from "../lib/tagger";
 import { isImeComposing } from "../lib/ime";
 import { DocumentMark } from "../components/DocumentMark";
+import { DetailHistory } from "../components/DetailHistory";
+import { RelatedPages } from "../components/RelatedPages";
+import { applyRevision, pushRevision } from "../lib/revisions";
+import { looksLikeAddress, scrapCover, scrapFaceTitle, shelfTitle } from "../lib/scrapFace";
 import type { Scrap } from "../lib/types";
 
 function neighborCover(scrap: Scrap) {
-  return scrap.posterUrl || scrap.og?.image || (scrap.dataUrl && (scrap.type === "image" || scrap.type === "video") ? scrap.dataUrl : "");
+  return scrapCover(scrap);
 }
 
 function NeighborPeek({
@@ -59,10 +66,22 @@ function NeighborPeek({
   const t = useT();
   const thumb = neighborCover(scrap);
   const Icon = side === "prev" ? ChevronLeft : ChevronRight;
+  const [open, setOpen] = useState(false);
   return (
-    <button type="button" className={"detail-peek detail-peek--" + side} onClick={onClick} aria-label={label}>
-      {thumb ? <img src={thumb} alt="" className="detail-peek-cover" /> : <span className="detail-peek-cover" />}
-      <span className="detail-peek-title">{scrap.title || t("untitled")}</span>
+    <button
+      type="button"
+      className={"detail-peek detail-peek--" + side + (open ? " is-open" : "")}
+      onClick={onClick}
+      aria-label={label}
+      onPointerEnter={() => setOpen(true)}
+      onPointerLeave={() => setOpen(false)}
+      onFocus={() => setOpen(true)}
+      onBlur={() => setOpen(false)}
+    >
+      <span className="detail-peek-flyout">
+        {thumb ? <img src={thumb} alt="" className="detail-peek-cover" /> : <span className="detail-peek-cover" />}
+        <span className="detail-peek-title face-title">{scrapFaceTitle(scrap, t("untitled"))}</span>
+      </span>
       <span className="detail-peek-chevron" aria-hidden>
         <Icon className="size-[18px]" strokeWidth={1.8} />
       </span>
@@ -96,17 +115,38 @@ export function ScrapDetail() {
   const coverSnapTried = useRef(new Set<string>());
   const [turning, setTurning] = useState<"" | "prev" | "next">("");
   const turnTimer = useRef(0);
+  const turnOutRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    takeSkipPageGenie();
+  }, [id]);
 
   const turnTo = useCallback(
     (targetId: string, side: "prev" | "next") => {
       if (!targetId || turning) return;
+      markSkipPageGenie();
       if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
         navigate(`/scrap/${targetId}`);
         return;
       }
-      setTurning(side);
+      const node = turnOutRef.current;
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        navigate(`/scrap/${targetId}`);
+      };
+      node?.addEventListener(
+        "animationend",
+        (event) => {
+          if (event.target !== node || event.animationName.indexOf("detail-flip-out") !== 0) return;
+          finish();
+        },
+        { once: true },
+      );
       window.clearTimeout(turnTimer.current);
-      turnTimer.current = window.setTimeout(() => navigate(`/scrap/${targetId}`), 440);
+      flushSync(() => setTurning(side));
+      turnTimer.current = window.setTimeout(finish, 520);
     },
     [navigate, turning],
   );
@@ -364,7 +404,13 @@ export function ScrapDetail() {
 
   async function saveEdit() {
     const tags = editTags.length ? editTags : [item.type];
-    await patch({ ...item, title: editTitle.trim(), memo: editMemo, tags });
+    await patch({
+      ...item,
+      title: editTitle.trim(),
+      memo: editMemo,
+      tags,
+      revisions: pushRevision(item, "edit"),
+    });
     setEditing(false);
     setTagDraft("");
   }
@@ -404,6 +450,8 @@ export function ScrapDetail() {
               kind: "text",
               text: blob || item.title || item.filename,
               lang,
+              ogTitle: item.og?.title,
+              ogDescription: item.og?.description,
               signal: ac.signal,
             });
       if (ac.signal.aborted) return;
@@ -415,9 +463,19 @@ export function ScrapDetail() {
         ...item,
         type: ai.type || item.type,
         tags: ai.tags?.length ? ai.tags : item.tags,
-        title: item.title.trim() ? item.title : ai.title || item.title,
+        title: looksLikeAddress(item.title, item.domain, item.url)
+          ? shelfTitle({
+              aiTitle: ai.miss ? "" : ai.title,
+              ogTitle: item.og?.title,
+              ogDescription: item.og?.description,
+              domain: item.domain || ai.domain,
+              url: item.url,
+              fallback: item.title,
+            }) || item.title
+          : item.title,
         text: ai.summary || ai.body || item.text,
         previewText: ai.analysis || item.previewText,
+        revisions: pushRevision(item, "ai"),
         updatedAt: Date.now(),
       };
       const linkUrl = next.url || item.url;
@@ -457,15 +515,18 @@ export function ScrapDetail() {
   async function share() {
     if (!item.url) return;
     const title = item.title || t("untitled");
-    try {
-      if (navigator.share) {
+    if (navigator.share) {
+      try {
         await navigator.share({ title, text: item.og?.description || item.memo || title, url: item.url });
         return;
+      } catch (err) {
+        if (err instanceof Error && err.name === "AbortError") return;
       }
+    }
+    try {
       await navigator.clipboard.writeText(item.url);
       await alert(t("shareCopied"));
-    } catch (err) {
-      if (err instanceof Error && err.name === "AbortError") return;
+    } catch {
       await alert(t("shareFailed"));
     }
   }
@@ -505,11 +566,19 @@ export function ScrapDetail() {
       <div className="detail-page-slot">
         {incoming ? (
           <div className="detail-turn-in" aria-hidden>
-            {incomingCover ? <img src={incomingCover} alt="" className="detail-turn-cover" /> : <span className="detail-turn-cover" />}
-            <span className="detail-turn-title">{incoming.title || t("untitled")}</span>
+            <h2 className="dashboard-title m-0 truncate">{scrapFaceTitle(incoming, t("untitled"))}</h2>
+            <p className="m-0 text-[0.75rem] text-muted">
+              {typeLabel(lang, incoming.type)} · {formatWhen(incoming.createdAt, lang)}
+            </p>
+            <div className="detail-actions detail-actions--in-card" />
+            {incomingCover ? (
+              <img src={incomingCover} alt="" className="detail-turn-cover" />
+            ) : (
+              <span className="detail-turn-cover detail-turn-cover--empty" />
+            )}
           </div>
         ) : null}
-      <article className="dashboard-panel detail-turn-out" aria-labelledby="scrap-detail-title">
+      <article ref={turnOutRef} className="dashboard-panel detail-turn-out" aria-labelledby="scrap-detail-title">
         {editing ? (
           <label className="grid gap-1">
             <span className="list-tools-label">{t("untitled")}</span>
@@ -532,11 +601,19 @@ export function ScrapDetail() {
         </p>
         {!editing ? (
           <div className="detail-actions detail-actions--in-card">
+            <GlassCluster className="detail-action-group">
             <IconTip label={t("editItem")}>
               <button type="button" className="detail-action" aria-label={t("editItem")} disabled={busy} onClick={beginEdit}>
                 <Pencil className="size-5" strokeWidth={1.8} />
               </button>
             </IconTip>
+            <IconTip label={t("deleteItem")}>
+              <button type="button" className="detail-action" aria-label={t("deleteItem")} disabled={busy} onClick={() => void peel()}>
+                <Trash2 className="size-5" strokeWidth={1.8} />
+              </button>
+            </IconTip>
+            </GlassCluster>
+            <GlassCluster className="detail-action-group">
             <IconTip label={aiBusy ? t("aiAnalyzing") : t("aiAnalyze")}>
               <button
                 type="button"
@@ -555,11 +632,8 @@ export function ScrapDetail() {
                 </button>
               </IconTip>
             ) : null}
-            <IconTip label={t("deleteItem")}>
-              <button type="button" className="detail-action" aria-label={t("deleteItem")} disabled={busy} onClick={() => void peel()}>
-                <Trash2 className="size-5" strokeWidth={1.8} />
-              </button>
-            </IconTip>
+            </GlassCluster>
+            <GlassCluster className="detail-action-group">
             <IconTip label={t("bookmark")}>
               <button
                 type="button"
@@ -595,6 +669,7 @@ export function ScrapDetail() {
                 {item.remindAt ? <Bell className="size-5" strokeWidth={1.8} /> : <BellOff className="size-5" strokeWidth={1.8} />}
               </button>
             </IconTip>
+            </GlassCluster>
           </div>
         ) : null}
         {item.url ? (
@@ -602,9 +677,11 @@ export function ScrapDetail() {
             <a href={item.url} className="scrap-card-link min-w-0 flex-1 truncate" target="_blank" rel="noreferrer">
               {item.url}
             </a>
-            <a href={item.url} className="inline-action" target="_blank" rel="noreferrer" aria-label={t("openLink")}>
-              <ExternalLink className="size-4" strokeWidth={1.8} />
-            </a>
+            <GlassCluster className="liquid-hit">
+              <a href={item.url} className="inline-action" target="_blank" rel="noreferrer" aria-label={t("openLink")}>
+                <ExternalLink className="size-4" strokeWidth={1.8} />
+              </a>
+            </GlassCluster>
           </div>
         ) : null}
         {showOgCard ? (
@@ -687,14 +764,16 @@ export function ScrapDetail() {
               </span>
             </p>
             {item.dataUrl ? (
-              <a
-                href={item.dataUrl}
-                className="inline-action"
-                download={item.filename || undefined}
-                aria-label={t("downloadFile")}
-              >
-                <Download className="size-4" strokeWidth={1.8} />
-              </a>
+              <GlassCluster className="liquid-hit">
+                <a
+                  href={item.dataUrl}
+                  className="inline-action"
+                  download={item.filename || undefined}
+                  aria-label={t("downloadFile")}
+                >
+                  <Download className="size-4" strokeWidth={1.8} />
+                </a>
+              </GlassCluster>
             ) : null}
           </div>
         ) : null}
@@ -709,6 +788,7 @@ export function ScrapDetail() {
               disabled={busy}
             />
             <div className="scrap-card-tags">
+              {editTags.length ? <TagCluster>
               {editTags.map((tag) => (
                 <button
                   key={tag}
@@ -721,6 +801,7 @@ export function ScrapDetail() {
                   <X className="ml-1 inline size-3" strokeWidth={2} />
                 </button>
               ))}
+              </TagCluster> : null}
             </div>
             <input
               value={tagDraft}
@@ -751,17 +832,32 @@ export function ScrapDetail() {
           <>
             {item.memo ? <p className="m-0 text-[0.9375rem] text-ink">{item.memo}</p> : null}
             <p className="scrap-card-tags">
+              {item.tags.length ? <TagCluster>
               {item.tags.map((tag) => (
                 <button
                   key={tag}
                   type="button"
                   className="scrap-tag scrap-tag--btn detail-tag-chip"
-                  onClick={() => navigate(`/search?q=${encodeURIComponent(tag)}`)}
+                  onClick={() => navigate(`/search?tag=${encodeURIComponent(tag)}`)}
                 >
                   {tag}
+                  <span className="search-tag-count">{scraps.filter((row) => row.tags.includes(tag)).length}</span>
                 </button>
               ))}
+              </TagCluster> : null}
             </p>
+            <DetailHistory
+              item={item}
+              busy={busy}
+              onRevert={(revision) => void patch(applyRevision(item, revision))}
+              onDelete={(revision) =>
+                void patch({
+                  ...item,
+                  revisions: (item.revisions || []).filter((row) => row.id !== revision.id),
+                })
+              }
+            />
+            <RelatedPages item={item} scraps={scraps} />
           </>
         )}
       </article>

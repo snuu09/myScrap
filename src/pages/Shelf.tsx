@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowUp } from "lucide-react";
 import { useT } from "../lib/useT";
@@ -12,6 +12,7 @@ import { GuestNoticeSheet } from "../components/GuestNoticeSheet";
 import { ScrapList } from "../components/ScrapList";
 import { StickDock } from "../components/StickDock";
 import { requestAnalyze } from "../lib/analyze";
+import { sheetGenieClass, usePresence } from "../lib/presence";
 import { fetchOgPreview } from "../lib/og";
 import { needsOgCoverSnapshot, snapshotOgCover } from "../lib/ogCover";
 import {
@@ -28,12 +29,13 @@ import {
 import { GuestQuotaError, GUEST_FILE_LIMIT, guestNoticeSeen, markGuestNoticeSeen } from "../lib/localScraps";
 import { uploadIssue } from "../lib/uploadCheck";
 import { filterScraps } from "../lib/scrapFilters";
+import { looksLikeAddress, shelfTitle } from "../lib/scrapFace";
 import { usePagedSlice } from "../lib/usePagedSlice";
 import { useDialog } from "../lib/dialog";
 import { getSupabase } from "../lib/supabase";
 import { analyzeFile, analyzeText, uid } from "../lib/tagger";
 import { blobToObjectUrl, blobUrlToDataUrl, captureCover } from "../lib/captureCover";
-import type { AnalyzeResult, Scrap, ScrapType } from "../lib/types";
+import type { AnalyzeResult, Scrap } from "../lib/types";
 
 const REMIND_NOTIFIED_KEY = "mybrary.remind.notified";
 
@@ -117,7 +119,7 @@ export function Shelf() {
     }
   }, [draft, location.pathname, navigate]);
   const [composer, setComposer] = useState("");
-  const [typeFilter, setTypeFilter] = useState<ScrapType | "all">("all");
+  const [typeFilter, setTypeFilter] = useState("all");
   const [dropping, setDropping] = useState(false);
   const [error, setError] = useState("");
   const [top, setTop] = useState(false);
@@ -411,33 +413,41 @@ export function Shelf() {
     setDraft(next);
     setComposer("");
     const url = hint.url || "";
-    const aiPromise = requestAnalyze({ kind: "text", text, lang });
-    const ogPromise = url ? fetchOgPreview(url) : null;
-    if (ogPromise) {
-      void ogPromise.then((ogResult) => {
-        setDraft((cur) =>
-          cur && cur.id === next.id && cur.analyzing
-            ? {
-                ...cur,
-                og: ogResult.og || cur.og,
-                ogStatus: ogResult.ogStatus || cur.ogStatus,
-                title: cur.title || ogResult.og?.title || cur.title,
-                domain: cur.domain || ogResult.og?.siteName || cur.domain,
-              }
-            : cur,
-        );
-      });
-    }
-    const ai = await aiPromise;
-    const resolvedUrl = ai.url || url || "";
     let ogPatch: Pick<Scrap, "og" | "ogStatus"> = { og: null, ogStatus: "" };
-    if (ogPromise) {
-      const ogResult = await ogPromise;
+    if (url) {
+      const ogResult = await fetchOgPreview(url);
       ogPatch = { og: ogResult.og, ogStatus: ogResult.ogStatus };
-    } else if (resolvedUrl) {
+      setDraft((cur) =>
+        cur && cur.id === next.id && cur.analyzing
+          ? {
+              ...cur,
+              og: ogPatch.og || cur.og,
+              ogStatus: ogPatch.ogStatus || cur.ogStatus,
+              domain: cur.domain || ogPatch.og?.siteName || cur.domain,
+            }
+          : cur,
+      );
+    }
+    const ai = await requestAnalyze({
+      kind: "text",
+      text,
+      lang,
+      ogTitle: ogPatch.og?.title,
+      ogDescription: ogPatch.og?.description,
+    });
+    const resolvedUrl = ai.url || url || "";
+    if (!ogPatch.og && resolvedUrl) {
       const ogResult = await fetchOgPreview(resolvedUrl);
       ogPatch = { og: ogResult.og, ogStatus: ogResult.ogStatus };
     }
+    const title = shelfTitle({
+      aiTitle: ai.miss ? "" : ai.title,
+      ogTitle: ogPatch.og?.title,
+      ogDescription: ogPatch.og?.description,
+      domain: ai.domain || ogPatch.og?.siteName || hint.domain,
+      url: resolvedUrl,
+      fallback: "",
+    });
     setDraft((cur) =>
       cur && cur.id === next.id
         ? {
@@ -445,8 +455,8 @@ export function Shelf() {
             analyzing: false,
             type: ai.type,
             tags: ai.tags,
-            title: ai.title || ogPatch.og?.title || cur.title,
-            text: ai.summary || ai.body || cur.text,
+            title: title || cur.title,
+            text: ai.summary || ai.body || ogPatch.og?.description || cur.text,
             previewText: ai.analysis || "",
             url: resolvedUrl || cur.url,
             domain: ai.domain || cur.domain,
@@ -627,7 +637,13 @@ export function Shelf() {
               analyzing: false,
               type: ai?.type || cur.type,
               tags: ai?.tags || cur.tags,
-              title: ai?.title || cur.title,
+              title:
+                shelfTitle({
+                  aiTitle: ai?.miss ? "" : ai?.title,
+                  domain: cur.domain,
+                  url: cur.url,
+                  fallback: looksLikeAddress(cur.title, cur.domain, cur.url) ? "" : cur.title,
+                }) || cur.title,
               text: ai?.summary || ai?.body || cur.text,
               previewText: ai?.analysis || cur.previewText,
               ...classifyFlags(ai),
@@ -723,8 +739,17 @@ export function Shelf() {
         if (!posterUrls.length && posterUrl) posterUrls = [posterUrl];
       }
 
+      const savedTitle = shelfTitle({
+        aiTitle: looksLikeAddress(nextDraft.title, nextDraft.domain, nextDraft.url) ? "" : nextDraft.title,
+        ogTitle: nextDraft.og?.title,
+        ogDescription: nextDraft.og?.description,
+        domain: nextDraft.domain,
+        url: nextDraft.url,
+        fallback: nextDraft.title,
+      });
       const saved = {
         ...nextDraft,
+        title: savedTitle || nextDraft.title,
         dataUrl,
         posterUrl: posterUrl || posterUrls[0] || "",
         posterUrls,
@@ -794,7 +819,11 @@ export function Shelf() {
   }
 
   const stickDisabled = !canStick().ok || !getSupabase();
-  const composing = Boolean(draft) || location.pathname === "/stick";
+  const draftPresence = usePresence(Boolean(draft));
+  const batchPresence = usePresence(batch.length > 0);
+  const draftHeld = useRef<ReactNode>(null);
+  const batchHeld = useRef<ReactNode>(null);
+  const composing = draftPresence.shown || location.pathname === "/stick";
 
   const batchPanel = batch.length ? (
     <FileBatch
@@ -820,6 +849,8 @@ export function Shelf() {
       onCancel={() => void discardDraft()}
     />
   ) : null;
+  if (draftPanel) draftHeld.current = draftPanel;
+  if (batchPanel) batchHeld.current = batchPanel;
 
   return (
     <div
@@ -849,10 +880,21 @@ export function Shelf() {
       {composing ? (
         <div className="compose-page">
           {error ? <p className="m-0 text-[0.8125rem] text-danger">{error}</p> : null}
-          {batchPanel ? <section className="classify-draft">{batchPanel}</section> : null}
-          {draftPanel ? (
-            <section className="classify-draft" aria-label={t("classifyTitle")}>
-              {draftPanel}
+          {batchPresence.shown ? (
+            <section
+              className={"classify-draft" + sheetGenieClass(batchPresence.closing)}
+              onAnimationEnd={(event) => batchPresence.onEnd(event, "sheet-genie-out")}
+            >
+              {batchPanel ?? batchHeld.current}
+            </section>
+          ) : null}
+          {draftPresence.shown ? (
+            <section
+              className={"classify-draft" + sheetGenieClass(draftPresence.closing)}
+              aria-label={t("classifyTitle")}
+              onAnimationEnd={(event) => draftPresence.onEnd(event, "sheet-genie-out")}
+            >
+              {draftPanel ?? draftHeld.current}
             </section>
           ) : null}
         </div>

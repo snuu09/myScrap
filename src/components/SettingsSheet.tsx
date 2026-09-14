@@ -1,13 +1,15 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
-import { usePrefs, type Look, type Palette, type ThemeChoice } from "../context/Prefs";
+import { usePrefs, type Palette, type ThemeChoice } from "../context/Prefs";
 import { isBrowseUser, useAuth } from "../context/Auth";
 import { usePlan } from "../context/Plan";
 import { clearUserScraps, loadUserDbUsage, SCRAPS_CLEARED_EVENT } from "../lib/scraps";
 import { useDialog } from "../lib/dialog";
 import { useT } from "../lib/useT";
 import { formatBytes } from "../lib/tagger";
+import { markArriveGenie } from "../lib/pageGenie";
 import { PlanUsageBlock, StorageGauge } from "./PlanUsageBlock";
+import { GlassCluster } from "./GlassCluster";
 
 function Seg({
   pressed,
@@ -25,22 +27,14 @@ function Seg({
   );
 }
 
-function SettingsSection({
-  label,
-  groupLabel,
-  children,
-}: {
-  label: string;
-  groupLabel: string;
-  children: ReactNode;
-}) {
+function PrefRow({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <section className="settings-section" aria-label={groupLabel}>
+    <div className="settings-pref-row">
       <p className="settings-section-label">{label}</p>
-      <div className="settings-seg-track" role="group" aria-label={groupLabel}>
+      <GlassCluster className="settings-seg-track" label={label} restOnPressed>
         {children}
-      </div>
-    </section>
+      </GlassCluster>
+    </div>
   );
 }
 
@@ -121,62 +115,79 @@ export function SettingsPage() {
         {t("settings")}
       </h1>
 
-        {user ? (
+      {user ? (
+        <section className="settings-card" aria-label={t("settingsAccount")}>
+          <p className="settings-card-label">{t("settingsAccount")}</p>
           <p className="settings-session-chip">
             {t("sessionIn")}
             <strong>{sessionLabel}</strong>
           </p>
-        ) : null}
-
-        {user ? (
-          <section className="settings-section" aria-label={t("planLabel")}>
+          <div>
             <p className="settings-section-label">{t("planLabel")}</p>
-            <div className="settings-session-chip">
-              <PlanUsageBlock showAdsNote />
-            </div>
-          </section>
-        ) : null}
+            <PlanUsageBlock showAdsNote />
+          </div>
+          <GlassCluster className="liquid-solo" label={t("logout")} ripple>
+            <button
+              type="button"
+              className={"settings-btn-leave" + (signingOut ? " is-progress" : "")}
+              disabled={signingOut || resetting}
+              aria-busy={signingOut}
+              onClick={async () => {
+                setSigningOut(true);
+                try {
+                  markArriveGenie(false);
+                  await signOut();
+                  navigate("/");
+                } finally {
+                  setSigningOut(false);
+                }
+              }}
+            >
+              {t("logout")}
+            </button>
+          </GlassCluster>
+        </section>
+      ) : null}
 
-        <SettingsSection label={t("langSwitch")} groupLabel={t("langSwitch")}>
+      <section className="settings-card" aria-label={t("settingsLookGroup")}>
+        <p className="settings-card-label">{t("settingsLookGroup")}</p>
+        <PrefRow label={t("langSwitch")}>
           <Seg pressed={lang === "ko"} onClick={() => setLang("ko")}>
             KO
           </Seg>
           <Seg pressed={lang === "en"} onClick={() => setLang("en")}>
             EN
           </Seg>
-        </SettingsSection>
-
-        <SettingsSection label={t("paletteSwitch")} groupLabel={t("paletteSwitch")}>
+        </PrefRow>
+        <PrefRow label={t("paletteSwitch")}>
           <Seg pressed={palette === "kitchen"} onClick={() => setPalette("kitchen" as Palette)}>
             {t("paletteKitchen")}
           </Seg>
           <Seg pressed={palette === "basalt"} onClick={() => setPalette("basalt")}>
             {t("paletteBasalt")}
           </Seg>
-        </SettingsSection>
-
-        <SettingsSection label={t("lookSwitch")} groupLabel={t("lookSwitch")}>
-          <Seg pressed={look === "fridge"} onClick={() => setLook("fridge" as Look)}>
-            {t("lookFridge")}
+        </PrefRow>
+        <PrefRow label={t("lookSwitch")}>
+          <Seg pressed={look === "glass"} onClick={() => setLook("glass")}>
+            {t("lookGlass")}
           </Seg>
           <Seg pressed={look === "library"} onClick={() => setLook("library")}>
             {t("lookLibrary")}
           </Seg>
-        </SettingsSection>
-
-        <SettingsSection label={t("themeSwitch")} groupLabel={t("themeSwitch")}>
+        </PrefRow>
+        <PrefRow label={t("themeSwitch")}>
           {(["light", "system", "dark"] as ThemeChoice[]).map((choice) => (
             <Seg key={choice} pressed={theme === choice} onClick={() => setTheme(choice)}>
               {t(choice === "light" ? "themeLight" : choice === "dark" ? "themeDark" : "themeSystem")}
             </Seg>
           ))}
-        </SettingsSection>
+        </PrefRow>
+      </section>
 
-        {user ? (
-          <>
-            <section className="settings-section" aria-label={t("dbUsageLabel")}>
-              <p className="settings-section-label">{t("dbUsageLabel")}</p>
-              <div className="settings-db-panel" aria-busy={usageLoading}>
+      {user ? (
+        <section className="settings-card" aria-label={t("dbUsageLabel")}>
+          <p className="settings-card-label">{t("dbUsageLabel")}</p>
+          <div className="settings-db-panel" aria-busy={usageLoading}>
                 <div className="settings-db-usage">
                   <p className="settings-db-summary">
                     {t("dbUsageSummary", {
@@ -197,35 +208,19 @@ export function SettingsPage() {
                     </p>
                   )}
                 </div>
-                <button
-                  type="button"
-                  className="settings-btn-reset"
-                  disabled={resetting || usageLoading || !hasData}
-                  onClick={() => void resetDb()}
-                >
-                  {t("dbReset")}
-                </button>
-              </div>
-            </section>
-            <button
-              type="button"
-              className={"settings-btn-leave" + (signingOut ? " is-progress" : "")}
-              disabled={signingOut || resetting}
-              aria-busy={signingOut}
-              onClick={async () => {
-                setSigningOut(true);
-                try {
-                  await signOut();
-                  navigate("/");
-                } finally {
-                  setSigningOut(false);
-                }
-              }}
-            >
-              {t("logout")}
-            </button>
-          </>
-        ) : null}
+                <GlassCluster className="liquid-solo" label={t("dbReset")} ripple>
+                  <button
+                    type="button"
+                    className="settings-btn-reset"
+                    disabled={resetting || usageLoading || !hasData}
+                    onClick={() => void resetDb()}
+                  >
+                    {t("dbReset")}
+                  </button>
+                </GlassCluster>
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }

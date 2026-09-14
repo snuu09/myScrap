@@ -1,7 +1,8 @@
 import { createPortal } from "react-dom";
-import { Sparkles } from "lucide-react";
+import { X } from "lucide-react";
 import { t } from "../i18n";
 import { usePrefs } from "../context/Prefs";
+import { AiProgress } from "./AiProgress";
 
 type Props = {
   open: boolean;
@@ -18,11 +19,12 @@ export function BusyOverlay({ open, label, onCancel }: Props) {
     <div className="app-busy-lock" role="alertdialog" aria-modal="true" aria-busy="true" aria-live="polite">
       <div className="app-busy-lock-dim" aria-hidden />
       <div className="app-busy-lock-status">
-        <Sparkles className="classify-busy-icon size-8" strokeWidth={1.6} aria-hidden />
+        <AiProgress />
         <p className="classify-busy-label">{label}</p>
       </div>
-      <button type="button" className="auth-link-utility app-busy-lock-cancel" onClick={onCancel}>
-        {t(lang, "cancel")}
+      <button type="button" className="app-busy-lock-cancel" onClick={onCancel} aria-label={t(lang, "cancel")}>
+        <X className="size-5" strokeWidth={1.8} />
+        <span className="sr-only">{t(lang, "cancel")}</span>
       </button>
     </div>,
     document.body,
