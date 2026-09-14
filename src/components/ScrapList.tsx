@@ -43,17 +43,13 @@ function ScrapCardThumb({
   item,
   mediaKind,
   title,
-  unread,
   showFileMark,
-  gallery,
   priority = false,
 }: {
   item: Scrap;
   mediaKind: ReturnType<typeof mediaKindOf>;
   title: string;
-  unread: boolean;
   showFileMark: boolean;
-  gallery: boolean;
   priority?: boolean;
 }) {
   const { lang } = usePrefs();
@@ -229,9 +225,7 @@ function ShelfRow({
           item={item}
           mediaKind={mediaKind}
           title={title}
-          unread={unread}
           showFileMark={showFileMark}
-          gallery
           priority={priority || index < 9}
         />
         <div className="scrap-card-body">
@@ -481,7 +475,7 @@ export function ScrapList({
   onLoadMore,
   sentinelRef,
 }: Props) {
-  const { shelfLayout, setShelfLayout } = usePrefs();
+  const { shelfLayout } = usePrefs();
   const t = useT();
   const gallery = shelfLayout === "gallery";
 
