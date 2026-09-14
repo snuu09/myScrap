@@ -40,6 +40,8 @@ export type Scrap = {
   analyzing?: boolean;
   /** Client-only: Claude `/api/analyze` fell back to MIME/URL tagging. */
   classifyFallback?: boolean;
+  /** Client-only: why classify did not use Claude. */
+  classifyMiss?: "" | "missing" | "auth" | "rules";
   bookmarked: boolean;
   readAt: number | null;
   remindAt: number | null;
@@ -57,4 +59,5 @@ export type AnalyzeResult = {
   url?: string;
   domain?: string;
   fallback?: boolean;
+  miss?: "" | "missing" | "auth" | "rules";
 };

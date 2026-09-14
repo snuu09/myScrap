@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { AuthProvider, isBrowseUser, useAuth } from "./context/Auth";
 import { PlanProvider } from "./context/Plan";
 import { PrefsProvider } from "./context/Prefs";
@@ -7,7 +7,7 @@ import { Header } from "./components/Header";
 import { Footer } from "./components/Footer";
 import { AuthSheet } from "./components/AuthSheet";
 import { GuestMigrateSheet } from "./components/GuestMigrateSheet";
-import { SettingsSheet } from "./components/SettingsSheet";
+import { SettingsPage } from "./components/SettingsSheet";
 import { ShelfReveal } from "./components/ShelfReveal";
 import { AuthWaiting } from "./components/AuthWaiting";
 import { CLOSE_OVERLAYS_EVENT } from "./components/StickDock";
@@ -33,8 +33,8 @@ function openSheet(setter: (v: boolean) => void) {
 function Home() {
   const { user, ready, recoveryPending } = useAuth();
   const { lang } = usePrefs();
+  const navigate = useNavigate();
   const [enter, setEnter] = useState(false);
-  const [settings, setSettings] = useState(false);
   const [migrate, setMigrate] = useState(false);
   const [reveal, setReveal] = useState(false);
   const hadUser = useRef(false);
@@ -62,7 +62,6 @@ function Home() {
   useEffect(() => {
     function onCloseOverlays() {
       setEnter(false);
-      setSettings(false);
     }
     window.addEventListener(CLOSE_OVERLAYS_EVENT, onCloseOverlays);
     return () => window.removeEventListener(CLOSE_OVERLAYS_EVENT, onCloseOverlays);
@@ -76,19 +75,18 @@ function Home() {
       >
         {t(lang, "skip")}
       </a>
-      <Header onEnter={() => openSheet(setEnter)} onSettings={() => openSheet(setSettings)} />
+      <Header onEnter={() => openSheet(setEnter)} onSettings={() => navigate("/settings")} />
       <main id="main" className={user ? "flex min-h-0 flex-col" : "min-h-0 p-0"}>
         {!ready ? (
           <AuthWaiting />
         ) : user ? (
-          <Shelf onEnter={() => openSheet(setEnter)} />
+          <Shelf />
         ) : (
           <Intro onEnter={() => openSheet(setEnter)} />
         )}
       </main>
       {!user ? <Footer /> : null}
       <AuthSheet open={enter} onClose={() => setEnter(false)} />
-      <SettingsSheet open={settings} onClose={() => setSettings(false)} />
       <GuestMigrateSheet open={migrate} onClose={() => setMigrate(false)} />
       <ShelfReveal active={Boolean(user) && reveal} onDone={endReveal} />
     </div>
@@ -97,10 +95,11 @@ function Home() {
 
 function DashboardPage() {
   const { user, ready } = useAuth();
+  const { lang } = usePrefs();
+  const navigate = useNavigate();
   const { setScrapsForUsage } = usePlan();
   const [scraps, setScraps] = useState<Scrap[]>([]);
   const [enter, setEnter] = useState(false);
-  const [settings, setSettings] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -115,7 +114,6 @@ function DashboardPage() {
   useEffect(() => {
     function onCloseOverlays() {
       setEnter(false);
-      setSettings(false);
     }
     window.addEventListener(CLOSE_OVERLAYS_EVENT, onCloseOverlays);
     return () => window.removeEventListener(CLOSE_OVERLAYS_EVENT, onCloseOverlays);
@@ -130,26 +128,29 @@ function DashboardPage() {
 
   return (
     <div className="grid min-h-dvh grid-rows-[auto_1fr_auto]">
-      <Header onEnter={() => openSheet(setEnter)} onSettings={() => openSheet(setSettings)} />
+      <Header
+        onEnter={() => openSheet(setEnter)}
+        onSettings={() => navigate("/settings")}
+        back={{ label: t(lang, "backToShelf"), to: "/" }}
+      />
       <main id="main" className="min-h-0">
-        <Dashboard scraps={scraps} />
+        <Dashboard scraps={scraps} onScrapsChange={setScraps} />
       </main>
       <Footer />
       <AuthSheet open={enter} onClose={() => setEnter(false)} />
-      <SettingsSheet open={settings} onClose={() => setSettings(false)} />
     </div>
   );
 }
 
 function ScrapDetailPage() {
   const { user, ready } = useAuth();
+  const { lang } = usePrefs();
+  const navigate = useNavigate();
   const [enter, setEnter] = useState(false);
-  const [settings, setSettings] = useState(false);
 
   useEffect(() => {
     function onCloseOverlays() {
       setEnter(false);
-      setSettings(false);
     }
     window.addEventListener(CLOSE_OVERLAYS_EVENT, onCloseOverlays);
     return () => window.removeEventListener(CLOSE_OVERLAYS_EVENT, onCloseOverlays);
@@ -164,19 +165,25 @@ function ScrapDetailPage() {
 
   return (
     <div className="grid min-h-dvh grid-rows-[auto_1fr_auto]">
-      <Header onEnter={() => openSheet(setEnter)} onSettings={() => openSheet(setSettings)} />
-      <main id="main" className="min-h-0">
+      <Header
+        onEnter={() => openSheet(setEnter)}
+        onSettings={() => navigate("/settings")}
+        back={{ label: t(lang, "backToShelf"), to: "/" }}
+      />
+      <main id="main" className="flex min-h-0 flex-col">
         <ScrapDetail />
       </main>
       <Footer />
       <AuthSheet open={enter} onClose={() => setEnter(false)} />
-      <SettingsSheet open={settings} onClose={() => setSettings(false)} />
     </div>
   );
 }
 
 function SearchPageShell() {
   const { user, ready } = useAuth();
+  const { lang } = usePrefs();
+  const navigate = useNavigate();
+  const [enter, setEnter] = useState(false);
 
   if (!ready) {
     return <AuthWaiting />;
@@ -186,20 +193,26 @@ function SearchPageShell() {
   }
 
   return (
-    <div className="grid min-h-dvh grid-rows-[1fr_auto]">
+    <div className="grid min-h-dvh grid-rows-[auto_1fr_auto]">
+      <Header
+        onEnter={() => openSheet(setEnter)}
+        onSettings={() => navigate("/settings")}
+        back={{ label: t(lang, "backToShelf"), to: "/" }}
+      />
       <main id="main" className="min-h-0">
         <SearchPage />
       </main>
       <Footer />
+      <AuthSheet open={enter} onClose={() => setEnter(false)} />
     </div>
   );
 }
 
-function LegalLayout() {
+function SettingsLayout() {
   const { lang } = usePrefs();
   const { recoveryPending } = useAuth();
+  const navigate = useNavigate();
   const [enter, setEnter] = useState(false);
-  const [settings, setSettings] = useState(false);
 
   useEffect(() => {
     if (recoveryPending) setEnter(true);
@@ -208,7 +221,45 @@ function LegalLayout() {
   useEffect(() => {
     function onCloseOverlays() {
       setEnter(false);
-      setSettings(false);
+    }
+    window.addEventListener(CLOSE_OVERLAYS_EVENT, onCloseOverlays);
+    return () => window.removeEventListener(CLOSE_OVERLAYS_EVENT, onCloseOverlays);
+  }, []);
+
+  function goBack() {
+    if (window.history.length > 1) navigate(-1);
+    else navigate("/");
+  }
+
+  return (
+    <div className="grid min-h-dvh grid-rows-[auto_1fr_auto]">
+      <Header
+        onEnter={() => openSheet(setEnter)}
+        onSettings={() => navigate("/settings")}
+        back={{ label: t(lang, "back"), onBack: goBack }}
+      />
+      <main id="main" className="min-h-0">
+        <SettingsPage />
+      </main>
+      <Footer />
+      <AuthSheet open={enter} onClose={() => setEnter(false)} />
+    </div>
+  );
+}
+
+function LegalLayout() {
+  const { lang } = usePrefs();
+  const { recoveryPending } = useAuth();
+  const navigate = useNavigate();
+  const [enter, setEnter] = useState(false);
+
+  useEffect(() => {
+    if (recoveryPending) setEnter(true);
+  }, [recoveryPending]);
+
+  useEffect(() => {
+    function onCloseOverlays() {
+      setEnter(false);
     }
     window.addEventListener(CLOSE_OVERLAYS_EVENT, onCloseOverlays);
     return () => window.removeEventListener(CLOSE_OVERLAYS_EVENT, onCloseOverlays);
@@ -216,13 +267,12 @@ function LegalLayout() {
 
   return (
     <div className="grid min-h-dvh grid-rows-[auto_1fr_auto]">
-      <Header onEnter={() => openSheet(setEnter)} onSettings={() => openSheet(setSettings)} />
+      <Header onEnter={() => openSheet(setEnter)} onSettings={() => navigate("/settings")} />
       <main id="main">
         <Legal />
       </main>
       <Footer />
       <AuthSheet open={enter} onClose={() => setEnter(false)} />
-      <SettingsSheet open={settings} onClose={() => setSettings(false)} />
       <span className="sr-only">{t(lang, "appName")}</span>
     </div>
   );
@@ -236,8 +286,12 @@ export default function App() {
           <DialogProvider>
             <BrowserRouter>
               <Routes>
-                <Route path="/" element={<Home />} />
+                <Route element={<Home />}>
+                  <Route path="/" element={null} />
+                  <Route path="/stick" element={null} />
+                </Route>
                 <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/settings" element={<SettingsLayout />} />
                 <Route path="/search" element={<SearchPageShell />} />
                 <Route path="/scrap/:id" element={<ScrapDetailPage />} />
                 <Route path="/terms" element={<LegalLayout />} />

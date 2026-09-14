@@ -18,4 +18,4 @@ Schema: `public.scraps`, RLS `auth.uid() = user_id`. Media: `scrap-media/{userId
 
 Auth redirect origins: `http://localhost:5173`, `https://mybrary-snuu09.web.app`, `https://mybrary-snuu09.firebaseapp.com`.
 
-`/api/analyze` must reject requests whose `mediaPath` is not `{uid}/...`.
+The `analyze` Edge Function must reject requests whose `mediaPath` is not `{uid}/...`.

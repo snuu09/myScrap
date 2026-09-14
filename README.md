@@ -27,7 +27,7 @@
 - 로드맵: [ROADMAP.md](ROADMAP.md) · 제품: [PRODUCT.md](PRODUCT.md) · 디자인: [DESIGN.md](DESIGN.md) · 구조: [ARCHITECTURE.md](ARCHITECTURE.md)
 - 라이브: [https://mybrary-snuu09.web.app](https://mybrary-snuu09.web.app)
 
-스택: Vite + React (TypeScript) SPA · Firebase Hosting(`mybrary-snuu09`) · Auth/DB/Storage는 Supabase · 분류는 Cloud Function `/api/analyze`(Netlify Function 트윈 있음).
+스택: Vite + React (TypeScript) SPA · Firebase Hosting(`mybrary-snuu09`) · Auth/DB/Storage는 Supabase · 분류는 Supabase Edge Function `analyze` (Spark에서도 동작. Cloud Function / Netlify 트윈은 보관).
 
 ---
 
@@ -90,7 +90,7 @@ npm run build
 ### 백엔드 · Auth
 
 1. Supabase Auth에서 Email, Google, Anonymous 활성화. 마이그레이션 순서: [20260820140000_scraps_media_realtime.sql](supabase/migrations/20260820140000_scraps_media_realtime.sql) → [20260829143000_profiles_plans.sql](supabase/migrations/20260829143000_profiles_plans.sql) → [20260905100000_scrap_engagement.sql](supabase/migrations/20260905100000_scrap_engagement.sql). Redirect URL에 위 Hosting 도메인 추가. 등급/관리자 수동 설정은 [supabase/README.md](supabase/README.md).
-2. 분류: 로컬은 Vite Netlify plugin + [netlify/functions/analyze.ts](netlify/functions/analyze.ts) (`ANTHROPIC_API_KEY` in project `.env`). Firebase Hosting rewrite `/api/analyze` → [functions/src/index.ts](functions/src/index.ts)는 Blaze 필요. 미배포/키 없음 → 클라이언트 MIME/URL 폴백 + 초안 힌트. 응답에 `summary`·`analysis` 포함. Blaze면 `functions/.env`에 `ANTHROPIC_API_KEY`, `SUPABASE_URL`, `SUPABASE_ANON_KEY` 후 `npx -y firebase-tools@latest deploy --only functions,hosting`. 배포 후 `POST /api/analyze`가 HTML 404가 아니라 JSON/401인지 확인.
+2. 분류: 클라이언트는 Supabase Edge Function `analyze`를 사용자 JWT로 호출합니다. 시크릿 `ANTHROPIC_API_KEY`가 없으면 MIME/URL 폴백입니다. Firebase Cloud Function과 Netlify `/api/analyze`는 Spark에서 쓰지 않습니다.
 3. 모델 ID는 `claude-sonnet-4-5` (과제명의 `claude-sonnet-5`는 현재 id가 아님).
 
 Netlify는 선택: `npm run build`, publish `dist`, 동일 Vite 키 + 사이트 env의 `ANTHROPIC_API_KEY`. Netlify 분석 함수는 [netlify/functions/analyze.ts](netlify/functions/analyze.ts).

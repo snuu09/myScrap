@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
+import { Navigate, useNavigate, useParams } from "react-router-dom";
 import {
   Bookmark,
   BookmarkCheck,
@@ -11,7 +11,6 @@ import {
   ChevronRight,
   Download,
   ExternalLink,
-  Library,
   Pencil,
   Share2,
   Sparkles,
@@ -71,17 +70,6 @@ function NeighborPeek({
   );
 }
 
-function BackToShelf() {
-  const t = useT();
-  return (
-    <IconTip label={t("backToShelf")}>
-      <Link to="/" className="auth-back-btn no-underline" aria-label={t("backToShelf")}>
-        <Library className="size-[22px]" strokeWidth={1.8} />
-      </Link>
-    </IconTip>
-  );
-}
-
 export function ScrapDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -106,6 +94,30 @@ export function ScrapDetail() {
   const pageBackfillTried = useRef(new Set<string>());
   const ogImageTried = useRef(new Set<string>());
   const coverSnapTried = useRef(new Set<string>());
+  const [turning, setTurning] = useState<"" | "prev" | "next">("");
+  const turnTimer = useRef(0);
+
+  const turnTo = useCallback(
+    (targetId: string, side: "prev" | "next") => {
+      if (!targetId || turning) return;
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        navigate(`/scrap/${targetId}`);
+        return;
+      }
+      setTurning(side);
+      window.clearTimeout(turnTimer.current);
+      turnTimer.current = window.setTimeout(() => navigate(`/scrap/${targetId}`), 440);
+    },
+    [navigate, turning],
+  );
+
+  useEffect(() => {
+    return () => window.clearTimeout(turnTimer.current);
+  }, []);
+
+  useEffect(() => {
+    setTurning("");
+  }, [id]);
 
   const cancelAiAnalyze = useCallback(() => {
     aiAbortRef.current?.abort();
@@ -216,6 +228,7 @@ export function ScrapDetail() {
   useEffect(() => {
     setEditing(false);
     setTagDraft("");
+    setTurning("");
   }, [id]);
 
   useEffect(() => {
@@ -229,12 +242,12 @@ export function ScrapDetail() {
         return;
       }
       if (editing || index < 0) return;
-      if (ev.key === "ArrowLeft" && index > 0) navigate(`/scrap/${scraps[index - 1].id}`);
-      if (ev.key === "ArrowRight" && index < scraps.length - 1) navigate(`/scrap/${scraps[index + 1].id}`);
+      if (ev.key === "ArrowLeft" && index > 0) turnTo(scraps[index - 1].id, "prev");
+      if (ev.key === "ArrowRight" && index < scraps.length - 1) turnTo(scraps[index + 1].id, "next");
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [navigate, index, scraps, editing]);
+  }, [navigate, index, scraps, editing, turnTo]);
 
   useEffect(() => {
     if (!user || !scrap?.url || scrap.og?.image) return;
@@ -296,9 +309,6 @@ export function ScrapDetail() {
     return (
       <div className="dashboard-door">
         <p className="shelf-empty-title">{t("noMatches")}</p>
-        <div className="mt-3">
-          <BackToShelf />
-        </div>
       </div>
     );
   }
@@ -479,21 +489,27 @@ export function ScrapDetail() {
     (mediaKind === "audio" || mediaKind === null || (!playable && (mediaKind === "image" || mediaKind === "video")));
   const showPlayable = playable;
 
+  const incoming = turning === "next" ? next : turning === "prev" ? prev : null;
+  const incomingCover = incoming ? neighborCover(incoming) : "";
+
   return (
     <div className="dashboard-door dashboard-door--detail">
-      <div className="dashboard-head">
-        <BackToShelf />
-      </div>
-
       {error ? <p className="m-0 text-[0.8125rem] text-danger">{error}</p> : null}
 
-      <div className="detail-stage">
+      <div className={"detail-stage" + (turning ? " detail-stage--turn-" + turning : "")}>
         <div className="detail-peek-slot detail-peek-slot--prev">
           {!editing && prev ? (
-            <NeighborPeek scrap={prev} side="prev" label={t("prevScrap")} onClick={() => navigate(`/scrap/${prev.id}`)} />
+            <NeighborPeek scrap={prev} side="prev" label={t("prevScrap")} onClick={() => turnTo(prev.id, "prev")} />
           ) : null}
         </div>
-      <article className="dashboard-panel" aria-labelledby="scrap-detail-title">
+      <div className="detail-page-slot">
+        {incoming ? (
+          <div className="detail-turn-in" aria-hidden>
+            {incomingCover ? <img src={incomingCover} alt="" className="detail-turn-cover" /> : <span className="detail-turn-cover" />}
+            <span className="detail-turn-title">{incoming.title || t("untitled")}</span>
+          </div>
+        ) : null}
+      <article className="dashboard-panel detail-turn-out" aria-labelledby="scrap-detail-title">
         {editing ? (
           <label className="grid gap-1">
             <span className="list-tools-label">{t("untitled")}</span>
@@ -749,9 +765,10 @@ export function ScrapDetail() {
           </>
         )}
       </article>
+      </div>
         <div className="detail-peek-slot detail-peek-slot--next">
           {!editing && next ? (
-            <NeighborPeek scrap={next} side="next" label={t("nextScrap")} onClick={() => navigate(`/scrap/${next.id}`)} />
+            <NeighborPeek scrap={next} side="next" label={t("nextScrap")} onClick={() => turnTo(next.id, "next")} />
           ) : null}
         </div>
       </div>

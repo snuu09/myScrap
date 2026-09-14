@@ -241,7 +241,7 @@ Folder tree, share/export, account settings beyond 나가기, cookie consent ban
 ## Suggested sequence now
 
 1. Fill `.env`, `npm run deploy:hosting`, add Firebase origins to Supabase Auth.
-2. Blaze + `functions/.env` if `/api/analyze` should call Claude on Hosting.
+2. Set Supabase secret `ANTHROPIC_API_KEY` so Edge Function `analyze` can call Claude on Spark Hosting.
 3. Later product (optional): 일자별, edit saved scrap, richer previews. Do not revive `js/` or `css/`.
 
 Phases 1–4 below are the static-client history, not the next build order.

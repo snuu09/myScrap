@@ -1,6 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
-import { X } from "lucide-react";
 import { usePrefs, type Look, type Palette, type ThemeChoice } from "../context/Prefs";
 import { isBrowseUser, useAuth } from "../context/Auth";
 import { usePlan } from "../context/Plan";
@@ -9,9 +8,6 @@ import { useDialog } from "../lib/dialog";
 import { useT } from "../lib/useT";
 import { formatBytes } from "../lib/tagger";
 import { PlanUsageBlock, StorageGauge } from "./PlanUsageBlock";
-import { IconTip } from "./IconTip";
-
-type Props = { open: boolean; onClose: () => void };
 
 function Seg({
   pressed,
@@ -48,7 +44,7 @@ function SettingsSection({
   );
 }
 
-export function SettingsSheet({ open, onClose }: Props) {
+export function SettingsPage() {
   const { lang, theme, palette, look, setLang, setTheme, setPalette, setLook } = usePrefs();
   const t = useT();
   const { user, signOut } = useAuth();
@@ -62,7 +58,7 @@ export function SettingsSheet({ open, onClose }: Props) {
   const [dbBytes, setDbBytes] = useState(usageBytes);
 
   useEffect(() => {
-    if (!open || !user) return;
+    if (!user) return;
     let cancelled = false;
     setDbCount(scrapCount);
     setDbBytes(usageBytes);
@@ -83,11 +79,8 @@ export function SettingsSheet({ open, onClose }: Props) {
     return () => {
       cancelled = true;
     };
-    // Only refetch when the sheet opens for this user
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- open/user gate
-  }, [open, user]);
-
-  if (!open) return null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch when the signed-in user changes
+  }, [user]);
 
   const sessionLabel = user
     ? isBrowseUser(user)
@@ -114,7 +107,6 @@ export function SettingsSheet({ open, onClose }: Props) {
       setDbBytes(0);
       window.dispatchEvent(new Event(SCRAPS_CLEARED_EVENT));
       await alert(t("dbResetDone"));
-      onClose();
       navigate("/");
     } catch {
       await alert(t("syncError"));
@@ -124,24 +116,10 @@ export function SettingsSheet({ open, onClose }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-30 bg-[color-mix(in_srgb,var(--color-ink)_24%,transparent)]" onClick={onClose}>
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="settings-title"
-        className="absolute top-[60px] right-[var(--gutter,clamp(16px,4vw,40px))] flex max-h-[calc(100dvh-80px)] w-[min(22rem,calc(100vw-24px))] flex-col gap-3 overflow-y-auto rounded-[32px] border border-paper-line bg-login-wall p-3.5 shadow-[var(--shadow-sheet)]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="mb-0 flex items-center justify-between">
-          <h2 id="settings-title" className="m-0 min-w-0 flex-1 text-[1.0625rem] font-bold">
-            {t("settings")}
-          </h2>
-          <IconTip label={t("close")}>
-            <button type="button" className="grid size-12 shrink-0 place-items-center" onClick={onClose} aria-label={t("close")}>
-              <X className="size-[22px]" strokeWidth={1.8} />
-            </button>
-          </IconTip>
-        </div>
+    <div className="settings-page">
+      <h1 id="settings-title" className="dashboard-title">
+        {t("settings")}
+      </h1>
 
         {user ? (
           <p className="settings-session-chip">
@@ -238,7 +216,7 @@ export function SettingsSheet({ open, onClose }: Props) {
                 setSigningOut(true);
                 try {
                   await signOut();
-                  onClose();
+                  navigate("/");
                 } finally {
                   setSigningOut(false);
                 }
@@ -248,7 +226,6 @@ export function SettingsSheet({ open, onClose }: Props) {
             </button>
           </>
         ) : null}
-      </div>
     </div>
   );
 }

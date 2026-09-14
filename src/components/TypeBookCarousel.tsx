@@ -1,3 +1,5 @@
+import { useEffect, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { typeLabel } from "../i18n";
 import { usePrefs } from "../context/Prefs";
 import { useT } from "../lib/useT";
@@ -8,13 +10,16 @@ type Props = {
   counts: Record<string, number>;
   active: ScrapType | "all";
   loading?: boolean;
+  contained?: boolean;
   onSelect: (value: ScrapType | "all") => void;
 };
 
-/** Horizontal Millie-like type books (MyBrary tokens, not a Millie clone). */
-export function TypeBookCarousel({ types, counts, active, loading, onSelect }: Props) {
+/** Horizontal type books. Breaks out of the 40rem column; page scroll stays vertical. */
+export function TypeBookCarousel({ types, counts, active, loading, contained, onSelect }: Props) {
   const { lang } = usePrefs();
   const t = useT();
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [ends, setEnds] = useState({ left: false, right: false });
   const books: { id: ScrapType | "all"; label: string; count: number }[] = [
     { id: "all", label: t("filterAll"), count: counts.all || 0 },
     ...types.map((type) => ({
@@ -24,9 +29,49 @@ export function TypeBookCarousel({ types, counts, active, loading, onSelect }: P
     })),
   ];
 
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    function sync() {
+      const node = trackRef.current;
+      if (!node) return;
+      const left = node.scrollLeft > 8;
+      const right = node.scrollLeft + node.clientWidth < node.scrollWidth - 8;
+      setEnds({ left, right });
+    }
+    sync();
+    el.addEventListener("scroll", sync, { passive: true });
+    const observer = new ResizeObserver(sync);
+    observer.observe(el);
+    return () => {
+      el.removeEventListener("scroll", sync);
+      observer.disconnect();
+    };
+  }, [books.length, loading]);
+
+  function scrollByDir(dir: -1 | 1) {
+    const el = trackRef.current;
+    if (!el) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    el.scrollBy({
+      left: dir * Math.max(el.clientWidth * 0.72, 160),
+      behavior: reduce ? "auto" : "smooth",
+    });
+  }
+
   return (
-    <section className="type-book-carousel" aria-label={t("filterAll")}>
-      <div className="type-book-track" role="list">
+    <section className={"type-book-carousel" + (contained ? " type-book-carousel--contained" : "")} aria-label={t("filterAll")}>
+      {ends.left ? (
+        <button
+          type="button"
+          className="type-book-nav type-book-nav--prev"
+          aria-label={t("typeBooksPrev")}
+          onClick={() => scrollByDir(-1)}
+        >
+          <ChevronLeft className="size-5" strokeWidth={1.8} />
+        </button>
+      ) : null}
+      <div className="type-book-track" role="list" ref={trackRef}>
         {books.map((book) => {
           const pressed = active === book.id;
           return (
@@ -48,6 +93,16 @@ export function TypeBookCarousel({ types, counts, active, loading, onSelect }: P
           );
         })}
       </div>
+      {ends.right ? (
+        <button
+          type="button"
+          className="type-book-nav type-book-nav--next"
+          aria-label={t("typeBooksNext")}
+          onClick={() => scrollByDir(1)}
+        >
+          <ChevronRight className="size-5" strokeWidth={1.8} />
+        </button>
+      ) : null}
     </section>
   );
 }

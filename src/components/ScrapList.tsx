@@ -64,28 +64,32 @@ function ScrapCardThumb({
     setExhausted(false);
   }, [item.id, candidateKey]);
 
+  const plate = (
+    <span className="scrap-book-plate">
+      {showFileMark ? (
+        <DocumentMark
+          extension={item.extension}
+          mime={item.mime}
+          type={item.type}
+          filename={item.filename}
+          size="sm"
+        />
+      ) : (
+        <span className="scrap-book-cover-type">{typeLabel(lang, item.type)}</span>
+      )}
+      <span className="scrap-book-cover-title">
+        {unread ? <span className="scrap-unread-dot" aria-hidden /> : null}
+        {title}
+      </span>
+    </span>
+  );
+
   if (!primary || exhausted) {
     if (!gallery) return null;
     return (
       <div className="scrap-book-cover">
         <span className="scrap-book-cover-spine" />
-        <span className="scrap-book-cover-face">
-          {showFileMark ? (
-            <DocumentMark
-              extension={item.extension}
-              mime={item.mime}
-              type={item.type}
-              filename={item.filename}
-              size="lg"
-            />
-          ) : (
-            <span className="scrap-book-cover-type">{typeLabel(lang, item.type)}</span>
-          )}
-          <span className="scrap-book-cover-title">
-            {unread ? <span className="scrap-unread-dot" aria-hidden /> : null}
-            {title}
-          </span>
-        </span>
+        <span className="scrap-book-cover-face">{plate}</span>
       </div>
     );
   }
@@ -118,10 +122,7 @@ function ScrapCardThumb({
       <span className="scrap-book-cover-spine" />
       <span className="scrap-book-cover-face">
         {media}
-        <span className="scrap-book-cover-title">
-          {unread ? <span className="scrap-unread-dot" aria-hidden /> : null}
-          {title}
-        </span>
+        {plate}
       </span>
     </div>
   );
@@ -299,7 +300,6 @@ type Props = {
   loading?: boolean;
   typeFilter: ScrapType | "all";
   onType: (value: ScrapType | "all") => void;
-  onClearFilters: () => void;
   hasMore?: boolean;
   onLoadMore?: () => void;
   sentinelRef?: RefObject<HTMLDivElement | null>;
@@ -311,14 +311,12 @@ export function ScrapList({
   loading = false,
   typeFilter,
   onType,
-  onClearFilters,
   hasMore = false,
   onLoadMore,
   sentinelRef,
 }: Props) {
   const { shelfLayout, setShelfLayout } = usePrefs();
   const t = useT();
-  const filtersActive = typeFilter !== "all";
   const gallery = shelfLayout === "gallery";
 
   const typeCounts = (() => {
@@ -381,11 +379,6 @@ export function ScrapList({
                 </IconTip>
               ))}
             </div>
-            {filtersActive ? (
-              <button type="button" className="auth-link-utility" onClick={onClearFilters}>
-                {t("clearFilters")}
-              </button>
-            ) : null}
           </div>
         </div>
       </section>

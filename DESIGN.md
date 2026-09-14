@@ -340,9 +340,9 @@ Slight clipping rotation (±0.45deg) on every third scrap. That is the fridge, n
 ## Components
 
 - **Auth stack:** Email and password in the header 로그인 sheet (32px radius). 48px controls, 15px label. Light sheet is `--login-wall` white. Inline validation under fields. Vertical order follows **The Auth Ladder Rule** (fields → primary → feedback → divider → Google → browse → toggle → find links). **Google로 계속** is tertiary (1px outline). **둘러보기** is secondary (2px magnet outline) on the sheet only. **회원가입** label (not 가입). No Apple. Reusable classes: `auth-btn-*`, `auth-link-*`, `auth-divider`, `auth-callout`, `auth-feedback-*` in [`src/index.css`](src/index.css).
-- **Settings sheet:** 32px radius login-wall sheet (same chrome as auth). Follow **The Settings Ladder Rule**. Reusable classes: `settings-section-*`, `settings-seg-*`, `settings-session-chip`, `settings-btn-leave` in [`src/index.css`](src/index.css). Do not open together with the 로그인 sheet.
-- **Palette switch:** Pill track, 40px cells. 기본 (tangerine swatch) and 현무암 (basalt swatch). Lives in the settings sheet. Default is tangerine.
-- **Theme switch:** Light, system, and dark magnets in a pill track, 40px cells, 18px glyphs. Also in the settings sheet.
+- **Settings page:** `/settings`, not a header sheet. Follow **The Settings Ladder Rule**. Reusable classes: `settings-section-*`, `settings-seg-*`, `settings-session-chip`, `settings-btn-leave` in [`src/index.css`](src/index.css). Do not open together with the 로그인 sheet.
+- **Palette switch:** Pill track, 40px cells. 기본 (tangerine swatch) and 현무암 (basalt swatch). Lives on `/settings`. Default is tangerine.
+- **Theme switch:** Light, system, and dark magnets in a pill track, 40px cells, 18px glyphs. Also on `/settings`.
 - **Composer:** Bottom dock after entry. 24px shell; 22px +; 15px field; Stick 48px / 14px. Focus ring follows the 24px shell, not a square on the textarea and not a pill.
 - **Classify draft:** A new **분류하기**, paste, or drop replaces the open classify card in place (no confirm). Only Cancel asks to discard. Upload % sits inside the progress track.
 - **+ menu:** 40px rows, 18px glyphs, hairline border.
@@ -390,11 +390,11 @@ Disabled opacity 0.6. Pressed scale 0.98.
 
 12px is for hints and timestamps only. Leads use 15px for AA readability.
 
-### Settings sheet hierarchy
+### Settings page hierarchy
 
 Binding for [`src/components/SettingsSheet.tsx`](src/components/SettingsSheet.tsx).
 
-**The Settings Ladder Rule.** (1) sheet title and close (same header row as auth), (2) **session chip** when a session exists, (3) **plan block** (tier name, trial D-day, storage used/limit bar, ad note, operator upgrade hint), (4) language, (5) palette, (6) appearance (theme), (7) **저장 사용량** panel (Supabase scrap count + media bytes + gauge; empty state says reset not needed) with **DB 초기화** danger-outline (disabled when empty; own scraps + media only; profiles stay), (8) **Leave** full-width tertiary when signed in. No auth fields. Escape and backdrop close the sheet.
+**The Settings Ladder Rule.** Settings is the `/settings` page, not a header sheet. Header menu navigates there; back returns to the previous screen (or `/` if there is none). The page hides the Stick dock. Order: (1) page title, (2) **session chip** when a session exists, (3) **plan block** (tier name, trial D-day, storage used/limit bar, ad note, operator upgrade hint), (4) language, (5) palette, (6) Look, (7) appearance (theme), (8) **저장 사용량** panel (Supabase scrap count + media bytes + gauge; empty state says reset not needed) with **DB 초기화** danger-outline (disabled when empty; own scraps + media only; profiles stay), (9) **Leave** full-width tertiary when signed in. No auth fields.
 
 **The Settings Section Rule.** Each block: caption label (13px muted) then control row. Section gap 12px (`gap-3`). Labels use `settings-section-label`.
 
@@ -404,7 +404,7 @@ Binding for [`src/components/SettingsSheet.tsx`](src/components/SettingsSheet.ts
 
 **The Settings Session Rule.** When signed in, show `settings-session-chip` directly under the header: enamel/paper pill, caption size, ink-soft label plus ink value (email or **둘러보기** for anonymous browse). Truncate long emails.
 
-**The Guest Storage Notice Rule.** Centered overlays share one shell ([`GuestNoticeSheet`](src/components/GuestNoticeSheet.tsx), [`GuestMigrateSheet`](src/components/GuestMigrateSheet.tsx), [`AppDialog`](src/components/AppDialog.tsx), [`RemindSheet`](src/components/RemindSheet.tsx)): 32px `--login-wall` panel, ink scrim, true screen center. Guest notice/migrate fire once per device (`mybrary.guest.notice`, `mybrary.guest.migrateAsked`). AppDialog replaces browser `alert` / `confirm`. On the shelf, browse mode keeps one quiet caption line above the list (ink-soft, `auth-link-utility` for 계정 만들기), not a colored alert bar.
+**The Guest Storage Notice Rule.** Centered overlays share one shell ([`GuestNoticeSheet`](src/components/GuestNoticeSheet.tsx), [`GuestMigrateSheet`](src/components/GuestMigrateSheet.tsx), [`AppDialog`](src/components/AppDialog.tsx), [`RemindSheet`](src/components/RemindSheet.tsx)): 32px `--login-wall` panel, ink scrim, true screen center. Guest notice/migrate fire once per device (`mybrary.guest.notice`, `mybrary.guest.migrateAsked`). AppDialog replaces browser `alert` / `confirm`. Do not repeat that notice as a shelf banner or 계정 만들기 link above the list.
 
 ## Motion & interaction
 
@@ -460,13 +460,13 @@ Binding against [ROADMAP.md](ROADMAP.md) Phase 4. Header stays brand + 로그인
 
 **The Long List Rule.** Shelf and `/search` render 24 scraps, then the next page on scroll or **더 보기**. Signed media is hydrated for that window only. Document film images mount only within four pages of the current page. Offscreen cards use `content-visibility: auto`. Do not sign every file for search or stats.
 
-**The Classify Draft Rule.** Classify-then-save lives in the floating Stick dock, **above** the composer pill. While a draft is open, a full-viewport blur+dim scrim sits behind the dock (does not dismiss on tap). The `.classify-draft` panel is a near-full bottom sheet (scroll when tall, paper chrome, scrap/sheet shadow). Upload progress shows **label + % inside** the progress track. A new **분류하기** (Stick send), paste, or drop **replaces** an open draft in place with no confirm; only the draft **Cancel** control uses leave-draft confirm. Cancel is auth utility ghost; Save is auth primary (48px magnet). Do not place the draft in shelf-door above list-tools.
+**The Classify Draft Rule.** Classify-then-save is the `/stick` page, not a sheet over the composer. Opening a draft navigates to `/stick` and unmounts the Stick dock and +. Save and Cancel return to the shelf. The page uses the same `.classify-draft` paper panel (category select, editable tag chips, memo). Multi-file confirm stays in the dock `FileBatch`; one file with an empty batch starts classify immediately. Upload progress shows **label + % inside** the progress track. A new **분류하기**, paste, or drop **replaces** an open draft in place with no confirm; only Cancel asks to discard (`아직 저장하지 않았습니다`). Cancel is auth utility ghost; Save is auth primary (48px magnet). Do not put the draft back on the dock or in shelf-door above list-tools.
 
-**The Detail Page Rule.** Row tap navigates to [`/scrap/:id`](src/pages/ScrapDetail.tsx). Full page in the app chrome (Header/Footer), not an auth/settings sheet. Back is a Library icon (`auth-back-btn` + IconTip **책장으로**). Share / edit / bookmark / read / remind sit **inside** `dashboard-panel` under the title meta. Edit mode (pencil) changes title, memo, and tags only; Escape cancels edit. Share appears only when the scrap has an external URL. Peel is a trash icon in that action row. Neighbor prev/next peeks sit beside the panel (cover sliver and title on wide screens, chevron overlay on narrow so the page does not shrink, newest-first). The peek image preloads the neighbor cover. Do not also show a neighbor row under the panel. Arrow keys and Escape return to shelf (Escape exits edit first). Peel uses the centered AppDialog, then deletes and returns home. List rows show a magnet **corner bookmark ribbon** when bookmarked (not an inline glyph). Type chips in list-tools hide types with count 0. Loading the detail list reuses `AuthWaiting` (circular spinner). Use dashboard-door / dashboard-panel paper language — never login-wall floating sheet.
+**The Detail Page Rule.** Row tap navigates to [`/scrap/:id`](src/pages/ScrapDetail.tsx). Full page in the app chrome (Header/Footer), not an auth/settings sheet. Back is a Library icon in the header logo slot (`auth-back-btn` + IconTip **책장으로**), not a separate row. Share / edit / bookmark / read / remind sit **inside** `dashboard-panel` under the title meta. Edit mode (pencil) changes title, memo, and tags only; Escape cancels edit. Share appears only when the scrap has an external URL. Peel is a trash icon in that action row. The stage fills the height under the header. Neighbor prev/next peeks sit beside the panel and, on wide screens, use the leftover width at the same height as the page (chevron overlay on narrow so the page does not shrink, newest-first). A peek click plays a short book flip (spine-hinged `rotateY`, incoming page visible underneath), then navigates; reduced motion skips the turn. The peek image preloads the neighbor cover. Do not also show a neighbor row under the panel. Arrow keys and Escape return to shelf (Escape exits edit first). Peel uses the centered AppDialog, then deletes and returns home. List rows show a magnet **corner bookmark ribbon** when bookmarked (not an inline glyph). Type chips in list-tools hide types with count 0. Loading the detail list reuses `AuthWaiting` (circular spinner). Use dashboard-door / dashboard-panel paper language — never login-wall floating sheet.
 
 **The Ad Slot Rule.** When `showAds` is true (free / standard tiers), one AdMob banner (`AdSlot` via `adsbygoogle`) sits below **list-tools** and above the recency list. Env: `VITE_ADMOB_PUBLISHER_ID` (ca-pub-…) and `VITE_ADMOB_BANNER_SLOT`. Premium and admin hide it. Browser SPAs use the AdSense tag; native Android/iOS shells can overlay native AdMob separately.
 
-**The Dashboard Rule.** Route `/dashboard`, header caption **통계** / Stats when signed in. Centered **dashboard-door** column max 40rem with **dashboard-panel** paper cards (same tokens as list-tools): plan via `PlanUsageBlock` (tier, D-day, **trial end date**, storage text + linear gauge), type/tag chips, recent 10 timeline, top-7 days. Empty sections use compact shelf-empty. Link back to shelf. Not a second home.
+**The Dashboard Rule.** Route `/dashboard`, header caption **대시보드** / Dashboard when signed in. Centered **dashboard-door** column max 40rem with **dashboard-panel** paper cards (same tokens as list-tools): plan via `PlanUsageBlock` (tier, D-day, **trial end date**, storage text + linear gauge), type/tag chips, recent 10 timeline, top-7 days. Type chips and recent rows open search or detail. Tag chips open search; rename and delete rewrite that tag on the scraps that use it. Day totals stay read-only. Empty sections use compact shelf-empty. Header Library icon returns to the shelf. Not a second home.
 
 **The Plan Usage Rule.** Settings and Dashboard share [`PlanUsageBlock`](src/components/PlanUsageBlock.tsx): tier name, trial D-day, local end date (`YYYY-MM-DD`), storage used/limit + 8px magnet progress bar (`StorageGauge`). Unlimited tiers omit the bar. Settings may show an ads note.
 
@@ -474,7 +474,7 @@ Binding against [ROADMAP.md](ROADMAP.md) Phase 4. Header stays brand + 로그인
 
 ### Intro
 
-- Sticky compact header: brand, 로그인, settings (KO/EN, palette, theme live in the settings sheet).
+- Sticky compact header: brand, 로그인, settings (KO/EN, palette, theme live on `/settings`).
 - Hero uses `--text-display-hero` (clamp 2–3rem) once, overlaid top-left on the still with the magnet-fill CTA. A thin peach enamel gradient under the type. No glass blur. No kicker.
 - The still is full-bleed under the header (`object-fit: cover`). No 4:3 card, no scrap radius. Titles sit on the catalog card, the linen book, and the holdings. The body is two short beats on hover or tap. No three-card stack. One job at a time.
 - Primary CTA copy stays personal (**책장을 연다**). **둘러보기** lives in the 로그인 sheet as a magnet-outline pill, not beside the hero CTA.
@@ -485,7 +485,7 @@ Binding against [ROADMAP.md](ROADMAP.md) Phase 4. Header stays brand + 로그인
 - 로그인 / Sign in is a 40–48px header control. Open state: paper sheet, `--radius-xl` 32px, email and password. Light sheet is white. Dark sheet is night enamel.
 - Light sheet: `--login-wall` white. Dark sheet: night enamel.
 - Escape and click-outside close it. One Job: close the sheet before intro hands off to the app. Do not stack with settings.
-- After session: chip + 나가기 in the settings sheet. Leave from the app returns to intro.
+- After session: chip + 나가기 on `/settings`. Leave from the app returns to intro.
 
 ### 일자별 filter
 

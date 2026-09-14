@@ -18,4 +18,4 @@ This app’s project is **MyBrary** (`vrayhcfbpgyazrxlblbj`, `https://vrayhcfbpg
 
 ## Claude
 
-Image/link classify is not in this folder. On Firebase it is [functions/src/index.ts](../functions/src/index.ts) (Hosting rewrite `/api/analyze`). On Netlify it is [netlify/functions/analyze.ts](../netlify/functions/analyze.ts). Both verify the user JWT with the anon key, then call Anthropic (`claude-sonnet-4-5`).
+Classify lives in [functions/analyze](functions/analyze). It verifies the user JWT, then calls Anthropic (`claude-sonnet-4-5`). Set the Supabase secret `ANTHROPIC_API_KEY` (never Vite). Deploy with the CLI or the Supabase dashboard. The Firebase and Netlify `/api/analyze` twins are not used while Hosting stays on Spark.

@@ -1,11 +1,15 @@
 import { useState, type ReactNode } from "react";
-import { Download, ExternalLink, Sparkles } from "lucide-react";
+import { Download, ExternalLink, Sparkles, X } from "lucide-react";
 import { t, typeLabel, detectedLabel } from "../i18n";
 import { usePrefs } from "../context/Prefs";
 import { SiteIcon } from "./SiteIcon";
 import { DocPreview } from "./DocPreview";
-import type { Scrap } from "../lib/types";
+import { isImeComposing } from "../lib/ime";
+import { urlCaution } from "../lib/urlRisk";
+import type { Scrap, ScrapType } from "../lib/types";
 import { formatBytes, isPdf, mediaKindOf } from "../lib/tagger";
+
+const CATEGORIES: ScrapType[] = ["text", "image", "video", "audio", "link", "document"];
 
 type Props = {
   draft: Scrap;
@@ -165,6 +169,7 @@ function DraftMedia({
 
 export function DraftCard({ draft, uploadRatio = null, queueLabel = "", onChange, onSave, onCancel }: Props) {
   const { lang } = usePrefs();
+  const [tagDraft, setTagDraft] = useState("");
   const og = draft.og;
   const mediaKind = mediaKindOf(draft.type, draft.mime);
   const visual = mediaKind === "image" || mediaKind === "video";
@@ -183,6 +188,22 @@ export function DraftCard({ draft, uploadRatio = null, queueLabel = "", onChange
       ? Math.min(100, Math.max(0, Math.round(uploadRatio * 100)))
       : null;
   const uploadLabel = ratio != null ? `${t(lang, "uploadingFile")} · ${ratio}%` : "";
+  const caution = !draft.analyzing && draft.url ? urlCaution(draft.url) : "";
+  const categories = draft.type === "unknown" ? ([...CATEGORIES, "unknown"] as ScrapType[]) : CATEGORIES;
+
+  function commitTag(raw = tagDraft) {
+    const next = raw
+      .split(/[,，]/)
+      .map((part) => part.trim())
+      .filter(Boolean);
+    setTagDraft("");
+    if (!next.length) return;
+    const merged = [...draft.tags];
+    for (const tag of next) {
+      if (!merged.includes(tag)) merged.push(tag);
+    }
+    onChange({ tags: merged });
+  }
 
   const previewBlock =
     showMedia || showDocCover || draft.url ? (
@@ -263,13 +284,54 @@ export function DraftCard({ draft, uploadRatio = null, queueLabel = "", onChange
           disabled={draft.analyzing}
         />
       </label>
-      <p className="scrap-card-tags">
-        {(draft.tags.length ? draft.tags : [draft.type]).map((tag) => (
-          <span key={tag} className="scrap-tag detail-tag-chip">
-            {tag === draft.type ? typeLabel(lang, tag) : tag}
-          </span>
-        ))}
-      </p>
+      <label className="grid gap-1">
+        <span className="list-tools-label">{t(lang, "classifyCategory")}</span>
+        <select
+          className="list-tools-search classify-draft-select"
+          value={draft.type}
+          disabled={draft.analyzing}
+          onChange={(e) => onChange({ type: e.target.value as ScrapType })}
+        >
+          {categories.map((id) => (
+            <option key={id} value={id}>
+              {typeLabel(lang, id)}
+            </option>
+          ))}
+        </select>
+      </label>
+      <div className="grid gap-1">
+        <span className="list-tools-label">{t(lang, "addTag")}</span>
+        <div className="scrap-card-tags">
+          {draft.tags.map((tag) => (
+            <button
+              key={tag}
+              type="button"
+              className="scrap-tag scrap-tag--btn detail-tag-chip"
+              disabled={draft.analyzing}
+              onClick={() => onChange({ tags: draft.tags.filter((row) => row !== tag) })}
+            >
+              {tag}
+              <X className="ml-1 inline size-3" strokeWidth={2} />
+            </button>
+          ))}
+        </div>
+        <input
+          value={tagDraft}
+          onChange={(e) => setTagDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (isImeComposing(e)) return;
+            if (e.key === "Enter" || e.key === ",") {
+              e.preventDefault();
+              commitTag();
+            }
+          }}
+          onBlur={() => commitTag()}
+          placeholder={t(lang, "addTag")}
+          className="list-tools-search"
+          aria-label={t(lang, "addTag")}
+          disabled={draft.analyzing}
+        />
+      </div>
       {draft.filename ? (
         <div className="inline-action-row">
           <p className="scrap-card-file min-w-0 flex-1">
@@ -363,7 +425,19 @@ export function DraftCard({ draft, uploadRatio = null, queueLabel = "", onChange
       ) : (
         <>
           <p className="classify-draft-detected">{detectedLabel(lang, draft.type)}</p>
+          {draft.classifyMiss === "missing" ? (
+            <p className="classify-draft-fallback">{t(lang, "classifyServerMissing")}</p>
+          ) : null}
+          {draft.classifyMiss === "auth" ? (
+            <p className="classify-draft-fallback">{t(lang, "classifyAuthMissed")}</p>
+          ) : null}
           {draft.classifyFallback ? <p className="classify-draft-fallback">{t(lang, "classifyFallback")}</p> : null}
+          {draft.ogStatus === "error" && draft.url ? (
+            <p className="classify-draft-fallback">{t(lang, "ogPreviewMissed")}</p>
+          ) : null}
+          {caution === "http" ? <p className="classify-draft-fallback">{t(lang, "urlCautionHttp")}</p> : null}
+          {caution === "punycode" ? <p className="classify-draft-fallback">{t(lang, "urlCautionPuny")}</p> : null}
+          {caution === "login" ? <p className="classify-draft-fallback">{t(lang, "urlCautionLogin")}</p> : null}
           {resultBlock}
         </>
       )}

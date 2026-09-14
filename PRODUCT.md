@@ -8,7 +8,7 @@ web
 
 ## Stack
 
-Vite + React (TypeScript), Tailwind, Lucide. Firebase Hosting serves the SPA; `/api/analyze` is a Cloud Function (Netlify Function still exists as a twin). Supabase is Auth (email/password, Google, and 둘러보기), Postgres `public.scraps`, and private Storage `scrap-media`. Layers: [ARCHITECTURE.md](ARCHITECTURE.md).
+Vite + React (TypeScript), Tailwind, Lucide. Firebase Hosting serves the SPA. Claude classify is the Supabase Edge Function `analyze` (Firebase and Netlify `/api/analyze` twins stay unused on Spark). Supabase is Auth (email/password, Google, and 둘러보기), Postgres `public.scraps`, and private Storage `scrap-media`. Layers: [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Users
 
@@ -26,9 +26,9 @@ One capture surface that inspects what you pasted (text, image, video, audio, UR
 
 Today (shipped):
 
-- First visit: intro on porcelain peach / night kitchen. Hero plus stick / classify / find hotspots. Header **로그인** opens the auth sheet on a **chooser** (Google / email / 둘러보기); email path keeps Auth Ladder fields, **회원가입** confirm password, and Auth Recovery. Intro hero keeps **책장을 연다** only. Settings stay a sheet (language, Look fridge|library, palette, theme, Leave).
+- First visit: intro on porcelain peach / night kitchen. Hero plus stick / classify / find hotspots. Header **로그인** opens the auth sheet on a **chooser** (Google / email / 둘러보기); email path keeps Auth Ladder fields, **회원가입** confirm password, and Auth Recovery. Intro hero keeps **책장을 연다** only. Settings are `/settings` (language, Look fridge|library, palette, theme, Leave), not a sheet.
 - A saved session skips intro and opens the door (`ShelfReveal` once per session). Leave returns to intro.
-- After entry: recency list; Stick is a **floating** compact composer (not in the legal Footer). Composer send label is **분류하기**. Composer has a + menu with scrim (clipboard, camera on mobile, photo pick, file attach) and drag-and-drop. Classify draft is a near-full sheet above the pill (blur scrim behind) while Claude (or the MIME fallback) runs; URL scraps also fetch OG. List metadata paints before image signed URLs hydrate in batch. Header **통계** opens the scrap dashboard. Header search capsule opens **`/search`** (find, no site header). Shelf type filter is a horizontal **type book carousel**. Slim list-tools keeps gallery (default), list, and accordion (type groups) as layout options. **일자별** (calendar icon), query, and stored tag chips live on **`/search`**. The shelf and search lists page in (24, then more on scroll) instead of mounting every card. Zero-count types are hidden. Row tap opens **`/scrap/:id`** detail (Library back icon, edit title/memo/tags, share only when URL exists, bookmark, read, remind, tags → `/search?q=`, neighbor peeks on the sides). Bookmarked rows show a corner ribbon. Look **책장** (default) swaps scrap/peel copy to page / take-off-shelf wording. Free and standard tiers see an ad slot below list-tools.
+- After entry: recency list; Stick is a **floating** compact composer (not in the legal Footer). Composer send label is **분류하기**. Composer has a + menu with scrim (clipboard, camera on mobile, photo pick, file attach) and drag-and-drop. Classify draft is `/stick` (dock and + hidden) while Claude runs; a missing classify function is not the same message as a real MIME fallback. URL scraps also fetch OG. List metadata paints before image signed URLs hydrate in batch. Header **대시보드** opens the scrap dashboard. Header search capsule opens **`/search`**. Search and detail put **책장으로** in the header logo slot. Shelf type filter is a horizontal **type book carousel**. Slim list-tools keeps gallery (default), list, and accordion (type groups) as layout options. **일자별** (calendar icon), query, and stored tag chips live on **`/search`**. The shelf and search lists page in (24, then more on scroll) instead of mounting every card. Zero-count types are hidden. Row tap opens **`/scrap/:id`** detail (Library back icon, edit title/memo/tags, share only when URL exists, bookmark, read, remind, tags → `/search?q=`, neighbor peeks on the sides). Bookmarked rows show a corner ribbon. Look **책장** (default) swaps scrap/peel copy to page / take-off-shelf wording. Free and standard tiers see an ad slot below list-tools.
 - Footer on intro and app: 이용약관, 개인정보처리방침, operator placeholders (표시 예정 until filled).
 - Empty list copy: "항목이 없습니다."
 - List order: newest first.
@@ -44,7 +44,7 @@ Confirmed from brief and implemented in the Vite SPA:
 
 - Responsive React UI; header, main, footer.
 - i18n: Korean, English.
-- Auto-tag pasted/dropped content by type: text, image, video, audio, link, document extension (Claude at `/api/analyze`, MIME/URL fallback).
+- Auto-tag pasted/dropped content by type: text, image, video, audio, link, document extension (Claude via Supabase function `analyze`, MIME/URL fallback).
 - Classify-then-save draft (type, tags, Claude summary/analysis, memo, preview) before the item hits the recency list. Account file drafts upload to Storage for Claude, then remove that object if the draft is cancelled. Detail **AI 분석** re-runs classify and persists summary/analysis.
 - A new **분류하기** (Stick send), paste, or drop replaces an open classify draft without confirm; only Cancel asks to discard.
 - Image: show the image when a signed URL exists.
@@ -52,11 +52,11 @@ Confirmed from brief and implemented in the Vite SPA:
 - Placeholder: "붙여넣기 할 내용이나 파일을 첨부해주세요."
 - Drag-and-drop analyzes dropped files.
 - Recency-sorted tagged list; empty state; scroll-to-top FAB.
-- Header color theme: 기본 (tangerine magnet), 현무암 (basalt magnet). Look fridge|library (default library) remaps enamel tokens. Language, Look, palette, appearance, and Leave sit in a header settings sheet.
+- Header color theme: 기본 (tangerine magnet), 현무암 (basalt magnet). Look fridge|library (default library) remaps enamel tokens. Language, Look, palette, appearance, and Leave sit on `/settings`.
 - Type book carousel on the shelf. **`/search`** finds by query, type, **일자별**, and stored tags (any selected tag matches). The list pages in as you scroll. Zero-count type books are hidden. Peel from the list or detail page. Detail actions: open link, share (URL only), edit (title/memo/tags), bookmark, read/unread, remind (foreground Notification once). List bookmark is a corner ribbon; unread stays a magnet dot.
 - Plan tiers (policy only, no payment): free (14-day trial, 100MB, ads), standard (1GB, ads), premium/admin (unlimited, no ads). Settings shows tier, trial D-day, storage bar (layout reserved while loading). Upload blocked after trial or over quota. Settings **DB 초기화** clears that account’s scraps and media only (profiles stay); for 둘러보기 it clears this device instead.
-- Supabase: email/password Auth, **Google**, **둘러보기** (anonymous Auth), `scraps` (engagement + og) + `profiles` + private media bucket. Claude classify via `/api/analyze` (MIME fallback if the function is down). URL OG via `og-preview`.
-- **둘러보기 saves to this device.** Browse scraps go to `localStorage`, not `scraps`, and media stays inline as a data URL (1.5MB a file, about 4MB in total). The first local save opens a one-time notice sheet that says so. The shelf keeps a quiet banner with a 계정 만들기 link.
+- Supabase: email/password Auth, **Google**, **둘러보기** (anonymous Auth), `scraps` (engagement + og) + `profiles` + private media bucket. Claude classify via the Supabase function `analyze` (MIME fallback if that function is down). URL OG via `og-preview`.
+- **둘러보기 saves to this device.** Browse scraps go to `localStorage`, not `scraps`, and media stays inline as a data URL (1.5MB a file, about 4MB in total). The first local save opens a one-time notice sheet that says so. The shelf does not repeat that line or a 계정 만들기 link.
 - Browse data belongs to the browser, not the anonymous session: a new browse session on the same browser picks the same shelf back up, another browser or cleared history starts empty, and signing into a real account asks once whether to move the device's scraps over (per-plan quota applies; anything it cannot take stays local).
 
 [Inferred] Language, Look, theme, and palette stay local. Account scraps never write without a signed-in user (email or Google); 둘러보기 writes to this device only.
@@ -95,4 +95,4 @@ No real user content, brand assets, or Open Graph corpus. Demonstration scraps m
 
 ## Accessibility & Inclusion
 
-[Inferred] Keyboard access to composer, + menu, settings sheet, 로그인 sheet, list, and language switch. Visible focus. WCAG AA contrast. Honor `prefers-reduced-motion`. Camera control is mobile-only and must not appear as a dead desktop action. Motion and pointer rules: [DESIGN.md](DESIGN.md).
+[Inferred] Keyboard access to composer, + menu, `/settings`, 로그인 sheet, list, and language switch. Visible focus. WCAG AA contrast. Honor `prefers-reduced-motion`. Camera control is mobile-only and must not appear as a dead desktop action. Motion and pointer rules: [DESIGN.md](DESIGN.md).

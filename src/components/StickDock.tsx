@@ -78,6 +78,40 @@ export function StickDock({ value, onChange, onSubmitText, onFiles, dropping, di
   }, [draftSlot]);
 
   useEffect(() => {
+    function onPaste(ev: ClipboardEvent) {
+      if (disabled) return;
+      const target = ev.target;
+      if (target instanceof HTMLElement) {
+        const field = target.closest("input, textarea, select, [contenteditable='true']");
+        if (field && field !== fieldRef.current) return;
+        if (field === fieldRef.current) return;
+      }
+      const data = ev.clipboardData;
+      if (!data) return;
+      if (data.files?.length) {
+        ev.preventDefault();
+        onFiles(data.files);
+        return;
+      }
+      const text = data.getData("text/plain");
+      if (!text) return;
+      ev.preventDefault();
+      const el = fieldRef.current;
+      const start = el?.selectionStart ?? value.length;
+      const end = el?.selectionEnd ?? start;
+      const next = value.slice(0, start) + text + value.slice(end);
+      onChange(next);
+      const caret = start + text.length;
+      requestAnimationFrame(() => {
+        el?.focus();
+        el?.setSelectionRange(caret, caret);
+      });
+    }
+    window.addEventListener("paste", onPaste);
+    return () => window.removeEventListener("paste", onPaste);
+  }, [disabled, onChange, onFiles, value]);
+
+  useEffect(() => {
     if (!menu) return;
     function onKey(ev: KeyboardEvent) {
       if (ev.key === "Escape") setMenu(false);
@@ -258,6 +292,11 @@ export function StickDock({ value, onChange, onSubmitText, onFiles, dropping, di
                 value={value}
                 placeholder={t(lang, "placeholder")}
                 onChange={(e) => onChange(e.target.value)}
+                onPaste={(e) => {
+                  if (!e.clipboardData.files?.length) return;
+                  e.preventDefault();
+                  onFiles(e.clipboardData.files);
+                }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     if (isImeComposing(e)) return;

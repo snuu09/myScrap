@@ -18,6 +18,16 @@ export function isSupabaseConfigured() {
 
 let client: SupabaseClient | null = null;
 
+export function functionUrl(name: string) {
+  const base = url().replace(/\/$/, "");
+  if (!isSupabaseConfigured()) return "";
+  return base + "/functions/v1/" + name;
+}
+
+export function publishableKey() {
+  return isSupabaseConfigured() ? key() : "";
+}
+
 export function getSupabase() {
   if (!isSupabaseConfigured()) return null;
   if (!client) {

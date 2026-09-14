@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, Navigate, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, ChevronDown, ChevronUp, X } from "lucide-react";
+import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
+import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { typeLabel } from "../i18n";
 import { useAuth } from "../context/Auth";
 import { usePrefs } from "../context/Prefs";
@@ -31,16 +31,30 @@ export function SearchPage() {
   const [scraps, setScraps] = useState<Scrap[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState(() => searchParams.get("q") || "");
-  const [typeFilter, setTypeFilter] = useState<ScrapType | "all">("all");
+  const [typeFilter, setTypeFilter] = useState<ScrapType | "all">(() => {
+    const type = searchParams.get("type");
+    return type && TYPES.includes(type as ScrapType) ? (type as ScrapType) : "all";
+  });
   const [dayFilter, setDayFilter] = useState<string | null>(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
-  const [tagFilter, setTagFilter] = useState<string[]>([]);
+  const [tagFilter, setTagFilter] = useState<string[]>(() => searchParams.getAll("tag"));
   const [tagsOpen, setTagsOpen] = useState(false);
 
+  const typeParam = searchParams.get("type") || "";
+  const tagParam = searchParams.getAll("tag").join("\n");
+
   useEffect(() => {
-    const q = searchParams.get("q");
-    if (q != null && q !== query) setQuery(q);
-  }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
+    const q = searchParams.get("q") || "";
+    setQuery(q);
+  }, [searchParams]);
+
+  useEffect(() => {
+    setTypeFilter(typeParam && TYPES.includes(typeParam as ScrapType) ? (typeParam as ScrapType) : "all");
+  }, [typeParam]);
+
+  useEffect(() => {
+    setTagFilter(tagParam ? tagParam.split("\n") : []);
+  }, [tagParam]);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -105,14 +119,36 @@ export function SearchPage() {
   );
   const paged = usePagedSlice(visible);
 
+  function writeParams(patch: { q?: string; type?: ScrapType | "all"; tags?: string[] }) {
+    const next = new URLSearchParams(searchParams);
+    if (patch.q !== undefined) {
+      if (patch.q) next.set("q", patch.q);
+      else next.delete("q");
+    }
+    if (patch.type !== undefined) {
+      if (patch.type === "all") next.delete("type");
+      else next.set("type", patch.type);
+    }
+    if (patch.tags !== undefined) {
+      next.delete("tag");
+      for (const tag of patch.tags) next.append("tag", tag);
+    }
+    setSearchParams(next, { replace: true });
+  }
+
   function toggleTag(tag: string) {
-    setTagFilter((cur) => (cur.includes(tag) ? cur.filter((item) => item !== tag) : [...cur, tag]));
+    const next = tagFilter.includes(tag) ? tagFilter.filter((item) => item !== tag) : [...tagFilter, tag];
+    writeParams({ tags: next });
   }
 
   function updateQuery(value: string) {
     setQuery(value);
-    if (value) setSearchParams({ q: value }, { replace: true });
-    else setSearchParams({}, { replace: true });
+    writeParams({ q: value });
+  }
+
+  function selectType(value: ScrapType | "all") {
+    setTypeFilter(value);
+    writeParams({ type: value });
   }
 
   if (!ready) return <AuthWaiting />;
@@ -121,11 +157,6 @@ export function SearchPage() {
   return (
     <div className="search-page">
       <div className="search-page-bar">
-        <IconTip label={t("backToShelf")}>
-          <Link to="/" className="auth-back-btn no-underline" aria-label={t("backToShelf")}>
-            <ArrowLeft className="size-[22px]" strokeWidth={1.8} />
-          </Link>
-        </IconTip>
         <div className="list-tools-search-wrap search-page-field">
           <input
             ref={inputRef}
@@ -168,7 +199,8 @@ export function SearchPage() {
         counts={typeCounts}
         active={typeFilter}
         loading={loading}
-        onSelect={setTypeFilter}
+        contained
+        onSelect={selectType}
       />
 
       {tagCounts.length ? (

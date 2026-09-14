@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowUp } from "lucide-react";
 import { useT } from "../lib/useT";
 import { usePrefs } from "../context/Prefs";
@@ -33,9 +33,17 @@ import { useDialog } from "../lib/dialog";
 import { getSupabase } from "../lib/supabase";
 import { analyzeFile, analyzeText, uid } from "../lib/tagger";
 import { blobToObjectUrl, blobUrlToDataUrl, captureCover } from "../lib/captureCover";
-import type { Scrap, ScrapType } from "../lib/types";
+import type { AnalyzeResult, Scrap, ScrapType } from "../lib/types";
 
 const REMIND_NOTIFIED_KEY = "mybrary.remind.notified";
+
+function classifyFlags(ai: AnalyzeResult | null): Pick<Scrap, "classifyFallback" | "classifyMiss"> {
+  if (!ai) return { classifyFallback: false, classifyMiss: "" };
+  return {
+    classifyFallback: Boolean(ai.fallback),
+    classifyMiss: ai.miss || "",
+  };
+}
 
 function blankScrap(partial: Partial<Scrap>): Scrap {
   const now = Date.now();
@@ -73,15 +81,14 @@ function blankScrap(partial: Partial<Scrap>): Scrap {
   };
 }
 
-type Props = { onEnter?: () => void };
-
-export function Shelf({ onEnter }: Props) {
+export function Shelf() {
   const t = useT();
   const { lang } = usePrefs();
   const { user } = useAuth();
   const { setScrapsForUsage, canUpload, canStick } = usePlan();
   const { alert, confirm } = useDialog();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const guest = isBrowseUser(user);
   const pendingWrite = useRef<(() => void) | null>(null);
@@ -99,6 +106,16 @@ export function Shelf({ onEnter }: Props) {
   useEffect(() => {
     draftRef.current = draft;
   }, [draft]);
+
+  useEffect(() => {
+    if (draft && location.pathname !== "/stick") {
+      navigate("/stick", { replace: true });
+      return;
+    }
+    if (!draft && location.pathname === "/stick" && !queueRef.current.length) {
+      navigate("/", { replace: true });
+    }
+  }, [draft, location.pathname, navigate]);
   const [composer, setComposer] = useState("");
   const [typeFilter, setTypeFilter] = useState<ScrapType | "all">("all");
   const [dropping, setDropping] = useState(false);
@@ -433,7 +450,7 @@ export function Shelf({ onEnter }: Props) {
             previewText: ai.analysis || "",
             url: resolvedUrl || cur.url,
             domain: ai.domain || cur.domain,
-            classifyFallback: Boolean(ai.fallback),
+            ...classifyFlags(ai),
             ...ogPatch,
           }
         : cur,
@@ -447,6 +464,10 @@ export function Shelf({ onEnter }: Props) {
     }
     const files = Array.from(list);
     if (!files.length) return;
+    if (files.length === 1 && batch.length === 0 && !draftRef.current) {
+      void startFromFile(files[0]);
+      return;
+    }
     setBatch((cur) => {
       const next = [...cur];
       for (const file of files) {
@@ -609,7 +630,7 @@ export function Shelf({ onEnter }: Props) {
               title: ai?.title || cur.title,
               text: ai?.summary || ai?.body || cur.text,
               previewText: ai?.analysis || cur.previewText,
-              classifyFallback: ai ? Boolean(ai.fallback) : false,
+              ...classifyFlags(ai),
               storedMedia: uploaded.storedMedia,
               mediaPath: uploaded.mediaPath,
               dataUrl: uploaded.dataUrl || cur.dataUrl,
@@ -711,6 +732,7 @@ export function Shelf({ onEnter }: Props) {
         updatedAt: Date.now(),
         analyzing: false,
         classifyFallback: undefined,
+        classifyMiss: undefined,
       };
       await saveScrap(user, saved);
       draftRef.current = null;
@@ -729,7 +751,16 @@ export function Shelf({ onEnter }: Props) {
   /** Drop an unsaved draft and remove any Storage object uploaded for Claude classify. */
   async function discardDraft() {
     if (!draft) return;
-    if (!(await confirm(t("leaveDraftConfirm")))) return;
+    if (
+      !(await confirm({
+        title: t("leaveDraftTitle"),
+        body: t("leaveDraftConfirm"),
+        confirmLabel: t("leaveDraftDiscard"),
+        cancelLabel: t("cancel"),
+        danger: true,
+      }))
+    )
+      return;
     const doomed = draft;
     setUploadRatio(null);
     draftRef.current = null;
@@ -762,15 +793,40 @@ export function Shelf({ onEnter }: Props) {
     advanceQueue();
   }
 
-  function clearFilters() {
-    setTypeFilter("all");
-  }
-
   const stickDisabled = !canStick().ok || !getSupabase();
+  const composing = Boolean(draft) || location.pathname === "/stick";
+
+  const batchPanel = batch.length ? (
+    <FileBatch
+      items={batch}
+      guest={guest}
+      canUpload={canUpload}
+      onToggleAnalyze={(id) =>
+        setBatch((cur) => cur.map((item) => (item.id === id ? { ...item, analyze: !item.analyze } : item)))
+      }
+      onRemove={(id) => setBatch((cur) => cur.filter((item) => item.id !== id))}
+      onConfirm={confirmBatch}
+      onCancel={() => setBatch([])}
+    />
+  ) : null;
+
+  const draftPanel = draft ? (
+    <DraftCard
+      draft={draft}
+      uploadRatio={uploadRatio}
+      queueLabel={queueLabel}
+      onChange={(patch) => setDraft((cur) => (cur ? { ...cur, ...patch } : cur))}
+      onSave={() => void persist()}
+      onCancel={() => void discardDraft()}
+    />
+  ) : null;
 
   return (
     <div
-      className="relative flex min-h-0 flex-1 flex-col pb-[calc(12.5rem+env(safe-area-inset-bottom))]"
+      className={
+        "relative flex min-h-0 flex-1 flex-col" +
+        (composing ? "" : " pb-[calc(12.5rem+env(safe-area-inset-bottom))]")
+      }
       onDragOver={(e) => {
         e.preventDefault();
         setDropping(true);
@@ -790,30 +846,32 @@ export function Shelf({ onEnter }: Props) {
         }
       }}
     >
+      {composing ? (
+        <div className="compose-page">
+          {error ? <p className="m-0 text-[0.8125rem] text-danger">{error}</p> : null}
+          {batchPanel ? <section className="classify-draft">{batchPanel}</section> : null}
+          {draftPanel ? (
+            <section className="classify-draft" aria-label={t("classifyTitle")}>
+              {draftPanel}
+            </section>
+          ) : null}
+        </div>
+      ) : (
       <div className="shelf-column">
-        {guest && listReady && scraps.length > 0 ? (
-          <p className="mx-auto flex max-w-[40rem] flex-wrap items-center gap-x-2 gap-y-1 px-[var(--gutter)] pt-3 text-[0.8125rem] text-ink-soft">
-            {t("guestBanner")}
-            {onEnter ? (
-              <button type="button" className="auth-link-utility" onClick={onEnter}>
-                {t("guestBannerCta")}
-              </button>
-            ) : null}
-          </p>
-        ) : null}
         {error ? <p className="mx-auto max-w-[40rem] px-[var(--gutter)] pt-3 text-[0.8125rem] text-danger">{error}</p> : null}
         <ScrapList
           scraps={scraps}
           loading={!listReady}
           typeFilter={typeFilter}
           onType={setTypeFilter}
-          onClearFilters={clearFilters}
           hasMore={paged.hasMore}
           onLoadMore={paged.loadMore}
           sentinelRef={paged.sentinelRef}
           visible={paged.slice}
         />
       </div>
+      )}
+      {composing ? null : (
       <StickDock
         value={composer}
         onChange={setComposer}
@@ -823,37 +881,10 @@ export function Shelf({ onEnter }: Props) {
         disabled={stickDisabled}
         disabledHint={stickBlockedReason()}
         below={<Footer />}
-        draftSlot={
-          batch.length || draft ? (
-            <>
-              {batch.length ? (
-                <FileBatch
-                  items={batch}
-                  guest={guest}
-                  canUpload={canUpload}
-                  onToggleAnalyze={(id) =>
-                    setBatch((cur) => cur.map((item) => (item.id === id ? { ...item, analyze: !item.analyze } : item)))
-                  }
-                  onRemove={(id) => setBatch((cur) => cur.filter((item) => item.id !== id))}
-                  onConfirm={confirmBatch}
-                  onCancel={() => setBatch([])}
-                />
-              ) : null}
-              {draft ? (
-                <DraftCard
-                  draft={draft}
-                  uploadRatio={uploadRatio}
-                  queueLabel={queueLabel}
-                  onChange={(patch) => setDraft((cur) => (cur ? { ...cur, ...patch } : cur))}
-                  onSave={() => void persist()}
-                  onCancel={() => void discardDraft()}
-                />
-              ) : null}
-            </>
-          ) : null
-        }
+        draftSlot={batchPanel}
       />
-      {top ? (
+      )}
+      {top && !composing ? (
         <button
           type="button"
           className="fixed right-[var(--gutter)] bottom-[calc(13.25rem+env(safe-area-inset-bottom))] z-20 grid size-12 place-items-center rounded-full bg-magnet text-magnet-ink shadow-[0_10px_22px_rgb(208_102_18/0.26)]"

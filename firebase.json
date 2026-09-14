@@ -42,13 +42,6 @@
     ],
     "rewrites": [
       {
-        "source": "/api/analyze",
-        "function": {
-          "functionId": "analyze",
-          "region": "asia-northeast3"
-        }
-      },
-      {
         "source": "**",
         "destination": "/index.html"
       }
