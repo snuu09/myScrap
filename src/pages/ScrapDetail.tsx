@@ -616,14 +616,13 @@ export function ScrapDetail() {
   /** Link posters are the stored OG snapshot, not a document page set. */
   const ogSnapshotOnly = Boolean(item.url && !hasFileMedia);
   const youtubeEmbed = ogSnapshotOnly && item.url ? youtubeEmbedUrl(item.url) : "";
-  /** Docs/audio always use poster; image/video use poster only when media URL is missing. */
+  /** PDF page covers and audio art; non-PDF office docs skip the filename cover card. */
   const showDocCover =
     coverPages.length > 0 &&
     !ogSnapshotOnly &&
-    (item.type === "document" ||
-      mediaKind === "audio" ||
-      mediaKind === null ||
-      (!playable && (mediaKind === "image" || mediaKind === "video")));
+    (mediaKind === "audio" ||
+      (!playable && (mediaKind === "image" || mediaKind === "video")) ||
+      ((item.type === "document" || mediaKind === null) && isPdf(item.mime, item.filename)));
   const showPlayable = playable;
 
   const incoming = turning === "next" ? next : turning === "prev" ? prev : null;
@@ -835,12 +834,7 @@ export function ScrapDetail() {
           </div>
         ) : null}
         {showDocCover ? (
-          <DocPreview
-            src={coverPages[0]}
-            pages={coverPages}
-            filename={item.filename}
-            limitedNote={!isPdf(item.mime, item.filename) && item.type === "document" ? t("previewPagesLimited") : ""}
-          />
+          <DocPreview src={coverPages[0]} pages={coverPages} filename={item.filename} />
         ) : null}
         {showPlayable ? (
           <ScrapMedia
