@@ -739,7 +739,6 @@ export function ScrapDetail() {
                 frameClassName="detail-media-frame detail-media-frame--bordered"
               />
             ) : null}
-            {item.og?.description ? <p className="og-card-desc">{item.og.description}</p> : null}
           </div>
         ) : null}
         {showDocCover ? (
@@ -759,6 +758,12 @@ export function ScrapDetail() {
             className="detail-media-img"
             frameClassName="detail-media-frame"
           />
+        ) : null}
+        {item.og?.description ? (
+          <div className="detail-ai-block">
+            <p className="detail-section-title">{t("aiOriginal")}</p>
+            <p className="detail-ai-text">{item.og.description}</p>
+          </div>
         ) : null}
         {item.text ? (
           <div className="detail-ai-block">

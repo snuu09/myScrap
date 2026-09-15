@@ -261,7 +261,7 @@ function ScrapDetailPage() {
         onSettings={() => navigate("/settings")}
         back={{ label: t(lang, "backToShelf"), to: "/" }}
       />
-      <main id="main" className={"flex min-h-0 flex-col" + pageGenie}>
+      <main id="main" className={"flex min-h-0 flex-col overflow-y-auto" + pageGenie}>
         <ScrapDetail />
       </main>
       <Footer />

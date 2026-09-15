@@ -916,6 +916,24 @@ body {
     margin-inline: auto;
   }
 
+  @media (min-width: 900px) {
+    .shelf-door {
+      max-width: 56rem;
+    }
+  }
+
+  @media (min-width: 1200px) {
+    .shelf-door {
+      max-width: 72rem;
+    }
+  }
+
+  @media (min-width: 1500px) {
+    .shelf-door {
+      max-width: 88rem;
+    }
+  }
+
   .list-tools {
     display: flex;
     flex-direction: column;
@@ -1818,6 +1836,24 @@ body {
     animation: search-page-in 220ms var(--ease-out);
   }
 
+  @media (min-width: 900px) {
+    .search-page {
+      width: min(100%, 56rem);
+    }
+  }
+
+  @media (min-width: 1200px) {
+    .search-page {
+      width: min(100%, 72rem);
+    }
+  }
+
+  @media (min-width: 1500px) {
+    .search-page {
+      width: min(100%, 88rem);
+    }
+  }
+
   .header--search .header-search-slot {
     animation: search-slot-in 220ms var(--ease-out);
     transform-origin: left center;
@@ -2410,9 +2446,27 @@ body {
     gap: 0.5rem;
   }
 
-  @media (min-width: 720px) {
+  @media (min-width: 560px) {
     .scrap-list--gallery {
       grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 900px) {
+    .scrap-list--gallery {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 1200px) {
+    .scrap-list--gallery {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 1500px) {
+    .scrap-list--gallery {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
     }
   }
 
@@ -2949,16 +3003,12 @@ body {
     position: relative;
     display: flex;
     min-width: 0;
-    min-height: 0;
-    flex: 1;
     flex-direction: column;
   }
 
   .detail-page-slot {
     position: relative;
     min-width: 0;
-    min-height: 0;
-    flex: 1;
     perspective: 1600px;
   }
 
@@ -3356,7 +3406,6 @@ body {
       gap: 0.85rem;
       align-items: stretch;
       justify-content: stretch;
-      height: 100%;
     }
 
     .detail-peek-slot,
