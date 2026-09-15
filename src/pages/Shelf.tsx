@@ -7,7 +7,6 @@ import { isBrowseUser, useAuth } from "../context/Auth";
 import { usePlan } from "../context/Plan";
 import { DraftCard } from "../components/DraftCard";
 import { FileBatch, type BatchItem } from "../components/FileBatch";
-import { Footer } from "../components/Footer";
 import { GuestNoticeSheet } from "../components/GuestNoticeSheet";
 import { ScrapList } from "../components/ScrapList";
 import { StickDock } from "../components/StickDock";
@@ -1004,7 +1003,7 @@ export function Shelf() {
     <div
       className={
         "relative flex min-h-0 flex-1 flex-col" +
-        (composing ? "" : " pb-[calc(12.5rem+env(safe-area-inset-bottom))]")
+        (composing ? "" : " pb-[calc(7.5rem+env(safe-area-inset-bottom))]")
       }
       onDragOver={(e) => {
         e.preventDefault();
@@ -1070,14 +1069,13 @@ export function Shelf() {
         dropping={dropping}
         disabled={stickDisabled}
         disabledHint={stickBlockedReason()}
-        below={<Footer />}
         draftSlot={batchPanel}
       />
       )}
       {top && !composing ? (
         <button
           type="button"
-          className="fixed right-[var(--gutter)] bottom-[calc(13.25rem+env(safe-area-inset-bottom))] z-20 grid size-12 place-items-center rounded-full bg-magnet text-magnet-ink shadow-[0_10px_22px_rgb(208_102_18/0.26)]"
+          className="fixed right-[var(--gutter)] bottom-[calc(7.75rem+env(safe-area-inset-bottom))] z-20 grid size-12 place-items-center rounded-full bg-magnet text-magnet-ink shadow-[0_10px_22px_rgb(208_102_18/0.26)]"
           aria-label={t("scrollTop")}
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
         >

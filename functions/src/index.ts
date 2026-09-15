@@ -34,9 +34,10 @@ function systemPrompt(lang: string) {
     '{"type":"text|image|video|audio|link|document","tags":["..."],"title":"...","body":"...","summary":"...","analysis":"...","url":"","domain":""}. ' +
     "type is the primary kind. tags are short lowercase labels including the type. title is a short shelf label. " +
     "body is a one-line description. summary is 1-2 sentences. analysis is 2-4 sentences about what it contains and why it is worth keeping. " +
+    "In summary and analysis, wrap 1 to 3 of the most important short phrases in ==double equals== like ==this== so the app can highlight them. Do not wrap whole sentences. " +
     "Write title, body, summary, and analysis in " +
     language +
-    ". No markdown. No extra keys."
+    ". No markdown other than ==highlights==. No extra keys."
   );
 }
 

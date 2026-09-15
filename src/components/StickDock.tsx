@@ -1,5 +1,6 @@
 import type { AnimationEvent, ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { ArrowUp, Camera, Clipboard, FileUp, ImageIcon, Plus } from "lucide-react";
 import { t } from "../i18n";
 import { usePrefs } from "../context/Prefs";
@@ -219,21 +220,25 @@ export function StickDock({ value, onChange, onSubmitText, onFiles, dropping, di
 
   return (
     <>
-      {menu ? (
-        <button
-          type="button"
-          className="stick-menu-scrim"
-          aria-label={t(lang, "close")}
-          onClick={() => closeMenu()}
-        />
-      ) : null}
+      {menu && typeof document !== "undefined"
+        ? createPortal(
+            <button
+              type="button"
+              className="stick-menu-scrim"
+              aria-label={t(lang, "close")}
+              onClick={() => closeMenu()}
+            />,
+            document.body,
+          )
+        : null}
       {draftPresence.shown ? <div className="classify-draft-scrim" aria-hidden /> : null}
       <div
         className={
           "stick-float" +
           (draftPresence.shown ? " stick-float--sheet" : "") +
           (!draftPresence.shown && over ? " stick-float--over" : "") +
-          (!draftPresence.shown && yielding ? " stick-float--yielding" : "")
+          (!draftPresence.shown && yielding ? " stick-float--yielding" : "") +
+          (menu && !menuClosing ? " stick-float--menu" : "")
         }
         aria-label={t(lang, "composerLabel")}
       >

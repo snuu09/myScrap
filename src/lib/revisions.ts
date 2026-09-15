@@ -23,6 +23,7 @@ export function parseRevisions(raw: unknown): ScrapRevision[] {
       tags: Array.isArray(item.tags) ? item.tags.map((tag) => String(tag)).filter(Boolean) : [],
       type: String(item.type || "text"),
       text: String(item.text || ""),
+      previewText: String(item.previewText || item.preview_text || ""),
     });
   }
   return next.slice(0, REVISION_LIMIT);
@@ -38,6 +39,7 @@ export function pushRevision(item: Scrap, kind: RevisionKind): ScrapRevision[] {
     tags: [...(item.tags || [])],
     type: item.type || "text",
     text: item.text || "",
+    previewText: item.previewText || "",
   };
   return [snap, ...parseRevisions(item.revisions)].slice(0, REVISION_LIMIT);
 }
@@ -50,6 +52,7 @@ export function applyRevision(item: Scrap, revision: ScrapRevision): Scrap {
     tags: [...revision.tags],
     type: revision.type,
     text: revision.text,
+    previewText: revision.previewText ?? item.previewText,
     revisions: pushRevision(item, "edit"),
     updatedAt: Date.now(),
   };

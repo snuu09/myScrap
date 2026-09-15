@@ -46,6 +46,7 @@ import { DetailHistory } from "../components/DetailHistory";
 import { RelatedPages } from "../components/RelatedPages";
 import { applyRevision, pushRevision } from "../lib/revisions";
 import { looksLikeAddress, scrapCover, scrapFaceTitle, shelfTitle } from "../lib/scrapFace";
+import { renderAiHighlight } from "../lib/aiHighlight";
 import type { Scrap } from "../lib/types";
 
 function neighborCover(scrap: Scrap) {
@@ -83,8 +84,9 @@ function NeighborPeek({
         <span className="detail-peek-title face-title">{scrapFaceTitle(scrap, t("untitled"))}</span>
       </span>
       <span className="detail-peek-chevron" aria-hidden>
-        <Icon className="size-[18px]" strokeWidth={1.8} />
+        <Icon className="size-[16px]" strokeWidth={2} />
       </span>
+      <span className="detail-peek-label">{side === "prev" ? t("prevScrap") : t("nextScrap")}</span>
     </button>
   );
 }
@@ -738,13 +740,13 @@ export function ScrapDetail() {
         {item.text ? (
           <div className="detail-ai-block">
             <p className="detail-section-title">{t("aiSummary")}</p>
-            <p className="detail-ai-text">{item.text}</p>
+            <p className="detail-ai-text">{renderAiHighlight(item.text)}</p>
           </div>
         ) : null}
         {item.previewText ? (
           <div className="detail-ai-block">
             <p className="detail-section-title">{t("aiAnalysis")}</p>
-            <p className="detail-ai-text">{item.previewText}</p>
+            <p className="detail-ai-text">{renderAiHighlight(item.previewText)}</p>
           </div>
         ) : null}
         {item.filename ? (

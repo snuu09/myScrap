@@ -9,6 +9,8 @@ export type ScrapRevision = {
   tags: string[];
   type: string;
   text: string;
+  /** AI analysis snapshot when present. */
+  previewText?: string;
 };
 
 export type ScrapOg = {

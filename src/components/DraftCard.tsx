@@ -10,6 +10,7 @@ import { AiProgress } from "./AiProgress";
 import { GlassCluster, TagCluster } from "./GlassCluster";
 import type { Scrap, ScrapType } from "../lib/types";
 import { formatBytes, isPdf, mediaKindOf } from "../lib/tagger";
+import { renderAiHighlight } from "../lib/aiHighlight";
 
 const CATEGORIES: ScrapType[] = ["text", "image", "video", "audio", "link", "document"];
 
@@ -70,6 +71,15 @@ export function AnalyzeSkeleton({
       ? Math.min(100, Math.max(0, Math.round(uploadRatio * 100)))
       : null;
   const uploadLabel = `${t(lang, "uploadingFile")} · ${ratio ?? 0}%`;
+  const overlayBody = preview ? (
+    <div className="classify-draft-preview">{preview}</div>
+  ) : (
+    <>
+      <div className="classify-draft-skeleton-bar w-2/5" />
+      <div className="classify-draft-skeleton-bar w-4/5" />
+      <div className="classify-draft-skeleton-block" />
+    </>
+  );
   return (
     <div className="classify-draft-skeleton">
       {filename ? (
@@ -93,16 +103,7 @@ export function AnalyzeSkeleton({
           </div>
         </div>
       ) : null}
-      {preview ? <div className="classify-draft-preview">{preview}</div> : null}
-      <ClassifyBusyOverlay onCancel={onCancel}>
-        {ratio == null && !preview ? (
-          <>
-            <div className="classify-draft-skeleton-bar w-2/5" />
-            <div className="classify-draft-skeleton-bar w-4/5" />
-            <div className="classify-draft-skeleton-block" />
-          </>
-        ) : null}
-      </ClassifyBusyOverlay>
+      <ClassifyBusyOverlay onCancel={onCancel}>{overlayBody}</ClassifyBusyOverlay>
     </div>
   );
 }
@@ -417,13 +418,13 @@ export function DraftCard({
       {!draft.analyzing && draft.text ? (
         <div className="draft-ai-block">
           <p className="list-tools-label">{t(lang, "aiSummary")}</p>
-          <p className="draft-ai-text">{draft.text}</p>
+          <p className="draft-ai-text">{renderAiHighlight(draft.text)}</p>
         </div>
       ) : null}
       {!draft.analyzing && draft.previewText ? (
         <div className="draft-ai-block">
           <p className="list-tools-label">{t(lang, "aiAnalysis")}</p>
-          <p className="draft-ai-text">{draft.previewText}</p>
+          <p className="draft-ai-text">{renderAiHighlight(draft.previewText)}</p>
         </div>
       ) : null}
       <textarea
@@ -502,8 +503,17 @@ export function DraftCard({
               </div>
             </div>
           ) : null}
-          {previewBlock ? <div className="classify-draft-preview">{previewBlock}</div> : null}
-          <ClassifyBusyOverlay onCancel={onCancel} />
+          <ClassifyBusyOverlay onCancel={onCancel}>
+            {previewBlock ? (
+              <div className="classify-draft-preview">{previewBlock}</div>
+            ) : (
+              <>
+                <div className="classify-draft-skeleton-bar w-2/5" />
+                <div className="classify-draft-skeleton-bar w-4/5" />
+                <div className="classify-draft-skeleton-block" />
+              </>
+            )}
+          </ClassifyBusyOverlay>
         </>
       ) : (
         <>

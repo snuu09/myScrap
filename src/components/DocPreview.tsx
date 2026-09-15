@@ -1,5 +1,4 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useT } from "../lib/useT";
 
 type Props = {
@@ -10,7 +9,7 @@ type Props = {
   limitedNote?: string;
 };
 
-/** Captured page images. Buttons, film strip, and the large page share one index. */
+/** Captured page images. Film strip and under-strip pager share one index. */
 export function DocPreview({ src, pages, filename, limitedNote }: Props) {
   const t = useT();
   const urls = (pages?.length ? pages : src ? [src] : []).filter(Boolean);
@@ -59,29 +58,7 @@ export function DocPreview({ src, pages, filename, limitedNote }: Props) {
   return (
     <div className="doc-preview">
       <div className="doc-preview-stage">
-        {multi ? (
-          <button
-            type="button"
-            className="doc-preview-nav doc-preview-nav--prev"
-            aria-label={t("prevPage")}
-            disabled={page <= 0}
-            onClick={() => setIndex((n) => Math.max(0, n - 1))}
-          >
-            <ChevronLeft className="size-5" strokeWidth={1.8} />
-          </button>
-        ) : null}
         <img className="doc-preview-img" src={current} alt={filename || ""} />
-        {multi ? (
-          <button
-            type="button"
-            className="doc-preview-nav doc-preview-nav--next"
-            aria-label={t("nextPage")}
-            disabled={page >= urls.length - 1}
-            onClick={() => setIndex((n) => Math.min(urls.length - 1, n + 1))}
-          >
-            <ChevronRight className="size-5" strokeWidth={1.8} />
-          </button>
-        ) : null}
       </div>
       {multi ? (
         <div
@@ -114,9 +91,25 @@ export function DocPreview({ src, pages, filename, limitedNote }: Props) {
         </div>
       ) : null}
       {multi ? (
-        <p className="doc-preview-count">
-          {t("pageCount", { n: page + 1, total: urls.length })}
-        </p>
+        <div className="doc-preview-pager">
+          <button
+            type="button"
+            className="doc-preview-pager-btn"
+            disabled={page <= 0}
+            onClick={() => setIndex((n) => Math.max(0, n - 1))}
+          >
+            {t("prevPage")}
+          </button>
+          <p className="doc-preview-count">{t("pageCount", { n: page + 1, total: urls.length })}</p>
+          <button
+            type="button"
+            className="doc-preview-pager-btn"
+            disabled={page >= urls.length - 1}
+            onClick={() => setIndex((n) => Math.min(urls.length - 1, n + 1))}
+          >
+            {t("nextPage")}
+          </button>
+        </div>
       ) : null}
       {limitedNote ? <p className="doc-preview-note">{limitedNote}</p> : null}
     </div>
