@@ -1,4 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { typeLabel } from "../i18n";
 import { usePlan } from "../context/Plan";
 import { usePrefs } from "../context/Prefs";
@@ -19,6 +20,7 @@ function TypeBubbles({
   rows: { id: string; label: string; count: number; color: string }[];
   onSelect: (id: string) => void;
 }) {
+  const [frontId, setFrontId] = useState<string | null>(null);
   const max = Math.max(1, ...rows.map((row) => row.count));
   const width = 320;
   const height = 220;
@@ -33,17 +35,25 @@ function TypeBubbles({
       y: height / 2 + Math.sin(angle) * (orbit * 0.72),
     };
   });
+  const painted = frontId
+    ? [...placed.filter((row) => row.id !== frontId), ...placed.filter((row) => row.id === frontId)]
+    : placed;
 
   return (
     <svg className="dashboard-chart" viewBox={`0 0 ${width} ${height}`} role="img">
-      {placed.map((row) => {
+      {painted.map((row) => {
         const countSize = Math.max(11, Math.min(16, row.r * 0.48));
         const labelSize = Math.max(9, Math.min(12, row.r * 0.34));
+        const isFront = frontId === row.id;
         return (
           <g key={row.id} transform={`translate(${row.x} ${row.y})`}>
             <g
-              className="dashboard-bubble"
+              className={"dashboard-bubble" + (isFront ? " is-front" : "")}
               onClick={() => onSelect(row.id)}
+              onPointerEnter={() => setFrontId(row.id)}
+              onPointerLeave={() => setFrontId((cur) => (cur === row.id ? null : cur))}
+              onFocus={() => setFrontId(row.id)}
+              onBlur={() => setFrontId((cur) => (cur === row.id ? null : cur))}
               role="button"
               tabIndex={0}
               onKeyDown={(event) => {
