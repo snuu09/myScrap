@@ -2891,6 +2891,46 @@ body {
     color: var(--color-magnet);
   }
 
+  .inline-action:disabled {
+    cursor: wait;
+    opacity: 0.85;
+  }
+
+  .inline-action.is-done {
+    color: var(--color-ok);
+  }
+
+  .inline-action-progress {
+    display: grid;
+    place-items: center;
+    position: relative;
+  }
+
+  .inline-action-pct {
+    position: absolute;
+    font-size: 0.5rem;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    color: var(--color-magnet);
+  }
+
+  .media-file-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.2rem;
+  }
+
+  .media-file-actions-error {
+    margin: 0;
+    max-width: 12rem;
+    font-size: 0.6875rem;
+    line-height: 1.3;
+    color: var(--color-danger);
+    text-align: right;
+  }
+
   .scrap-card-file {
     display: flex;
     align-items: center;

@@ -11,7 +11,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Combine,
-  Download,
   ExternalLink,
   Folders,
   Pencil,
@@ -30,6 +29,7 @@ import { AuthWaiting } from "../components/AuthWaiting";
 import { BusyOverlay } from "../components/BusyOverlay";
 import { ScrapMedia } from "../components/ScrapMedia";
 import { DocPreview } from "../components/DocPreview";
+import { MediaFileActions } from "../components/MediaFileActions";
 import { requestAnalyze } from "../lib/analyze";
 import { captureCover } from "../lib/captureCover";
 import { deleteScrap, hydrateSignedMedia, isPagedPosterPath, loadScraps, saveScrap, uploadPosters } from "../lib/scraps";
@@ -234,10 +234,12 @@ export function ScrapDetail() {
     if (!user || !scrap?.dataUrl) return;
     if (!isPdf(scrap.mime, scrap.filename)) return;
     if (pageBackfillTried.current.has(scrap.id)) return;
-    const stored = scrap.pages || 0;
+    const hasCovers = Boolean(scrap.posterUrl || scrap.posterUrls.length);
     const paged = isPagedPosterPath(scrap.posterPath);
-    if (paged && stored > 4) return;
-    if (paged && stored > 0 && stored < 4) return;
+    const complete = paged && (scrap.pages >= 4 || scrap.posterUrls.length >= 4);
+    if (complete) return;
+    // Skip mid-upgrade states that already have partial paged covers.
+    if (paged && hasCovers && scrap.pages > 0 && scrap.pages < 4 && scrap.posterUrls.length > 0) return;
     pageBackfillTried.current.add(scrap.id);
     const target = scrap;
     let cancelled = false;
@@ -249,7 +251,7 @@ export function ScrapDetail() {
         const file = new File([blob], target.filename || "file.pdf", { type: target.mime || "application/pdf" });
         const covers = await captureCover(file);
         if (cancelled || !covers.length) return;
-        if (paged && covers.length <= stored) return;
+        if (paged && covers.length <= (target.pages || 0) && target.posterUrls.length >= covers.length) return;
         const uploaded = await uploadPosters(user, target.id, covers);
         if (cancelled) return;
         const nextScrap: Scrap = {
@@ -618,7 +620,10 @@ export function ScrapDetail() {
   const showDocCover =
     coverPages.length > 0 &&
     !ogSnapshotOnly &&
-    (mediaKind === "audio" || mediaKind === null || (!playable && (mediaKind === "image" || mediaKind === "video")));
+    (item.type === "document" ||
+      mediaKind === "audio" ||
+      mediaKind === null ||
+      (!playable && (mediaKind === "image" || mediaKind === "video")));
   const showPlayable = playable;
 
   const incoming = turning === "next" ? next : turning === "prev" ? prev : null;
@@ -888,16 +893,7 @@ export function ScrapDetail() {
               </span>
             </p>
             {item.dataUrl ? (
-              <GlassCluster className="liquid-hit">
-                <a
-                  href={item.dataUrl}
-                  className="inline-action"
-                  download={item.filename || undefined}
-                  aria-label={t("downloadFile")}
-                >
-                  <Download className="size-4" strokeWidth={1.8} />
-                </a>
-              </GlassCluster>
+              <MediaFileActions src={item.dataUrl} filename={item.filename} mime={item.mime} />
             ) : null}
           </div>
         ) : null}

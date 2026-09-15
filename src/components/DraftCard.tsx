@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { ChevronDown, Download, ExternalLink, Sparkles, X } from "lucide-react";
+import { ChevronDown, ExternalLink, Sparkles, X } from "lucide-react";
 import { t, typeLabel, detectedLabel } from "../i18n";
 import { usePrefs } from "../context/Prefs";
 import { SiteIcon } from "./SiteIcon";
 import { DocPreview } from "./DocPreview";
+import { MediaFileActions } from "./MediaFileActions";
 import { isImeComposing } from "../lib/ime";
 import { urlCaution } from "../lib/urlRisk";
 import { AiProgress } from "./AiProgress";
@@ -400,16 +401,7 @@ export function DraftCard({
             </span>
           </p>
           {draft.dataUrl ? (
-            <GlassCluster className="liquid-hit">
-              <a
-                href={draft.dataUrl}
-                className="inline-action"
-                download={draft.filename || undefined}
-                aria-label={t(lang, "downloadFile")}
-              >
-                <Download className="size-4" strokeWidth={1.8} />
-              </a>
-            </GlassCluster>
+            <MediaFileActions src={draft.dataUrl} filename={draft.filename} mime={draft.mime} />
           ) : null}
         </div>
       ) : null}

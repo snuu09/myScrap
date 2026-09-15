@@ -1,9 +1,9 @@
 import { isPdf } from "./tagger";
-import { extractAudioCover } from "./audioCover";
 
 const COVER_W = 720;
 const COVER_H = 960;
 const JPEG_QUALITY = 0.85;
+const MAX_PDF_PAGES = 4;
 
 function canvasToJpeg(canvas: HTMLCanvasElement) {
   return new Promise<Blob | null>((resolve) => {
@@ -99,7 +99,8 @@ async function renderPdfPage(page: import("pdfjs-dist").PDFPageProxy) {
   if (!ctx) return null;
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  await page.render({ canvas, canvasContext: ctx, viewport }).promise;
+  // pdf.js v5: pass `canvas` only (canvasContext is legacy and conflicts when both are set).
+  await page.render({ canvas, viewport }).promise;
   return canvasToJpeg(canvas);
 }
 
@@ -111,7 +112,7 @@ async function capturePdfPages(file: File) {
   const data = new Uint8Array(await file.arrayBuffer());
   const doc = await pdfjs.getDocument({ data }).promise;
   try {
-    const count = Math.max(1, doc.numPages || 1);
+    const count = Math.min(MAX_PDF_PAGES, Math.max(1, doc.numPages || 1));
     const blobs: Blob[] = [];
     for (let i = 1; i <= count; i++) {
       const page = await doc.getPage(i);
@@ -204,7 +205,10 @@ async function oneCover(file: File): Promise<Blob | null> {
   if (mime.startsWith("video/")) return await captureVideoFrame(file);
   const audio =
     mime.startsWith("audio/") || /\.(mp3|m4a|aac|flac|wav|ogg|opus|aiff?)$/i.test(name);
-  if (audio) return await extractAudioCover(file);
+  if (audio) {
+    const { extractAudioCover } = await import("./audioCover");
+    return await extractAudioCover(file);
+  }
   const ext = name.includes(".") ? name.split(".").pop() || "" : "";
   const canvas = drawDocCoverCard(name, ext || mime.split("/").pop() || "file");
   return canvas ? canvasToJpeg(canvas) : null;
