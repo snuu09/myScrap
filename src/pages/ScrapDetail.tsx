@@ -47,6 +47,7 @@ import { RelatedPages } from "../components/RelatedPages";
 import { applyRevision, pushRevision } from "../lib/revisions";
 import { looksLikeAddress, scrapCover, scrapFaceTitle, shelfTitle } from "../lib/scrapFace";
 import { renderAiHighlight } from "../lib/aiHighlight";
+import { SourceExcerpt } from "../components/SourceExcerpt";
 import type { Scrap } from "../lib/types";
 
 function neighborCover(scrap: Scrap) {
@@ -456,7 +457,9 @@ export function ScrapDetail() {
           /* classify with whatever OG we already have */
         }
       }
-      const blob = [item.title, item.memo, item.text, item.previewText, item.url].filter(Boolean).join("\n");
+      const blob = item.sourceText
+        ? item.sourceText
+        : [item.title, item.memo, item.text, item.previewText, item.url].filter(Boolean).join("\n");
       const ai =
         item.mediaPath
           ? await requestAnalyze({
@@ -482,6 +485,13 @@ export function ScrapDetail() {
         await alert(t("aiAnalyzeFailed"));
         return;
       }
+      const nextSource = item.url
+        ? pageExcerpt || metaDescription || ogDescription || item.sourceText
+        : item.mediaPath && (item.mime.startsWith("image/") || item.type === "image")
+          ? ai.summary || ai.body || item.sourceText
+          : item.mediaPath
+            ? [item.filename, item.mime].filter(Boolean).join(" · ") || item.sourceText
+            : item.sourceText || item.text;
       let next: Scrap = {
         ...item,
         type: ai.type || item.type,
@@ -499,6 +509,7 @@ export function ScrapDetail() {
           : item.title,
         text: ai.summary || ai.body || metaDescription || item.text,
         previewText: ai.analysis || item.previewText,
+        sourceText: nextSource || item.sourceText,
         revisions: pushRevision(item, "ai"),
         updatedAt: Date.now(),
         ...(ogPatch || {}),
@@ -759,11 +770,13 @@ export function ScrapDetail() {
             frameClassName="detail-media-frame"
           />
         ) : null}
-        {item.og?.description ? (
-          <div className="detail-ai-block">
-            <p className="detail-section-title">{t("aiOriginal")}</p>
-            <p className="detail-ai-text">{item.og.description}</p>
-          </div>
+        {item.sourceText || item.og?.description ? (
+          <SourceExcerpt
+            text={item.sourceText || item.og?.description || ""}
+            className="detail-ai-block"
+            titleClassName="detail-section-title"
+            bodyClassName="detail-ai-text"
+          />
         ) : null}
         {item.text ? (
           <div className="detail-ai-block">

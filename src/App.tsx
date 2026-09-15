@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { AuthProvider, isBrowseUser, useAuth } from "./context/Auth";
 import { PlanProvider } from "./context/Plan";
@@ -30,6 +30,32 @@ import { usePlan } from "./context/Plan";
 function openSheet(setter: (v: boolean) => void) {
   window.dispatchEvent(new Event(CLOSE_OVERLAYS_EVENT));
   setter(true);
+}
+
+/** Document-flow chrome: footer sits after content and scrolls with the page. */
+function PageChrome({
+  header,
+  children,
+  overlays,
+  footer = true,
+  mainClassName = "",
+}: {
+  header: ReactNode;
+  children: ReactNode;
+  overlays?: ReactNode;
+  footer?: boolean;
+  mainClassName?: string;
+}) {
+  return (
+    <div className="flex min-h-dvh flex-col">
+      {header}
+      <main id="main" className={mainClassName}>
+        {children}
+      </main>
+      {footer ? <Footer /> : null}
+      {overlays}
+    </div>
+  );
 }
 
 function Home() {
@@ -71,7 +97,7 @@ function Home() {
   }, []);
 
   return (
-    <div className={"grid min-h-dvh " + (user ? "grid-rows-[auto_1fr]" : "grid-rows-[auto_1fr_auto]")}>
+    <div className="flex min-h-dvh flex-col">
       <a
         href="#main"
         className="absolute left-3 top-[-40px] z-20 rounded-[14px] bg-ink px-3 py-2 text-enamel focus:top-3"
@@ -79,7 +105,10 @@ function Home() {
         {t(lang, "skip")}
       </a>
       <Header onEnter={() => openSheet(setEnter)} onSettings={() => navigate("/settings")} />
-      <main id="main" className={(user ? "flex min-h-0 flex-col" : "min-h-0 p-0") + arrive}>
+      <main
+        id="main"
+        className={(user ? "flex min-h-0 flex-1 flex-col" : "min-h-0 p-0") + arrive}
+      >
         {!ready ? (
           <AuthWaiting />
         ) : user ? (
@@ -167,18 +196,19 @@ function DashboardPage() {
   }
 
   return (
-    <div className="grid min-h-dvh grid-rows-[auto_1fr_auto]">
-      <Header
-        onEnter={() => openSheet(setEnter)}
-        onSettings={() => navigate("/settings")}
-        back={{ label: t(lang, "backToShelf"), to: "/" }}
-      />
-      <main id="main" className={"min-h-0" + pageGenie}>
-        <Dashboard scraps={scraps} onScrapsChange={setScraps} />
-      </main>
-      <Footer />
-      <AuthSheet open={enter} onClose={() => setEnter(false)} />
-    </div>
+    <PageChrome
+      header={
+        <Header
+          onEnter={() => openSheet(setEnter)}
+          onSettings={() => navigate("/settings")}
+          back={{ label: t(lang, "backToShelf"), to: "/" }}
+        />
+      }
+      mainClassName={pageGenie}
+      overlays={<AuthSheet open={enter} onClose={() => setEnter(false)} />}
+    >
+      <Dashboard scraps={scraps} onScrapsChange={setScraps} />
+    </PageChrome>
   );
 }
 
@@ -217,18 +247,19 @@ function DashboardEditorPage({ kind }: { kind: "types" | "tags" }) {
   }
 
   return (
-    <div className="grid min-h-dvh grid-rows-[auto_1fr_auto]">
-      <Header
-        onEnter={() => openSheet(setEnter)}
-        onSettings={() => navigate("/settings")}
-        back={{ label: t(lang, "back"), to: "/dashboard" }}
-      />
-      <main id="main" className={"min-h-0" + pageGenie}>
-        <DashboardEditor scraps={scraps} onScrapsChange={setScraps} kind={kind} />
-      </main>
-      <Footer />
-      <AuthSheet open={enter} onClose={() => setEnter(false)} />
-    </div>
+    <PageChrome
+      header={
+        <Header
+          onEnter={() => openSheet(setEnter)}
+          onSettings={() => navigate("/settings")}
+          back={{ label: t(lang, "back"), to: "/dashboard" }}
+        />
+      }
+      mainClassName={pageGenie}
+      overlays={<AuthSheet open={enter} onClose={() => setEnter(false)} />}
+    >
+      <DashboardEditor scraps={scraps} onScrapsChange={setScraps} kind={kind} />
+    </PageChrome>
   );
 }
 
@@ -255,18 +286,19 @@ function ScrapDetailPage() {
   }
 
   return (
-    <div className="grid h-dvh grid-rows-[auto_minmax(0,1fr)_auto]">
-      <Header
-        onEnter={() => openSheet(setEnter)}
-        onSettings={() => navigate("/settings")}
-        back={{ label: t(lang, "backToShelf"), to: "/" }}
-      />
-      <main id="main" className={"min-h-0 overflow-y-auto overscroll-y-contain" + pageGenie}>
-        <ScrapDetail />
-      </main>
-      <Footer />
-      <AuthSheet open={enter} onClose={() => setEnter(false)} />
-    </div>
+    <PageChrome
+      header={
+        <Header
+          onEnter={() => openSheet(setEnter)}
+          onSettings={() => navigate("/settings")}
+          back={{ label: t(lang, "backToShelf"), to: "/" }}
+        />
+      }
+      mainClassName={pageGenie}
+      overlays={<AuthSheet open={enter} onClose={() => setEnter(false)} />}
+    >
+      <ScrapDetail />
+    </PageChrome>
   );
 }
 
@@ -285,18 +317,19 @@ function SearchPageShell() {
   }
 
   return (
-    <div className="grid min-h-dvh grid-rows-[auto_1fr_auto]">
-      <Header
-        onEnter={() => openSheet(setEnter)}
-        onSettings={() => navigate("/settings")}
-        back={{ label: t(lang, "backToShelf"), to: "/" }}
-      />
-      <main id="main" className={"min-h-0" + pageGenie}>
-        <SearchPage />
-      </main>
-      <Footer />
-      <AuthSheet open={enter} onClose={() => setEnter(false)} />
-    </div>
+    <PageChrome
+      header={
+        <Header
+          onEnter={() => openSheet(setEnter)}
+          onSettings={() => navigate("/settings")}
+          back={{ label: t(lang, "backToShelf"), to: "/" }}
+        />
+      }
+      mainClassName={pageGenie}
+      overlays={<AuthSheet open={enter} onClose={() => setEnter(false)} />}
+    >
+      <SearchPage />
+    </PageChrome>
   );
 }
 
@@ -325,18 +358,19 @@ function SettingsLayout() {
   }
 
   return (
-    <div className="grid min-h-dvh grid-rows-[auto_1fr_auto]">
-      <Header
-        onEnter={() => openSheet(setEnter)}
-        onSettings={() => navigate("/settings")}
-        back={{ label: t(lang, "back"), onBack: goBack }}
-      />
-      <main id="main" className={"min-h-0" + pageGenie}>
-        <SettingsPage />
-      </main>
-      <Footer />
-      <AuthSheet open={enter} onClose={() => setEnter(false)} />
-    </div>
+    <PageChrome
+      header={
+        <Header
+          onEnter={() => openSheet(setEnter)}
+          onSettings={() => navigate("/settings")}
+          back={{ label: t(lang, "back"), onBack: goBack }}
+        />
+      }
+      mainClassName={pageGenie}
+      overlays={<AuthSheet open={enter} onClose={() => setEnter(false)} />}
+    >
+      <SettingsPage />
+    </PageChrome>
   );
 }
 
@@ -359,15 +393,17 @@ function LegalLayout() {
   }, []);
 
   return (
-    <div className="grid min-h-dvh grid-rows-[auto_1fr_auto]">
-      <Header onEnter={() => openSheet(setEnter)} onSettings={() => navigate("/settings")} />
-      <main id="main">
-        <Legal />
-      </main>
-      <Footer />
-      <AuthSheet open={enter} onClose={() => setEnter(false)} />
-      <span className="sr-only">{t(lang, "appName")}</span>
-    </div>
+    <PageChrome
+      header={<Header onEnter={() => openSheet(setEnter)} onSettings={() => navigate("/settings")} />}
+      overlays={
+        <>
+          <AuthSheet open={enter} onClose={() => setEnter(false)} />
+          <span className="sr-only">{t(lang, "appName")}</span>
+        </>
+      }
+    >
+      <Legal />
+    </PageChrome>
   );
 }
 

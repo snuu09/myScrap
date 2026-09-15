@@ -36,7 +36,8 @@ function systemPrompt(lang: string) {
     '{"type":"text|image|video|audio|link|document","tags":["..."],"title":"...","body":"...","summary":"...","analysis":"...","url":"","domain":""}. ' +
     "type is the primary kind. tags are short lowercase labels including the type. " +
     "title is a shelf label of at most 32 characters. When a Page title is given, only shorten that title; do not invent a new topic. Never use the raw URL or domain as the title when a page title or description is given. If there is no short title, use the first sentence of the Meta description or OG description. " +
-    "body is a one-line description. summary is 1-2 sentences. analysis is 2-4 sentences about what it contains and why it is worth keeping. " +
+    "body is a one-line shelf blurb. summary is 3 to 5 sentences the reader can use instead of opening the source. analysis is 6 to 10 sentences of key points grounded only in the given Page excerpt, paste, image, or file metadata. " +
+    "For links, write a page briefing from the excerpt and metadata. For images, describe the scene, any readable text, and why it might be kept. For plain text, cover claims, lists, and action items. For video, audio, or documents without extracted body text, stick to filename and mime and end with one short line that body text was not extracted. " +
     "When Page title, OG description, Meta description, or Page excerpt are given, ground body, summary, and analysis only in those facts. Do not invent prices, tool stacks, product names, or claims that are not present in that text. If only a URL is given with no page metadata, keep summary and analysis very short and say preview metadata was not available. " +
     "In summary and analysis, wrap 1 to 3 of the most important short phrases in ==double equals== like ==this== so the app can highlight them. Do not wrap whole sentences. " +
     "Write title, body, summary, and analysis in " +
@@ -97,7 +98,7 @@ Deno.serve(async (req) => {
 
   const filename = payload.filename || "";
   const mime = payload.mime || "";
-  const text = String(payload.text || "").slice(0, 8000);
+  const text = String(payload.text || "").slice(0, 12000);
   const lang = payload.lang === "en" ? "en" : "ko";
   const content: ContentPart[] = [];
 
@@ -131,7 +132,7 @@ Deno.serve(async (req) => {
     const ogTitle = String(payload.ogTitle || "").slice(0, 180);
     const ogDescription = String(payload.ogDescription || "").slice(0, 400);
     const metaDescription = String(payload.metaDescription || "").slice(0, 400);
-    const pageExcerpt = String(payload.pageExcerpt || "").slice(0, 2000);
+    const pageExcerpt = String(payload.pageExcerpt || "").slice(0, 6000);
     const hints: string[] = [];
     if (ogTitle) hints.push("Page title: " + ogTitle);
     if (ogDescription) hints.push("OG description: " + ogDescription);
@@ -154,7 +155,7 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 700,
+        max_tokens: 1600,
         system: systemPrompt(lang),
         messages: [{ role: "user", content }],
       }),
@@ -179,13 +180,13 @@ Deno.serve(async (req) => {
     };
     const type = parsed.type || typeFromMime(mime, filename);
     const tags = Array.isArray(parsed.tags) && parsed.tags.length ? parsed.tags.map(String) : [type];
-    const summary = String(parsed.summary || parsed.body || text || "").slice(0, 400);
-    const analysis = String(parsed.analysis || "").slice(0, 800);
+    const summary = String(parsed.summary || parsed.body || text || "").slice(0, 800);
+    const analysis = String(parsed.analysis || "").slice(0, 2000);
     return json({
       type,
       tags,
       title: String(parsed.title || filename || "").slice(0, 40),
-      body: String(parsed.body || summary || text || "").slice(0, 400),
+      body: String(parsed.body || summary || text || "").slice(0, 800),
       summary,
       analysis,
       url: String(parsed.url || ""),

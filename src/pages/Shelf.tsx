@@ -68,6 +68,7 @@ function blankScrap(partial: Partial<Scrap>): Scrap {
     posterUrls: [],
     pages: 0,
     previewText: "",
+    sourceText: "",
     sample: false,
     storedMedia: false,
     domain: "",
@@ -101,6 +102,7 @@ export function Shelf() {
   const [pendingDrafts, setPendingDrafts] = useState<Scrap[]>([]);
   const [batch, setBatch] = useState<BatchItem[]>([]);
   const [queueLabel, setQueueLabel] = useState("");
+  const [queueMeta, setQueueMeta] = useState({ n: 0, total: 0 });
   const [savingBatch, setSavingBatch] = useState(false);
   const saveAbortRef = useRef(false);
   const queueRef = useRef<{ file: File; analyze: boolean }[]>([]);
@@ -108,6 +110,11 @@ export function Shelf() {
   const draftRef = useRef<Scrap | null>(null);
   const pendingRef = useRef<Scrap[]>([]);
   const [uploadRatio, setUploadRatio] = useState<number | null>(null);
+
+  function syncQueueMeta(next: { n: number; total: number }) {
+    queueMetaRef.current = next;
+    setQueueMeta(next);
+  }
 
   useEffect(() => {
     draftRef.current = draft;
@@ -418,6 +425,7 @@ export function Shelf() {
       text: hint.body,
       url: hint.url,
       domain: hint.domain,
+      sourceText: hint.url ? "" : text,
       analyzing: true,
     });
     setDraft(next);
@@ -438,6 +446,11 @@ export function Shelf() {
               og: ogPatch.og || cur.og,
               ogStatus: ogPatch.ogStatus || cur.ogStatus,
               domain: cur.domain || ogPatch.og?.siteName || cur.domain,
+              sourceText:
+                pageExcerpt ||
+                metaDescription ||
+                ogPatch.og?.description ||
+                cur.sourceText,
             }
           : cur,
       );
@@ -458,6 +471,9 @@ export function Shelf() {
       if (ogResult.metaDescription) metaDescription = ogResult.metaDescription;
       if (ogResult.excerpt) pageExcerpt = ogResult.excerpt;
     }
+    const sourceText = url
+      ? pageExcerpt || metaDescription || ogPatch.og?.description || ""
+      : text;
     const title = shelfTitle({
       aiTitle: ai.miss ? "" : ai.title,
       ogTitle: ogPatch.og?.title,
@@ -477,6 +493,7 @@ export function Shelf() {
             title: title || cur.title,
             text: ai.summary || ai.body || metaDescription || ogPatch.og?.description || cur.text,
             previewText: ai.analysis || "",
+            sourceText: sourceText || cur.sourceText,
             url: resolvedUrl || cur.url,
             domain: ai.domain || cur.domain,
             ...classifyFlags(ai),
@@ -524,7 +541,7 @@ export function Shelf() {
     const [first, ...rest] = items;
     if (!first) return;
     queueRef.current = rest;
-    queueMetaRef.current = { n: 1, total: items.length };
+    syncQueueMeta({ n: 1, total: items.length });
     setQueueLabel(items.length > 1 ? t("batchProgress", { n: 1, total: items.length }) : "");
     void startFromFile(first.file, first.analyze);
   }
@@ -532,13 +549,13 @@ export function Shelf() {
   function advanceQueue() {
     const next = queueRef.current.shift();
     if (!next) {
-      queueMetaRef.current = { n: 0, total: 0 };
+      syncQueueMeta({ n: 0, total: 0 });
       setQueueLabel("");
       return;
     }
     const n = queueMetaRef.current.n + 1;
-    queueMetaRef.current.n = n;
     const total = queueMetaRef.current.total || n;
+    syncQueueMeta({ n, total });
     setQueueLabel(total > 1 ? t("batchProgress", { n, total }) : "");
     void startFromFile(next.file, next.analyze);
   }
@@ -559,7 +576,7 @@ export function Shelf() {
     setUploadRatio(null);
     if (hasMore) advanceQueue();
     else {
-      queueMetaRef.current = { n: 0, total: 0 };
+      syncQueueMeta({ n: 0, total: 0 });
       setQueueLabel("");
     }
   }
@@ -578,10 +595,15 @@ export function Shelf() {
     }
     if (draftRef.current) {
       queueRef.current.push(...ready);
-      if (!queueMetaRef.current.total) queueMetaRef.current = { n: 0, total: ready.length };
-      else {
-        queueMetaRef.current.total += ready.length;
-        setQueueLabel(t("batchProgress", { n: queueMetaRef.current.n, total: queueMetaRef.current.total }));
+      if (!queueMetaRef.current.total) {
+        syncQueueMeta({ n: 0, total: ready.length });
+      } else {
+        const next = {
+          n: queueMetaRef.current.n,
+          total: queueMetaRef.current.total + ready.length,
+        };
+        syncQueueMeta(next);
+        setQueueLabel(t("batchProgress", { n: next.n, total: next.total }));
       }
       return;
     }
@@ -691,6 +713,10 @@ export function Shelf() {
           }) || next.title,
         text: ai?.summary || ai?.body || next.text,
         previewText: ai?.analysis || next.previewText,
+        sourceText:
+          hint.type === "image" || file.type.startsWith("image/")
+            ? ai?.summary || ai?.body || next.sourceText
+            : [hint.filename, hint.mime].filter(Boolean).join(" · ") || next.sourceText,
         ...classifyFlags(ai),
         storedMedia: uploaded.storedMedia,
         mediaPath: uploaded.mediaPath,
@@ -1110,6 +1136,9 @@ export function Shelf() {
       <BusyOverlay
         open={Boolean(draft?.analyzing) || savingBatch}
         label={savingBatch ? t("savingBusy") : t("classifyRunningBusy")}
+        current={savingBatch ? 0 : queueMeta.n}
+        total={savingBatch ? 0 : queueMeta.total}
+        ratio={draft?.analyzing ? uploadRatio : null}
         onCancel={() => {
           if (savingBatch) {
             saveAbortRef.current = true;

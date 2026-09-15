@@ -33,6 +33,7 @@ type Row = {
   extension: string;
   size: number;
   preview_text: string;
+  source_text?: string;
   pages: number;
   og: unknown;
   og_status: string;
@@ -239,6 +240,7 @@ function toRow(userId: string, scrap: Scrap): Row {
     extension: scrap.extension || "",
     size: Number(scrap.size) || 0,
     preview_text: scrap.previewText || "",
+    source_text: scrap.sourceText || "",
     pages: Math.max(0, Number(scrap.pages) || 0),
     og: scrap.og,
     og_status: scrap.ogStatus || "",
@@ -279,6 +281,7 @@ function fromRow(row: Row): Scrap {
     posterUrls: [],
     pages: Math.max(0, Number(row.pages) || 0),
     previewText: row.preview_text || "",
+    sourceText: row.source_text || "",
     sample: !!row.sample,
     storedMedia: !!row.stored_media && !!mediaPath,
     domain: row.domain || "",

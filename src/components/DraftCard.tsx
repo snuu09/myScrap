@@ -11,6 +11,7 @@ import { GlassCluster, TagCluster } from "./GlassCluster";
 import type { Scrap, ScrapType } from "../lib/types";
 import { formatBytes, isPdf, mediaKindOf } from "../lib/tagger";
 import { renderAiHighlight } from "../lib/aiHighlight";
+import { SourceExcerpt } from "./SourceExcerpt";
 
 const CATEGORIES: ScrapType[] = ["text", "image", "video", "audio", "link", "document"];
 
@@ -411,6 +412,9 @@ export function DraftCard({
             </GlassCluster>
           ) : null}
         </div>
+      ) : null}
+      {!draft.analyzing && (draft.sourceText || draft.og?.description) ? (
+        <SourceExcerpt text={draft.sourceText || draft.og?.description || ""} />
       ) : null}
       {!draft.analyzing && draft.text ? (
         <div className="draft-ai-block">

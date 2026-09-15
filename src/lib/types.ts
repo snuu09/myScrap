@@ -11,6 +11,8 @@ export type ScrapRevision = {
   text: string;
   /** AI analysis snapshot when present. */
   previewText?: string;
+  /** Readable source excerpt / paste / image description when present. */
+  sourceText?: string;
 };
 
 export type ScrapOg = {
@@ -44,6 +46,8 @@ export type Scrap = {
   /** Captured cover page count (1–4). Legacy rows stay 0 until backfill. */
   pages: number;
   previewText: string;
+  /** Readable page excerpt, pasted original, or image description. Not shown on shelf cards. */
+  sourceText: string;
   sample: boolean;
   storedMedia: boolean;
   domain: string;

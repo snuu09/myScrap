@@ -29,6 +29,7 @@ function normalize(item: Scrap): Scrap {
     remindAt: item.remindAt ?? null,
     og: item.og ?? null,
     ogStatus: item.ogStatus || "",
+    sourceText: item.sourceText || "",
     posterPath: item.posterPath || "",
     posterUrl: item.posterUrl || "",
     posterUrls: Array.isArray(item.posterUrls) ? item.posterUrls.filter(Boolean) : item.posterUrl ? [item.posterUrl] : [],

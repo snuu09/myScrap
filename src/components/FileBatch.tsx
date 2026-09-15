@@ -1,8 +1,9 @@
 import { useEffect, useMemo } from "react";
 import { Sparkles, X } from "lucide-react";
 import { useT } from "../lib/useT";
-import { formatBytes } from "../lib/tagger";
+import { formatBytes, extOf } from "../lib/tagger";
 import { uploadIssue, type UploadIssue } from "../lib/uploadCheck";
+import { DocumentMark } from "./DocumentMark";
 
 export type BatchItem = {
   id: string;
@@ -34,8 +35,12 @@ function BatchThumb({ file }: { file: File }) {
   useEffect(() => () => {
     if (url) URL.revokeObjectURL(url);
   }, [url]);
-  if (!url) return <span className="file-batch-thumb file-batch-thumb--empty" aria-hidden />;
-  return <img src={url} alt="" className="file-batch-thumb" />;
+  if (url) return <img src={url} alt="" className="file-batch-thumb" />;
+  return (
+    <span className="file-batch-thumb file-batch-thumb--holder" aria-hidden>
+      <DocumentMark filename={file.name} mime={file.type} extension={extOf(file.name)} size="sm" />
+    </span>
+  );
 }
 
 export function FileBatch({
@@ -69,18 +74,6 @@ export function FileBatch({
         {rows.map(({ item, issue }) => (
           <li key={item.id} className={"file-batch-row" + (issue ? " file-batch-row--bad" : "")}>
             <BatchThumb file={item.file} />
-            <label className="file-batch-analyze" aria-label={t("batchAnalyze")}>
-              <span className={"file-batch-check" + (!issue && item.analyze ? " is-on" : "")}>
-                <input
-                  type="checkbox"
-                  checked={!issue && item.analyze}
-                  disabled={Boolean(issue) || saving}
-                  onChange={() => onToggleAnalyze(item.id)}
-                />
-              </span>
-              <Sparkles className="size-3.5 shrink-0" strokeWidth={1.8} aria-hidden />
-              <span>{t("batchAnalyze")}</span>
-            </label>
             <div className="file-batch-meta min-w-0 flex-1">
               <p className="file-batch-name">{item.file.name || t("file")}</p>
               <p className="file-batch-size">
@@ -88,6 +81,16 @@ export function FileBatch({
                 {issue ? ` · ${issueText(t, issue, guest)}` : ""}
               </p>
             </div>
+            <button
+              type="button"
+              className={"file-batch-ai" + (!issue && item.analyze ? " is-on" : "")}
+              aria-label={t("batchAnalyze")}
+              aria-pressed={!issue && item.analyze}
+              disabled={Boolean(issue) || saving}
+              onClick={() => onToggleAnalyze(item.id)}
+            >
+              <Sparkles className="size-3.5" strokeWidth={1.8} aria-hidden />
+            </button>
             <button
               type="button"
               className="file-batch-remove"

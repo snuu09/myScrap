@@ -2065,9 +2065,9 @@ body {
 
   .file-batch-row {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: center;
-    gap: 0.45rem 0.55rem;
+    gap: 0.55rem;
     border-radius: var(--radius-sm);
     border: 1px solid var(--color-paper-line);
     background: var(--color-enamel);
@@ -2084,103 +2084,76 @@ body {
     background: var(--color-paper);
   }
 
-  .file-batch-thumb--empty {
-    background:
-      linear-gradient(135deg, color-mix(in srgb, var(--color-magnet) 12%, var(--color-paper)), var(--color-enamel));
-  }
-
-  .file-batch-check {
-    position: relative;
+  .file-batch-thumb--holder {
     display: grid;
     place-items: center;
-    width: 1.05rem;
-    height: 1.05rem;
-    flex: 0 0 auto;
-    border-radius: 0.28rem;
-    border: 1.5px solid color-mix(in srgb, var(--color-magnet) 55%, var(--color-paper-line));
     background: var(--color-paper);
-    color: var(--color-paper);
   }
 
-  .file-batch-check.is-on {
-    border-color: var(--color-magnet);
-    background: var(--color-magnet);
-  }
-
-  .file-batch-check.is-on::after {
-    content: "";
-    width: 0.28rem;
-    height: 0.5rem;
-    border: solid currentColor;
-    border-width: 0 1.5px 1.5px 0;
-    transform: rotate(45deg) translate(-0.5px, -1px);
-  }
-
-  .file-batch-check input {
-    position: absolute;
-    inset: 0;
-    margin: 0;
-    opacity: 0;
-    cursor: pointer;
+  .file-batch-thumb--holder .doc-mark {
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 0.35rem;
   }
 
   .file-batch-row--bad {
     border-color: color-mix(in srgb, var(--color-danger, #b42318) 45%, var(--color-paper-line));
   }
 
-  .file-batch-analyze {
-    display: flex;
-    flex: 0 0 auto;
-    align-items: center;
-    gap: 0.3rem;
-    font-size: 0.75rem;
-    font-weight: 650;
-    color: var(--color-ink);
-  }
-
-  .file-batch-analyze > span:last-child {
-    white-space: nowrap;
-  }
-
   .file-batch-meta {
-    flex: 1 1 8rem;
+    flex: 1 1 auto;
     min-width: 0;
   }
 
   .file-batch-name,
   .file-batch-size {
     margin: 0;
-    overflow-wrap: anywhere;
-    white-space: normal;
   }
 
   .file-batch-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     font-size: 0.8125rem;
     font-weight: 650;
     color: var(--color-ink);
   }
 
   .file-batch-size {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     font-size: 0.75rem;
     color: var(--color-muted);
   }
 
   .file-batch-row--bad .file-batch-size {
+    white-space: normal;
     color: var(--color-danger, #b42318);
   }
 
-  @media (max-width: 419px) {
-    .file-batch-analyze > span:last-child {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      overflow: hidden;
-      clip-path: inset(50%);
-    }
+  .file-batch-ai {
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border: 1.5px solid color-mix(in srgb, var(--color-magnet) 45%, var(--color-paper-line));
+    border-radius: var(--radius-sm);
+    background: var(--color-paper);
+    color: var(--color-muted);
+    cursor: pointer;
+  }
 
-    .file-batch-analyze {
-      position: relative;
-    }
+  .file-batch-ai.is-on {
+    border-color: var(--color-magnet);
+    background: var(--color-magnet);
+    color: var(--color-magnet-ink);
+  }
+
+  .file-batch-ai:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
   }
 
   @media (min-width: 720px) {
@@ -2190,15 +2163,8 @@ body {
     }
 
     .file-batch-row {
-      flex-wrap: nowrap;
       gap: 0.65rem;
       padding: 0.65rem 0.85rem;
-    }
-
-    .file-batch-name {
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
     }
   }
 
@@ -5037,7 +5003,7 @@ body {
     flex-direction: column;
     gap: 1rem;
     margin-inline: auto;
-    padding: 1.25rem var(--gutter) 2.75rem;
+    padding: 1.25rem var(--gutter) 1.25rem;
   }
 
   .classify-draft-select {
@@ -5220,6 +5186,10 @@ body {
     box-shadow: var(--shadow-sheet);
   }
 
+  .classify-draft--sheet:has(.file-batch) {
+    min-height: 0;
+  }
+
   .classify-draft-form {
     display: flex;
     flex: 1;
@@ -5258,6 +5228,16 @@ body {
     line-height: 1.45;
     color: var(--color-ink-soft);
     white-space: pre-wrap;
+  }
+
+  .source-excerpt-toggle {
+    justify-self: start;
+    margin-top: 0.15rem;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    font-size: 0.8125rem;
   }
 
   .detail-ai-block {
@@ -5439,9 +5419,9 @@ body {
   .app-busy-lock-dim {
     position: absolute;
     inset: 0;
-    background: color-mix(in srgb, white 36%, var(--color-paper));
-    -webkit-backdrop-filter: blur(8px);
-    backdrop-filter: blur(8px);
+    background: color-mix(in srgb, var(--color-ink) 40%, transparent);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
   }
 
   .app-busy-lock-status {
@@ -5455,14 +5435,49 @@ body {
     min-width: min(16rem, calc(100vw - 3rem));
     border-radius: var(--radius-md);
     border: 1px solid color-mix(in srgb, var(--color-ink) 10%, var(--color-paper-line));
-    background: color-mix(in srgb, white 46%, var(--color-paper));
+    background: color-mix(in srgb, white 72%, var(--color-paper));
     padding: 1.25rem 1.5rem 1rem;
     color: var(--color-ink);
     text-align: center;
-    box-shadow: 0 1px 3px color-mix(in srgb, var(--color-ink) 6%, transparent);
-    -webkit-backdrop-filter: blur(8px);
-    backdrop-filter: blur(8px);
+    box-shadow: 0 8px 28px color-mix(in srgb, var(--color-ink) 18%, transparent);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
     pointer-events: none;
+  }
+
+  .app-busy-lock-count {
+    margin: 0;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--color-ink-soft);
+  }
+
+  .app-busy-lock-bar {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 1.35rem;
+    overflow: hidden;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--color-ink) 8%, var(--color-enamel));
+  }
+
+  .app-busy-lock-bar-fill {
+    position: absolute;
+    inset: 0 auto 0 0;
+    border-radius: inherit;
+    background: color-mix(in srgb, var(--color-magnet) 82%, white);
+    transition: width 180ms var(--ease-out);
+  }
+
+  .app-busy-lock-bar-label {
+    position: relative;
+    z-index: 1;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    color: var(--color-ink);
   }
 
   .app-busy-lock-cancel {

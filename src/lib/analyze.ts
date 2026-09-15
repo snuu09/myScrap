@@ -125,11 +125,11 @@ export async function requestAnalyze(payload: Payload): Promise<AnalyzeResult> {
     if (res.status === 503 || data?.fallback) return withMiss(payload, "rules");
     if (!res.ok || !data?.type) return withMiss(payload, "missing");
 
-    const summary = String(data.summary || data.body || "").slice(0, 400);
-    const analysis = String(data.analysis || "").slice(0, 800);
+    const summary = String(data.summary || data.body || "").slice(0, 800);
+    const analysis = String(data.analysis || "").slice(0, 2000);
     return {
       ...data,
-      body: String(data.body || summary).slice(0, 400),
+      body: String(data.body || summary).slice(0, 800),
       summary,
       analysis,
       fallback: false,

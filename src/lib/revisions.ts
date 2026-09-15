@@ -24,6 +24,7 @@ export function parseRevisions(raw: unknown): ScrapRevision[] {
       type: String(item.type || "text"),
       text: String(item.text || ""),
       previewText: String(item.previewText || item.preview_text || ""),
+      sourceText: String(item.sourceText || item.source_text || ""),
     });
   }
   return next.slice(0, REVISION_LIMIT);
@@ -40,6 +41,7 @@ export function pushRevision(item: Scrap, kind: RevisionKind): ScrapRevision[] {
     type: item.type || "text",
     text: item.text || "",
     previewText: item.previewText || "",
+    sourceText: item.sourceText || "",
   };
   return [snap, ...parseRevisions(item.revisions)].slice(0, REVISION_LIMIT);
 }
@@ -53,6 +55,7 @@ export function applyRevision(item: Scrap, revision: ScrapRevision): Scrap {
     type: revision.type,
     text: revision.text,
     previewText: revision.previewText ?? item.previewText,
+    sourceText: revision.sourceText ?? item.sourceText,
     revisions: pushRevision(item, "edit"),
     updatedAt: Date.now(),
   };

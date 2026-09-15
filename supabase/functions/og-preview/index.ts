@@ -1,7 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "./cors.ts";
 
-const EXCERPT_MAX = 2000;
+const EXCERPT_MAX = 6000;
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
