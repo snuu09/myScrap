@@ -1,4 +1,5 @@
 import { isPdf } from "./tagger";
+import { extractAudioCover } from "./audioCover";
 
 const COVER_W = 720;
 const COVER_H = 960;
@@ -205,10 +206,7 @@ async function oneCover(file: File): Promise<Blob | null> {
   if (mime.startsWith("video/")) return await captureVideoFrame(file);
   const audio =
     mime.startsWith("audio/") || /\.(mp3|m4a|aac|flac|wav|ogg|opus|aiff?)$/i.test(name);
-  if (audio) {
-    const { extractAudioCover } = await import("./audioCover");
-    return await extractAudioCover(file);
-  }
+  if (audio) return await extractAudioCover(file);
   const ext = name.includes(".") ? name.split(".").pop() || "" : "";
   const canvas = drawDocCoverCard(name, ext || mime.split("/").pop() || "file");
   return canvas ? canvasToJpeg(canvas) : null;
