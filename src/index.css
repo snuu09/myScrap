@@ -2992,11 +2992,9 @@ body {
   }
 
   .dashboard-door--detail {
-    flex: 1;
-    min-height: 0;
+    width: 100%;
     max-width: min(76rem, calc(100vw - 1.5rem));
-    overflow-y: auto;
-    overscroll-behavior: contain;
+    margin-inline: auto;
   }
 
   .detail-stage {
@@ -3391,8 +3389,6 @@ body {
   @media (min-width: 960px) {
     .dashboard-door--detail {
       max-width: min(76rem, calc(100vw - 1.5rem));
-      flex: 1;
-      min-height: 0;
     }
 
     .dashboard-door--detail > .text-danger {
@@ -4572,8 +4568,8 @@ body {
 
   .dashboard-door.dashboard-door--detail {
     max-width: min(76rem, calc(100vw - 1.5rem));
-    flex: 1;
-    min-height: 0;
+    flex: none;
+    min-height: auto;
   }
 
   .dashboard-head {

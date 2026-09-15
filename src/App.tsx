@@ -255,13 +255,13 @@ function ScrapDetailPage() {
   }
 
   return (
-    <div className="grid min-h-dvh grid-rows-[auto_1fr_auto]">
+    <div className="grid h-dvh grid-rows-[auto_minmax(0,1fr)_auto]">
       <Header
         onEnter={() => openSheet(setEnter)}
         onSettings={() => navigate("/settings")}
         back={{ label: t(lang, "backToShelf"), to: "/" }}
       />
-      <main id="main" className={"flex min-h-0 flex-col overflow-y-auto" + pageGenie}>
+      <main id="main" className={"min-h-0 overflow-y-auto overscroll-y-contain" + pageGenie}>
         <ScrapDetail />
       </main>
       <Footer />
