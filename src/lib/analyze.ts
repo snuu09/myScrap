@@ -13,6 +13,8 @@ type Payload = {
   lang?: Lang;
   ogTitle?: string;
   ogDescription?: string;
+  metaDescription?: string;
+  pageExcerpt?: string;
   signal?: AbortSignal;
 };
 
@@ -78,6 +80,8 @@ async function postAnalyze(token: string, payload: Payload) {
       lang: payload.lang === "en" ? "en" : "ko",
       ogTitle: payload.ogTitle || "",
       ogDescription: payload.ogDescription || "",
+      metaDescription: payload.metaDescription || "",
+      pageExcerpt: payload.pageExcerpt || "",
     }),
     signal: payload.signal,
   });

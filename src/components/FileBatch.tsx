@@ -69,7 +69,7 @@ export function FileBatch({
         {rows.map(({ item, issue }) => (
           <li key={item.id} className={"file-batch-row" + (issue ? " file-batch-row--bad" : "")}>
             <BatchThumb file={item.file} />
-            <label className="file-batch-analyze">
+            <label className="file-batch-analyze" aria-label={t("batchAnalyze")}>
               <span className={"file-batch-check" + (!issue && item.analyze ? " is-on" : "")}>
                 <input
                   type="checkbox"

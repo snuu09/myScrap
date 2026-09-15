@@ -7,6 +7,7 @@ import { isBrowseUser, useAuth } from "../context/Auth";
 import { usePlan } from "../context/Plan";
 import { DraftCard } from "../components/DraftCard";
 import { FileBatch, type BatchItem } from "../components/FileBatch";
+import { BusyOverlay } from "../components/BusyOverlay";
 import { GuestNoticeSheet } from "../components/GuestNoticeSheet";
 import { ScrapList } from "../components/ScrapList";
 import { StickDock } from "../components/StickDock";
@@ -101,7 +102,7 @@ export function Shelf() {
   const [batch, setBatch] = useState<BatchItem[]>([]);
   const [queueLabel, setQueueLabel] = useState("");
   const [savingBatch, setSavingBatch] = useState(false);
-  const [saveRatio, setSaveRatio] = useState<number | null>(null);
+  const saveAbortRef = useRef(false);
   const queueRef = useRef<{ file: File; analyze: boolean }[]>([]);
   const queueMetaRef = useRef({ n: 0, total: 0 });
   const draftRef = useRef<Scrap | null>(null);
@@ -423,9 +424,13 @@ export function Shelf() {
     setComposer("");
     const url = hint.url || "";
     let ogPatch: Pick<Scrap, "og" | "ogStatus"> = { og: null, ogStatus: "" };
+    let metaDescription = "";
+    let pageExcerpt = "";
     if (url) {
       const ogResult = await fetchOgPreview(url);
       ogPatch = { og: ogResult.og, ogStatus: ogResult.ogStatus };
+      metaDescription = ogResult.metaDescription || "";
+      pageExcerpt = ogResult.excerpt || "";
       setDraft((cur) =>
         cur && cur.id === next.id && cur.analyzing
           ? {
@@ -443,11 +448,15 @@ export function Shelf() {
       lang,
       ogTitle: ogPatch.og?.title,
       ogDescription: ogPatch.og?.description,
+      metaDescription,
+      pageExcerpt,
     });
     const resolvedUrl = ai.url || url || "";
-    if (!ogPatch.og && resolvedUrl) {
+    if ((!ogPatch.og || !pageExcerpt) && resolvedUrl) {
       const ogResult = await fetchOgPreview(resolvedUrl);
-      ogPatch = { og: ogResult.og, ogStatus: ogResult.ogStatus };
+      if (ogResult.og) ogPatch = { og: ogResult.og, ogStatus: ogResult.ogStatus };
+      if (ogResult.metaDescription) metaDescription = ogResult.metaDescription;
+      if (ogResult.excerpt) pageExcerpt = ogResult.excerpt;
     }
     const title = shelfTitle({
       aiTitle: ai.miss ? "" : ai.title,
@@ -456,6 +465,7 @@ export function Shelf() {
       domain: ai.domain || ogPatch.og?.siteName || hint.domain,
       url: resolvedUrl,
       fallback: "",
+      preferOg: Boolean(resolvedUrl),
     });
     setDraft((cur) =>
       cur && cur.id === next.id
@@ -465,7 +475,7 @@ export function Shelf() {
             type: ai.type,
             tags: ai.tags,
             title: title || cur.title,
-            text: ai.summary || ai.body || ogPatch.og?.description || cur.text,
+            text: ai.summary || ai.body || metaDescription || ogPatch.og?.description || cur.text,
             previewText: ai.analysis || "",
             url: resolvedUrl || cur.url,
             domain: ai.domain || cur.domain,
@@ -774,6 +784,7 @@ export function Shelf() {
       domain: nextDraft.domain,
       url: nextDraft.url,
       fallback: nextDraft.title,
+      preferOg: Boolean(nextDraft.url),
     });
     const saved = {
       ...nextDraft,
@@ -822,24 +833,23 @@ export function Shelf() {
     }
     if (needsGuestNotice(() => void persistPendingAll())) return;
     const queue = [...pendingDrafts];
+    saveAbortRef.current = false;
     setSavingBatch(true);
-    setSaveRatio(0);
     try {
       for (let i = 0; i < queue.length; i++) {
+        if (saveAbortRef.current) break;
         await persistOne(queue[i]);
         const left = queue.slice(i + 1);
         pendingRef.current = left;
         setPendingDrafts(left);
-        setSaveRatio((i + 1) / queue.length);
       }
-      await refresh();
+      if (!saveAbortRef.current) await refresh();
     } catch (err) {
       const message = err instanceof GuestQuotaError ? t("guestQuotaMsg") : t("syncError");
       setError(message);
       await alert(message);
     } finally {
       setSavingBatch(false);
-      setSaveRatio(null);
     }
   }
 
@@ -872,9 +882,10 @@ export function Shelf() {
   }
 
   /** Drop an unsaved draft and remove any Storage object uploaded for Claude classify. */
-  async function discardDraft() {
+  async function discardDraft(opts?: { force?: boolean }) {
     if (!draft) return;
     if (
+      !opts?.force &&
       !(await confirm({
         title: t("leaveDraftTitle"),
         body: t("leaveDraftConfirm"),
@@ -939,8 +950,36 @@ export function Shelf() {
           <p className="list-tools-label">{t("classifyDone")}</p>
           <p className="list-tools-label">{t("batchProgress", { n: pendingDrafts.length, total: pendingDrafts.length })}</p>
         </div>
-        {pendingDrafts.map((item) => (
-          <div key={item.id} className="classify-batch-review-item">
+        {pendingDrafts.length >= 3 ? (
+          <nav className="classify-batch-nav" aria-label={t("classifyTitle")}>
+            {pendingDrafts.map((item, index) => (
+              <button
+                key={item.id}
+                type="button"
+                className="classify-batch-nav-btn"
+                aria-label={t("batchProgress", { n: index + 1, total: pendingDrafts.length })}
+                onClick={() => {
+                  document.getElementById(`batch-draft-${item.id}`)?.scrollIntoView({
+                    behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+                    block: "start",
+                  });
+                }}
+              >
+                {index + 1}
+              </button>
+            ))}
+          </nav>
+        ) : null}
+        {pendingDrafts.map((item, index) => (
+          <div key={item.id} id={`batch-draft-${item.id}`} className="classify-batch-review-item">
+            <div className="classify-batch-review-head">
+              <p className="classify-batch-review-index">
+                {t("batchProgress", { n: index + 1, total: pendingDrafts.length })}
+              </p>
+              <p className="classify-batch-review-name">
+                {item.filename || item.title || item.url || t("untitled")}
+              </p>
+            </div>
             <DraftCard
               draft={item}
               hideActions
@@ -959,25 +998,10 @@ export function Shelf() {
           </button>
           <button
             type="button"
-            className={"auth-btn-primary classify-save-btn px-4" + (savingBatch ? " is-saving" : "")}
+            className={"auth-btn-primary classify-save-btn px-4" + (savingBatch ? " is-progress" : "")}
             disabled={savingBatch}
             onClick={() => void persistPendingAll()}
           >
-            {savingBatch && saveRatio != null ? (
-              <span className="classify-save-ring" aria-hidden>
-                <svg viewBox="0 0 36 36">
-                  <circle className="classify-save-ring-track" cx="18" cy="18" r="15" fill="none" />
-                  <circle
-                    className="classify-save-ring-fill"
-                    cx="18"
-                    cy="18"
-                    r="15"
-                    fill="none"
-                    style={{ strokeDashoffset: `${94.2 * (1 - Math.min(1, Math.max(0, saveRatio)))}` }}
-                  />
-                </svg>
-              </span>
-            ) : null}
             <span>{t("save")}</span>
           </button>
         </div>
@@ -1083,6 +1107,17 @@ export function Shelf() {
         </button>
       ) : null}
       <GuestNoticeSheet open={noticeOpen} onConfirm={confirmGuestNotice} onCancel={cancelGuestNotice} />
+      <BusyOverlay
+        open={Boolean(draft?.analyzing) || savingBatch}
+        label={savingBatch ? t("savingBusy") : t("classifyRunningBusy")}
+        onCancel={() => {
+          if (savingBatch) {
+            saveAbortRef.current = true;
+            return;
+          }
+          void discardDraft({ force: true });
+        }}
+      />
     </div>
   );
 }

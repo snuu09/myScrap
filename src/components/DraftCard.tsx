@@ -24,8 +24,6 @@ type Props = {
   /** Hide Cancel/Save when a parent owns the batch footer. */
   hideActions?: boolean;
   saving?: boolean;
-  /** 0–1 while a multi-save runs; draws a ring on Save. */
-  saveRatio?: number | null;
 };
 
 function ClassifyBusyOverlay({
@@ -185,7 +183,6 @@ export function DraftCard({
   onCancel,
   hideActions = false,
   saving = false,
-  saveRatio = null,
 }: Props) {
   const { lang } = usePrefs();
   const [tagDraft, setTagDraft] = useState("");
@@ -442,24 +439,9 @@ export function DraftCard({
           </button>
           <button
             type="submit"
-            className={"auth-btn-primary classify-save-btn px-4" + (saving ? " is-saving" : "")}
+            className={"auth-btn-primary classify-save-btn px-4" + (saving ? " is-progress" : "")}
             disabled={draft.analyzing || saving}
           >
-            {saving && saveRatio != null ? (
-              <span className="classify-save-ring" aria-hidden>
-                <svg viewBox="0 0 36 36">
-                  <circle className="classify-save-ring-track" cx="18" cy="18" r="15" fill="none" />
-                  <circle
-                    className="classify-save-ring-fill"
-                    cx="18"
-                    cy="18"
-                    r="15"
-                    fill="none"
-                    style={{ strokeDashoffset: `${94.2 * (1 - Math.min(1, Math.max(0, saveRatio)))}` }}
-                  />
-                </svg>
-              </span>
-            ) : null}
             <span>{t(lang, "save")}</span>
           </button>
         </div>

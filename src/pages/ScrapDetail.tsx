@@ -84,9 +84,8 @@ function NeighborPeek({
         <span className="detail-peek-title face-title">{scrapFaceTitle(scrap, t("untitled"))}</span>
       </span>
       <span className="detail-peek-chevron" aria-hidden>
-        <Icon className="size-[16px]" strokeWidth={2} />
+        <Icon className="size-[18px]" strokeWidth={1.8} />
       </span>
-      <span className="detail-peek-label">{side === "prev" ? t("prevScrap") : t("nextScrap")}</span>
     </button>
   );
 }
@@ -437,6 +436,26 @@ export function ScrapDetail() {
     setBusy(true);
     setError("");
     try {
+      let ogTitle = item.og?.title || "";
+      let ogDescription = item.og?.description || "";
+      let metaDescription = "";
+      let pageExcerpt = "";
+      let ogPatch: Pick<Scrap, "og" | "ogStatus"> | null = null;
+      if (item.url && !item.mediaPath) {
+        try {
+          const ogResult = await fetchOgPreview(item.url);
+          if (ac.signal.aborted) return;
+          if (ogResult.og) {
+            ogTitle = ogResult.og.title || ogTitle;
+            ogDescription = ogResult.og.description || ogDescription;
+            ogPatch = { og: ogResult.og, ogStatus: ogResult.ogStatus };
+          }
+          metaDescription = ogResult.metaDescription || "";
+          pageExcerpt = ogResult.excerpt || "";
+        } catch {
+          /* classify with whatever OG we already have */
+        }
+      }
       const blob = [item.title, item.memo, item.text, item.previewText, item.url].filter(Boolean).join("\n");
       const ai =
         item.mediaPath
@@ -452,8 +471,10 @@ export function ScrapDetail() {
               kind: "text",
               text: blob || item.title || item.filename,
               lang,
-              ogTitle: item.og?.title,
-              ogDescription: item.og?.description,
+              ogTitle,
+              ogDescription,
+              metaDescription,
+              pageExcerpt,
               signal: ac.signal,
             });
       if (ac.signal.aborted) return;
@@ -468,17 +489,19 @@ export function ScrapDetail() {
         title: looksLikeAddress(item.title, item.domain, item.url)
           ? shelfTitle({
               aiTitle: ai.miss ? "" : ai.title,
-              ogTitle: item.og?.title,
-              ogDescription: item.og?.description,
+              ogTitle: ogTitle || item.og?.title,
+              ogDescription: ogDescription || item.og?.description,
               domain: item.domain || ai.domain,
               url: item.url,
               fallback: item.title,
+              preferOg: Boolean(item.url),
             }) || item.title
           : item.title,
-        text: ai.summary || ai.body || item.text,
+        text: ai.summary || ai.body || metaDescription || item.text,
         previewText: ai.analysis || item.previewText,
         revisions: pushRevision(item, "ai"),
         updatedAt: Date.now(),
+        ...(ogPatch || {}),
       };
       const linkUrl = next.url || item.url;
       if (linkUrl && !next.og) {
@@ -851,8 +874,16 @@ export function ScrapDetail() {
           </>
         )}
       </article>
+      </div>
+        <div className="detail-peek-slot detail-peek-slot--next">
+          {!editing && next ? (
+            <NeighborPeek scrap={next} side="next" label={t("nextScrap")} onClick={() => turnTo(next.id, "next")} />
+          ) : null}
+        </div>
+      </div>
+
       {!editing ? (
-        <>
+        <div className="detail-after">
           <DetailHistory
             item={item}
             busy={busy}
@@ -865,15 +896,8 @@ export function ScrapDetail() {
             }
           />
           <RelatedPages item={item} scraps={scraps} />
-        </>
-      ) : null}
-      </div>
-        <div className="detail-peek-slot detail-peek-slot--next">
-          {!editing && next ? (
-            <NeighborPeek scrap={next} side="next" label={t("nextScrap")} onClick={() => turnTo(next.id, "next")} />
-          ) : null}
         </div>
-      </div>
+      ) : null}
 
       <RemindSheet
         open={remindOpen}

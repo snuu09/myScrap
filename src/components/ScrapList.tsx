@@ -524,6 +524,7 @@ export function ScrapList({
         counts={typeCounts}
         active={typeFilter}
         loading={loading}
+        contained
         onSelect={onType}
       />
 

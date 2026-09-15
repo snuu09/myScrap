@@ -14,7 +14,7 @@ type Props = {
   onSelect: (value: string) => void;
 };
 
-/** Horizontal type books. Breaks out of the 40rem column; page scroll stays vertical. */
+/** Horizontal type books. Default breaks out of the 40rem column; `contained` stays in the door. */
 export function TypeBookCarousel({ types, counts, active, loading, contained, onSelect }: Props) {
   const { lang } = usePrefs();
   const t = useT();
@@ -39,17 +39,18 @@ export function TypeBookCarousel({ types, counts, active, loading, contained, on
       const left = node.scrollLeft > 8;
       const right = node.scrollLeft + node.clientWidth < node.scrollWidth - 8;
       setEnds({ left, right });
-      if (contained) return;
       const door = node.closest(".shelf-door");
-      if (!(door instanceof HTMLElement)) return;
-      const books = [...node.querySelectorAll(".type-book")];
-      const doorStyle = getComputedStyle(door);
-      const content =
-        door.clientWidth - parseFloat(doorStyle.paddingLeft) - parseFloat(doorStyle.paddingRight);
       const gap = parseFloat(getComputedStyle(node).columnGap) || 0;
-      const needed = books.reduce((sum, book, index) => {
+      const bookEls = [...node.querySelectorAll(".type-book")];
+      const needed = bookEls.reduce((sum, book, index) => {
         return sum + book.getBoundingClientRect().width + (index ? gap : 0);
       }, 0);
+      let content = node.clientWidth;
+      if (!contained && door instanceof HTMLElement) {
+        const doorStyle = getComputedStyle(door);
+        content =
+          door.clientWidth - parseFloat(doorStyle.paddingLeft) - parseFloat(doorStyle.paddingRight);
+      }
       setFit(needed > 0 && needed + 8 <= content);
     }
     sync();
@@ -79,7 +80,7 @@ export function TypeBookCarousel({ types, counts, active, loading, contained, on
       className={
         "type-book-carousel" +
         (contained ? " type-book-carousel--contained" : "") +
-        (!contained && fit ? " type-book-carousel--fit" : "")
+        (fit ? " type-book-carousel--fit" : "")
       }
       aria-label={t("filterAll")}
     >

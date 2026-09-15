@@ -35,8 +35,9 @@ function systemPrompt(lang: string) {
     "You classify personal scraps for MyBrary, a private shelf. Reply with JSON only: " +
     '{"type":"text|image|video|audio|link|document","tags":["..."],"title":"...","body":"...","summary":"...","analysis":"...","url":"","domain":""}. ' +
     "type is the primary kind. tags are short lowercase labels including the type. " +
-    "title is a shelf label of at most 32 characters. Shorten a long page title. Never use the raw URL or domain as the title when a page title or description is given. If there is no short title, use the first sentence of the description. " +
+    "title is a shelf label of at most 32 characters. When a Page title is given, only shorten that title; do not invent a new topic. Never use the raw URL or domain as the title when a page title or description is given. If there is no short title, use the first sentence of the Meta description or OG description. " +
     "body is a one-line description. summary is 1-2 sentences. analysis is 2-4 sentences about what it contains and why it is worth keeping. " +
+    "When Page title, OG description, Meta description, or Page excerpt are given, ground body, summary, and analysis only in those facts. Do not invent prices, tool stacks, product names, or claims that are not present in that text. If only a URL is given with no page metadata, keep summary and analysis very short and say preview metadata was not available. " +
     "In summary and analysis, wrap 1 to 3 of the most important short phrases in ==double equals== like ==this== so the app can highlight them. Do not wrap whole sentences. " +
     "Write title, body, summary, and analysis in " +
     language +
@@ -82,6 +83,8 @@ Deno.serve(async (req) => {
     lang?: string;
     ogTitle?: string;
     ogDescription?: string;
+    metaDescription?: string;
+    pageExcerpt?: string;
   };
   try {
     payload = await req.json();
@@ -125,13 +128,16 @@ Deno.serve(async (req) => {
         typeFromMime(mime, filename),
     });
   } else {
-    const ogHint =
-      payload.ogTitle || payload.ogDescription
-        ? "\nPage title: " +
-          String(payload.ogTitle || "").slice(0, 180) +
-          "\nPage description: " +
-          String(payload.ogDescription || "").slice(0, 400)
-        : "";
+    const ogTitle = String(payload.ogTitle || "").slice(0, 180);
+    const ogDescription = String(payload.ogDescription || "").slice(0, 400);
+    const metaDescription = String(payload.metaDescription || "").slice(0, 400);
+    const pageExcerpt = String(payload.pageExcerpt || "").slice(0, 2000);
+    const hints: string[] = [];
+    if (ogTitle) hints.push("Page title: " + ogTitle);
+    if (ogDescription) hints.push("OG description: " + ogDescription);
+    if (metaDescription) hints.push("Meta description: " + metaDescription);
+    if (pageExcerpt) hints.push("Page excerpt:\n" + pageExcerpt);
+    const ogHint = hints.length ? "\n" + hints.join("\n") : "";
     content.push({
       type: "text",
       text: "Classify and analyze this paste:\n" + (text || "(empty)") + ogHint,

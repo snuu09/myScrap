@@ -2,7 +2,16 @@ import { getSupabase } from "./supabase";
 import { getAccessToken } from "./scraps";
 import type { ScrapOg } from "./types";
 
-export type OgFetchResult = { og: ScrapOg | null; ogStatus: "ready" | "error" | "skipped" };
+export type OgFetchResult = {
+  og: ScrapOg | null;
+  ogStatus: "ready" | "error" | "skipped";
+  /** name=description; ephemeral for classify, not stored on ScrapOg. */
+  metaDescription?: string;
+  /** Short page text window for classify; ephemeral, not stored. */
+  excerpt?: string;
+};
+
+type RemoteOg = ScrapOg & { metaDescription: string; excerpt: string };
 
 function asOgFields(row: Record<string, unknown>): ScrapOg {
   return {
@@ -126,7 +135,7 @@ function parseOgHtml(html: string, pageUrl: string): ScrapOg {
   };
 }
 
-async function invokeRemote(url: string): Promise<ScrapOg | null> {
+async function invokeRemote(url: string): Promise<RemoteOg | null> {
   const supabase = getSupabase();
   const token = await getAccessToken();
   if (!supabase || !token) return null;
@@ -141,9 +150,14 @@ async function invokeRemote(url: string): Promise<ScrapOg | null> {
       outer.data && typeof outer.data === "object" && !Array.isArray(outer.data)
         ? (outer.data as Record<string, unknown>)
         : null;
-    const og = asOgFields(nested || outer);
+    const row = nested || outer;
+    const og = asOgFields(row);
     if (!og.title && !og.image && !og.siteName) return null;
-    return og;
+    return {
+      ...og,
+      metaDescription: String(row.metaDescription || ""),
+      excerpt: String(row.excerpt || ""),
+    };
   } catch {
     return null;
   }
@@ -285,20 +299,47 @@ async function clientOg(url: string): Promise<ScrapOg | null> {
   return merged;
 }
 
-/** YouTube and Instagram thumbs first. Other links use microlink, then a short HTML scrape. */
+function packResult(
+  og: ScrapOg,
+  extra?: { metaDescription?: string; excerpt?: string },
+): OgFetchResult {
+  const filled = {
+    ...og,
+    siteName: og.siteName || "",
+    favicon: og.favicon || "",
+  };
+  if (!filled.image && !filled.title && !filled.siteName) {
+    return { og: null, ogStatus: "error", metaDescription: "", excerpt: "" };
+  }
+  return {
+    og: filled,
+    ogStatus: filled.image ? "ready" : "error",
+    metaDescription: extra?.metaDescription || "",
+    excerpt: extra?.excerpt || "",
+  };
+}
+
+/** Prefer Edge Function og-preview when signed in. Fall back to microlink / HTML scrape. */
 export async function fetchOgPreview(url: string): Promise<OgFetchResult> {
   const trimmed = url.trim();
   if (!/^https?:\/\//i.test(trimmed)) return { og: null, ogStatus: "skipped" };
 
-  const clientPromise = clientOg(trimmed);
-  const remotePromise = withTimeout(invokeRemote(trimmed), 800);
-  const client = await clientPromise;
-  if (client?.image) return { og: client, ogStatus: "ready" };
+  const remote = await withTimeout(invokeRemote(trimmed), 6000);
+  if (remote) {
+    const og: ScrapOg = {
+      title: remote.title,
+      description: remote.description,
+      image: remote.image,
+      siteName: remote.siteName || hostOf(trimmed),
+      favicon: remote.favicon || faviconFor(trimmed),
+    };
+    return packResult(og, {
+      metaDescription: remote.metaDescription,
+      excerpt: remote.excerpt,
+    });
+  }
 
-  const remote = await remotePromise;
-  if (remote?.image) return { og: remote, ogStatus: "ready" };
-
-  const filled = mergeOg(remote, client || emptyOg());
-  if (!filled.image && !filled.title && !filled.siteName) return { og: null, ogStatus: "error" };
-  return { og: filled, ogStatus: filled.image ? "ready" : "error" };
+  const client = await clientOg(trimmed);
+  if (!client) return { og: null, ogStatus: "error" };
+  return packResult(client);
 }

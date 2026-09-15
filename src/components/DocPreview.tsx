@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useT } from "../lib/useT";
 
 type Props = {
@@ -95,19 +96,21 @@ export function DocPreview({ src, pages, filename, limitedNote }: Props) {
           <button
             type="button"
             className="doc-preview-pager-btn"
+            aria-label={t("prevPage")}
             disabled={page <= 0}
             onClick={() => setIndex((n) => Math.max(0, n - 1))}
           >
-            {t("prevPage")}
+            <ChevronLeft className="size-4" strokeWidth={1.8} />
           </button>
           <p className="doc-preview-count">{t("pageCount", { n: page + 1, total: urls.length })}</p>
           <button
             type="button"
             className="doc-preview-pager-btn"
+            aria-label={t("nextPage")}
             disabled={page >= urls.length - 1}
             onClick={() => setIndex((n) => Math.min(urls.length - 1, n + 1))}
           >
-            {t("nextPage")}
+            <ChevronRight className="size-4" strokeWidth={1.8} />
           </button>
         </div>
       ) : null}
