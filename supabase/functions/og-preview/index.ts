@@ -204,6 +204,11 @@ function firstContentImage(html: string, base: string) {
 }
 
 async function fetchText(target: string) {
+  const page = await fetchPage(target);
+  return page.html;
+}
+
+async function fetchPage(target: string): Promise<{ html: string; finalUrl: string }> {
   const res = await fetch(target, {
     redirect: "follow",
     headers: {
@@ -211,8 +216,73 @@ async function fetchText(target: string) {
       Accept: "text/html,application/json;q=0.9,*/*;q=0.8",
     },
   });
-  if (!res.ok) return "";
-  return await res.text();
+  if (!res.ok) return { html: "", finalUrl: target };
+  return { html: await res.text(), finalUrl: res.url || target };
+}
+
+/** map.naver.com SPA shells lack place OG; m.place serves Kakao-style previews. */
+function naverPlaceId(pageUrl: string) {
+  try {
+    const u = new URL(pageUrl);
+    const host = u.hostname.replace(/^www\./, "").toLowerCase();
+    const pin = u.searchParams.get("pinId") || u.searchParams.get("placeId") || "";
+    if (/^\d{5,}$/.test(pin)) return pin;
+
+    const path = u.pathname;
+    const entry = path.match(/\/(?:entry\/)?place\/(\d{5,})/i);
+    if (entry) return entry[1];
+
+    const isPlaceHost =
+      host === "map.naver.com" ||
+      host === "m.map.naver.com" ||
+      host === "place.naver.com" ||
+      host.endsWith(".place.naver.com") ||
+      host === "naver.me";
+    if (!isPlaceHost) return "";
+
+    const numbered = path.match(/\/(?:restaurant|place|hospital|hairshop|attraction|accommodation)\/(\d{5,})/i);
+    if (numbered) return numbered[1];
+    const any = path.match(/\/(\d{5,})(?:\/|$)/);
+    return any ? any[1] : "";
+  } catch {
+    return "";
+  }
+}
+
+function cleanNaverPlaceTitle(title: string) {
+  return title
+    .replace(/[\u0000-\u001f\u007f]/g, "")
+    .replace(/\s*:\s*네이버\s*$/u, "")
+    .trim();
+}
+
+function preferFilled(base: OgData, next: OgData): OgData {
+  return {
+    title: next.title || base.title,
+    description: next.description || base.description,
+    metaDescription: next.metaDescription || base.metaDescription,
+    excerpt: next.excerpt || base.excerpt,
+    image: next.image || base.image,
+    siteName: next.siteName || base.siteName,
+    favicon: next.favicon || base.favicon,
+    url: next.url || base.url,
+  };
+}
+
+async function enrichNaverPlace(pageUrl: string, finalUrl: string, data: OgData): Promise<OgData> {
+  const placeId = naverPlaceId(finalUrl) || naverPlaceId(pageUrl);
+  if (!placeId) return data;
+
+  const placeUrl = "https://m.place.naver.com/place/" + placeId;
+  const html = await fetchText(placeUrl).catch(() => "");
+  if (!html) return data;
+
+  const place = parseOg(html, placeUrl);
+  place.title = cleanNaverPlaceTitle(place.title);
+  if (place.siteName === "네이버 플레이스" || !place.siteName) place.siteName = "네이버지도";
+  place.favicon = "https://ssl.pstatic.net/static/maps/assets/icons/favicon.ico";
+  if (!place.image && !place.title) return data;
+  return preferFilled(data, place);
 }
 
 async function enrichProvider(pageUrl: string, data: OgData): Promise<OgData> {
@@ -289,9 +359,10 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const html = await fetchText(pageUrl);
-    const scraped = html ? { ...base, ...parseOg(html, pageUrl) } : base;
-    const data = await enrichProvider(pageUrl, scraped);
+    const page = await fetchPage(pageUrl);
+    const scraped = page.html ? { ...base, ...parseOg(page.html, page.finalUrl || pageUrl) } : base;
+    const withPlace = await enrichNaverPlace(pageUrl, page.finalUrl || pageUrl, scraped);
+    const data = await enrichProvider(pageUrl, withPlace);
     const ok = !!(data.title || data.image || data.description);
     return json({ ok, data });
   } catch {

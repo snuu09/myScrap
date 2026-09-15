@@ -256,6 +256,58 @@ async function proxyHtml(target: string) {
   }
 }
 
+/** map.naver.com SPA shells lack place OG; m.place serves place title + photo. */
+function naverPlaceId(pageUrl: string) {
+  try {
+    const u = new URL(pageUrl);
+    const host = u.hostname.replace(/^www\./, "").toLowerCase();
+    const pin = u.searchParams.get("pinId") || u.searchParams.get("placeId") || "";
+    if (/^\d{5,}$/.test(pin)) return pin;
+
+    const path = u.pathname;
+    const entry = path.match(/\/(?:entry\/)?place\/(\d{5,})/i);
+    if (entry) return entry[1];
+
+    const isPlaceHost =
+      host === "map.naver.com" ||
+      host === "m.map.naver.com" ||
+      host === "place.naver.com" ||
+      host.endsWith(".place.naver.com") ||
+      host === "naver.me";
+    if (!isPlaceHost) return "";
+
+    const numbered = path.match(
+      /\/(?:restaurant|place|hospital|hairshop|attraction|accommodation)\/(\d{5,})/i,
+    );
+    if (numbered) return numbered[1];
+    const any = path.match(/\/(\d{5,})(?:\/|$)/);
+    return any ? any[1] : "";
+  } catch {
+    return "";
+  }
+}
+
+function cleanNaverPlaceTitle(title: string) {
+  return title
+    .replace(/[\u0000-\u001f\u007f]/g, "")
+    .replace(/\s*:\s*네이버\s*$/u, "")
+    .trim();
+}
+
+async function naverPlaceOg(url: string): Promise<ScrapOg | null> {
+  const placeId = naverPlaceId(url);
+  if (!placeId) return null;
+  const placeUrl = "https://m.place.naver.com/place/" + placeId;
+  const html = await proxyHtml(placeUrl);
+  if (!html) return null;
+  const parsed = parseOgHtml(html, placeUrl);
+  parsed.title = cleanNaverPlaceTitle(parsed.title);
+  if (parsed.siteName === "네이버 플레이스" || !parsed.siteName) parsed.siteName = "네이버지도";
+  parsed.favicon = "https://ssl.pstatic.net/static/maps/assets/icons/favicon.ico";
+  if (!parsed.image && !parsed.title) return null;
+  return parsed;
+}
+
 function mergeOg(base: ScrapOg | null, next: ScrapOg): ScrapOg {
   return {
     title: next.title || base?.title || "",
@@ -283,6 +335,9 @@ async function clientOg(url: string): Promise<ScrapOg | null> {
   const ig = instagramCode(url);
   if (ig) return instagramOg(ig);
 
+  const naver = await naverPlaceOg(url);
+  if (naver?.image) return naver;
+
   const linked = await microlinkOg(url);
   if (linked?.image) {
     if (!linked.siteName) linked.siteName = hostOf(url);
@@ -292,7 +347,7 @@ async function clientOg(url: string): Promise<ScrapOg | null> {
 
   const html = await proxyHtml(url);
   const parsed = html ? parseOgHtml(html, url) : emptyOg();
-  const merged = mergeOg(linked, parsed);
+  const merged = mergeOg(mergeOg(linked, parsed), naver || emptyOg());
   if (!merged.image && !merged.title && !merged.siteName) return null;
   if (!merged.siteName) merged.siteName = hostOf(url);
   if (!merged.favicon) merged.favicon = faviconFor(url);
