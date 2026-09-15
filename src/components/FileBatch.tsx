@@ -1,4 +1,5 @@
-import { X } from "lucide-react";
+import { useEffect, useMemo } from "react";
+import { Sparkles, X } from "lucide-react";
 import { useT } from "../lib/useT";
 import { formatBytes } from "../lib/tagger";
 import { uploadIssue, type UploadIssue } from "../lib/uploadCheck";
@@ -17,6 +18,7 @@ type Props = {
   onRemove: (id: string) => void;
   onConfirm: () => void;
   onCancel: () => void;
+  saving?: boolean;
 };
 
 function issueText(t: (key: string) => string, issue: UploadIssue, guest: boolean) {
@@ -27,6 +29,15 @@ function issueText(t: (key: string) => string, issue: UploadIssue, guest: boolea
   return t(guest ? "guestQuotaMsg" : "quotaExceededMsg");
 }
 
+function BatchThumb({ file }: { file: File }) {
+  const url = useMemo(() => (file.type.startsWith("image/") ? URL.createObjectURL(file) : ""), [file]);
+  useEffect(() => () => {
+    if (url) URL.revokeObjectURL(url);
+  }, [url]);
+  if (!url) return <span className="file-batch-thumb file-batch-thumb--empty" aria-hidden />;
+  return <img src={url} alt="" className="file-batch-thumb" />;
+}
+
 export function FileBatch({
   items,
   guest,
@@ -35,6 +46,7 @@ export function FileBatch({
   onRemove,
   onConfirm,
   onCancel,
+  saving = false,
 }: Props) {
   const t = useT();
   let reserved = 0;
@@ -49,20 +61,24 @@ export function FileBatch({
     <div className="file-batch">
       <div className="list-tools-head">
         <p className="list-tools-label">{t("batchTitle")}</p>
-        <button type="button" className="auth-link-utility" onClick={onCancel}>
+        <button type="button" className="auth-link-utility" onClick={onCancel} disabled={saving}>
           {t("cancel")}
         </button>
       </div>
       <ul className="file-batch-list">
         {rows.map(({ item, issue }) => (
           <li key={item.id} className={"file-batch-row" + (issue ? " file-batch-row--bad" : "")}>
+            <BatchThumb file={item.file} />
             <label className="file-batch-analyze">
-              <input
-                type="checkbox"
-                checked={!issue && item.analyze}
-                disabled={Boolean(issue)}
-                onChange={() => onToggleAnalyze(item.id)}
-              />
+              <span className={"file-batch-check" + (!issue && item.analyze ? " is-on" : "")}>
+                <input
+                  type="checkbox"
+                  checked={!issue && item.analyze}
+                  disabled={Boolean(issue) || saving}
+                  onChange={() => onToggleAnalyze(item.id)}
+                />
+              </span>
+              <Sparkles className="size-3.5 shrink-0" strokeWidth={1.8} aria-hidden />
               <span>{t("batchAnalyze")}</span>
             </label>
             <div className="file-batch-meta min-w-0 flex-1">
@@ -76,6 +92,7 @@ export function FileBatch({
               type="button"
               className="file-batch-remove"
               aria-label={t("batchRemove")}
+              disabled={saving}
               onClick={() => onRemove(item.id)}
             >
               <X className="size-4" strokeWidth={1.8} />
@@ -83,7 +100,12 @@ export function FileBatch({
           </li>
         ))}
       </ul>
-      <button type="button" className="auth-btn-primary px-4" disabled={!ready} onClick={onConfirm}>
+      <button
+        type="button"
+        className={"auth-btn-primary px-4" + (saving ? " is-progress" : "")}
+        disabled={!ready || saving}
+        onClick={onConfirm}
+      >
         {t("batchUpload")}
       </button>
     </div>

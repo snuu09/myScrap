@@ -1,5 +1,5 @@
-import { useState, type ReactNode } from "react";
-import { Download, ExternalLink, X } from "lucide-react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { ChevronDown, Download, ExternalLink, X } from "lucide-react";
 import { t, typeLabel, detectedLabel } from "../i18n";
 import { usePrefs } from "../context/Prefs";
 import { SiteIcon } from "./SiteIcon";
@@ -20,6 +20,11 @@ type Props = {
   onChange: (patch: Partial<Scrap>) => void;
   onSave: () => void;
   onCancel: () => void;
+  /** Hide Cancel/Save when a parent owns the batch footer. */
+  hideActions?: boolean;
+  saving?: boolean;
+  /** 0–1 while a multi-save runs; draws a ring on Save. */
+  saveRatio?: number | null;
 };
 
 function ClassifyBusyOverlay({
@@ -36,12 +41,12 @@ function ClassifyBusyOverlay({
       <div className="classify-busy-dim" aria-hidden />
       <div className="classify-busy-status">
         <AiProgress />
-        <p className="classify-busy-label">{t(lang, "classifyRunningBusy")}</p>
+        <p className="classify-busy-label classify-busy-label--shimmer">{t(lang, "classifyRunningBusy")}</p>
+        <button type="button" className="classify-busy-cancel" onClick={onCancel} aria-label={t(lang, "cancel")}>
+          <X className="size-5" strokeWidth={1.8} />
+          <span className="sr-only">{t(lang, "cancel")}</span>
+        </button>
       </div>
-      <button type="button" className="classify-busy-cancel" onClick={onCancel} aria-label={t(lang, "cancel")}>
-        <X className="size-5" strokeWidth={1.8} />
-        <span className="sr-only">{t(lang, "cancel")}</span>
-      </button>
     </div>
   );
 }
@@ -170,9 +175,38 @@ function DraftMedia({
   );
 }
 
-export function DraftCard({ draft, uploadRatio = null, queueLabel = "", onChange, onSave, onCancel }: Props) {
+export function DraftCard({
+  draft,
+  uploadRatio = null,
+  queueLabel = "",
+  onChange,
+  onSave,
+  onCancel,
+  hideActions = false,
+  saving = false,
+  saveRatio = null,
+}: Props) {
   const { lang } = usePrefs();
   const [tagDraft, setTagDraft] = useState("");
+  const [typeOpen, setTypeOpen] = useState(false);
+  const typeRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!typeOpen) return;
+    function onDoc(event: MouseEvent) {
+      if (!typeRef.current?.contains(event.target as Node)) setTypeOpen(false);
+    }
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") setTypeOpen(false);
+    }
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [typeOpen]);
+
   const og = draft.og;
   const mediaKind = mediaKindOf(draft.type, draft.mime);
   const visual = mediaKind === "image" || mediaKind === "video";
@@ -213,7 +247,7 @@ export function DraftCard({ draft, uploadRatio = null, queueLabel = "", onChange
       <>
         {draft.url ? (
           <div className="inline-action-row">
-            <a href={draft.url} className="scrap-card-link min-w-0 flex-1 truncate" target="_blank" rel="noreferrer">
+            <a href={draft.url} className="scrap-card-link scrap-card-link--full min-w-0 flex-1" target="_blank" rel="noreferrer">
               {draft.url}
             </a>
             <GlassCluster className="liquid-hit">
@@ -289,21 +323,40 @@ export function DraftCard({ draft, uploadRatio = null, queueLabel = "", onChange
           disabled={draft.analyzing}
         />
       </label>
-      <label className="grid gap-1">
+      <div className="grid gap-1" ref={typeRef}>
         <span className="list-tools-label">{t(lang, "classifyCategory")}</span>
-        <select
-          className="list-tools-search classify-draft-select"
-          value={draft.type}
-          disabled={draft.analyzing}
-          onChange={(e) => onChange({ type: e.target.value as ScrapType })}
+        <button
+          type="button"
+          className="classify-type-trigger"
+          disabled={draft.analyzing || saving}
+          aria-expanded={typeOpen}
+          aria-haspopup="listbox"
+          onClick={() => setTypeOpen((open) => !open)}
         >
-          {categories.map((id) => (
-            <option key={id} value={id}>
-              {typeLabel(lang, id)}
-            </option>
-          ))}
-        </select>
-      </label>
+          <span>{typeLabel(lang, draft.type)}</span>
+          <ChevronDown className={"size-4" + (typeOpen ? " is-open" : "")} strokeWidth={1.8} />
+        </button>
+        {typeOpen ? (
+          <ul className="classify-type-menu" role="listbox">
+            {categories.map((id) => (
+              <li key={id}>
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={draft.type === id}
+                  className="classify-type-option"
+                  onClick={() => {
+                    onChange({ type: id });
+                    setTypeOpen(false);
+                  }}
+                >
+                  {typeLabel(lang, id)}
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
       <div className="grid gap-1">
         <span className="list-tools-label">{t(lang, "addTag")}</span>
         <div className="scrap-card-tags">
@@ -342,7 +395,7 @@ export function DraftCard({ draft, uploadRatio = null, queueLabel = "", onChange
       {draft.filename ? (
         <div className="inline-action-row">
           <p className="scrap-card-file min-w-0 flex-1">
-            <span className="truncate">
+            <span className="scrap-source-full">
               {draft.filename}
               {draft.size ? ` · ${formatBytes(draft.size)}` : ""}
             </span>
@@ -381,14 +434,35 @@ export function DraftCard({ draft, uploadRatio = null, queueLabel = "", onChange
         className="classify-draft-memo"
         disabled={draft.analyzing}
       />
-      <div className="classify-draft-actions">
-        <button type="button" className="auth-link-utility" onClick={onCancel}>
-          {t(lang, "cancel")}
-        </button>
-        <button type="submit" className="auth-btn-primary px-4" disabled={draft.analyzing}>
-          {t(lang, "save")}
-        </button>
-      </div>
+      {hideActions ? null : (
+        <div className="classify-draft-actions">
+          <button type="button" className="auth-link-utility" onClick={onCancel} disabled={saving}>
+            {t(lang, "cancel")}
+          </button>
+          <button
+            type="submit"
+            className={"auth-btn-primary classify-save-btn px-4" + (saving ? " is-saving" : "")}
+            disabled={draft.analyzing || saving}
+          >
+            {saving && saveRatio != null ? (
+              <span className="classify-save-ring" aria-hidden>
+                <svg viewBox="0 0 36 36">
+                  <circle className="classify-save-ring-track" cx="18" cy="18" r="15" fill="none" />
+                  <circle
+                    className="classify-save-ring-fill"
+                    cx="18"
+                    cy="18"
+                    r="15"
+                    fill="none"
+                    style={{ strokeDashoffset: `${94.2 * (1 - Math.min(1, Math.max(0, saveRatio)))}` }}
+                  />
+                </svg>
+              </span>
+            ) : null}
+            <span>{t(lang, "save")}</span>
+          </button>
+        </div>
+      )}
     </>
   );
 
@@ -400,7 +474,7 @@ export function DraftCard({ draft, uploadRatio = null, queueLabel = "", onChange
         if (!draft.analyzing) onSave();
       }}
     >
-      {queueLabel || !draft.analyzing ? (
+      {hideActions ? null : queueLabel || !draft.analyzing ? (
         <div className="list-tools-head">
           {!draft.analyzing ? <p className="list-tools-label">{t(lang, "classifyDone")}</p> : <span />}
           {queueLabel ? <p className="list-tools-label">{queueLabel}</p> : null}

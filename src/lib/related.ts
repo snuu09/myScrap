@@ -8,16 +8,22 @@ function tokens(value: string) {
     .filter((part) => part.length > 1);
 }
 
-function scorePair(item: Scrap, other: Scrap) {
-  const shared = item.tags.filter((tag) => other.tags.includes(tag)).length;
-  const domain = item.domain && item.domain === other.domain ? 2 : 0;
-  const type = item.type && item.type === other.type ? 1 : 0;
-  const mine = new Set(tokens(item.title));
-  const overlap = tokens(other.title).filter((token) => mine.has(token)).length;
-  return shared * 3 + domain + type + overlap;
+function bodyText(item: Scrap) {
+  return [item.text, item.previewText, item.memo].filter(Boolean).join(" ");
 }
 
-/** Related pages from fields already on the shelf. No extra classify call. */
+function scorePair(item: Scrap, other: Scrap) {
+  const shared = item.tags.filter((tag) => other.tags.includes(tag)).length;
+  const mineBody = new Set(tokens(bodyText(item)));
+  const bodyOverlap = tokens(bodyText(other)).filter((token) => mineBody.has(token)).length;
+  const mineTitle = new Set(tokens(item.title));
+  const titleOverlap = tokens(other.title).filter((token) => mineTitle.has(token)).length;
+  const domain = item.domain && item.domain === other.domain ? 1 : 0;
+  const type = item.type && item.type === other.type ? 0.25 : 0;
+  return shared * 3 + bodyOverlap * 2 + titleOverlap + domain + type;
+}
+
+/** Related pages from summary, analysis, memo, and tags. No extra classify call. */
 export function relatedScraps(item: Scrap, all: Scrap[]) {
   return all
     .filter((other) => other.id !== item.id)

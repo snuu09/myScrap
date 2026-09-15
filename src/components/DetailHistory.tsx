@@ -32,8 +32,8 @@ export function DetailHistory({ item, busy, onRevert, onDelete }: Props) {
   const compared = revisions.find((row) => row.id === compareId) || null;
 
   return (
-    <section className="detail-history" aria-label={t("historyTitle")}>
-      <p className="list-tools-label">{t("historyTitle")}</p>
+    <section className="dashboard-panel detail-history" aria-label={t("historyTitle")}>
+      <p className="detail-section-title">{t("historyTitle")}</p>
       <ul className="detail-history-list">
         {revisions.map((revision) => (
           <li key={revision.id} className="detail-history-row">

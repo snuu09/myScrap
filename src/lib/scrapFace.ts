@@ -1,6 +1,14 @@
 import type { Scrap } from "./types";
+import { FAVICON_HOLDER } from "./audioCover";
 
 export function scrapCover(scrap: Scrap) {
+  if (scrap.posterUrl) return scrap.posterUrl;
+  if (scrap.og?.image) return scrap.og.image;
+  if (scrap.dataUrl && (scrap.type === "image" || scrap.type === "video")) return scrap.dataUrl;
+  return FAVICON_HOLDER;
+}
+
+export function scrapCoverOrEmpty(scrap: Scrap) {
   if (scrap.posterUrl) return scrap.posterUrl;
   if (scrap.og?.image) return scrap.og.image;
   if (scrap.dataUrl && (scrap.type === "image" || scrap.type === "video")) return scrap.dataUrl;

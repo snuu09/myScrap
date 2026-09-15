@@ -20,12 +20,12 @@ export function BusyOverlay({ open, label, onCancel }: Props) {
       <div className="app-busy-lock-dim" aria-hidden />
       <div className="app-busy-lock-status">
         <AiProgress />
-        <p className="classify-busy-label">{label}</p>
+        <p className="classify-busy-label classify-busy-label--shimmer">{label}</p>
+        <button type="button" className="app-busy-lock-cancel" onClick={onCancel} aria-label={t(lang, "cancel")}>
+          <X className="size-5" strokeWidth={1.8} />
+          <span className="sr-only">{t(lang, "cancel")}</span>
+        </button>
       </div>
-      <button type="button" className="app-busy-lock-cancel" onClick={onCancel} aria-label={t(lang, "cancel")}>
-        <X className="size-5" strokeWidth={1.8} />
-        <span className="sr-only">{t(lang, "cancel")}</span>
-      </button>
     </div>,
     document.body,
   );

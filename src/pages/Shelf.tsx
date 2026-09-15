@@ -98,11 +98,15 @@ export function Shelf() {
   const [scraps, setScraps] = useState<Scrap[]>([]);
   const [listReady, setListReady] = useState(false);
   const [draft, setDraft] = useState<Scrap | null>(null);
+  const [pendingDrafts, setPendingDrafts] = useState<Scrap[]>([]);
   const [batch, setBatch] = useState<BatchItem[]>([]);
   const [queueLabel, setQueueLabel] = useState("");
+  const [savingBatch, setSavingBatch] = useState(false);
+  const [saveRatio, setSaveRatio] = useState<number | null>(null);
   const queueRef = useRef<{ file: File; analyze: boolean }[]>([]);
   const queueMetaRef = useRef({ n: 0, total: 0 });
   const draftRef = useRef<Scrap | null>(null);
+  const pendingRef = useRef<Scrap[]>([]);
   const [uploadRatio, setUploadRatio] = useState<number | null>(null);
 
   useEffect(() => {
@@ -110,14 +114,19 @@ export function Shelf() {
   }, [draft]);
 
   useEffect(() => {
-    if (draft && location.pathname !== "/stick") {
+    pendingRef.current = pendingDrafts;
+  }, [pendingDrafts]);
+
+  useEffect(() => {
+    const reviewing = Boolean(draft) || pendingDrafts.length > 0;
+    if (reviewing && location.pathname !== "/stick") {
       navigate("/stick", { replace: true });
       return;
     }
-    if (!draft && location.pathname === "/stick" && !queueRef.current.length) {
+    if (!reviewing && location.pathname === "/stick" && !queueRef.current.length) {
       navigate("/", { replace: true });
     }
-  }, [draft, location.pathname, navigate]);
+  }, [draft, pendingDrafts.length, location.pathname, navigate]);
   const [composer, setComposer] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [dropping, setDropping] = useState(false);
@@ -307,8 +316,11 @@ export function Shelf() {
 
   useEffect(() => {
     function onCleared() {
-      setScraps([]);      setScrapsForUsage([]);
+      setScraps([]);
+      setScrapsForUsage([]);
       setDraft(null);
+      pendingRef.current = [];
+      setPendingDrafts([]);
     }
     window.addEventListener(SCRAPS_CLEARED_EVENT, onCleared);
     return () => window.removeEventListener(SCRAPS_CLEARED_EVENT, onCleared);
@@ -377,21 +389,19 @@ export function Shelf() {
 
   async function replaceOpenDraft() {
     const doomed = draft;
-    if (!doomed) return;
+    const pending = [...pendingRef.current];
+    if (!doomed && !pending.length) return;
     setUploadRatio(null);
+    draftRef.current = null;
     setDraft(null);
-    if (doomed.dataUrl.startsWith("blob:")) URL.revokeObjectURL(doomed.dataUrl);
-    if (user && doomed.mediaPath) {
-      try {
-        await removeMedia(user, doomed.mediaPath);
-      } catch {
-        /* best-effort before starting the next stick */
-      }
-    }
+    pendingRef.current = [];
+    setPendingDrafts([]);
+    if (doomed) await revokeDraftMedia(doomed);
+    for (const item of pending) await revokeDraftMedia(item);
   }
 
   async function busyGuard() {
-    if (draft) await replaceOpenDraft();
+    if (draft || pendingRef.current.length) await replaceOpenDraft();
     if (await guardStick()) return true;
     return false;
   }
@@ -474,7 +484,7 @@ export function Shelf() {
     }
     const files = Array.from(list);
     if (!files.length) return;
-    if (files.length === 1 && batch.length === 0 && !draftRef.current) {
+    if (files.length === 1 && batch.length === 0 && !draftRef.current && !pendingRef.current.length) {
       void startFromFile(files[0]);
       return;
     }
@@ -524,11 +534,39 @@ export function Shelf() {
     void startFromFile(next.file, next.analyze);
   }
 
+  /** After a file analyze finishes: stash into review list when batching, else keep the draft open. */
+  function settleAnalyzedDraft(scrap: Scrap) {
+    const hasMore = queueRef.current.length > 0;
+    const batchMode = queueMetaRef.current.total > 1 || pendingRef.current.length > 0 || hasMore;
+    if (!batchMode) {
+      setDraft(scrap);
+      return;
+    }
+    const nextPending = [...pendingRef.current, scrap];
+    pendingRef.current = nextPending;
+    setPendingDrafts(nextPending);
+    draftRef.current = null;
+    setDraft(null);
+    setUploadRatio(null);
+    if (hasMore) advanceQueue();
+    else {
+      queueMetaRef.current = { n: 0, total: 0 };
+      setQueueLabel("");
+    }
+  }
+
   function confirmBatch() {
     const ready = validBatchItems(batch);
     if (!ready.length) return;
     if (needsGuestNotice(() => confirmBatch())) return;
     setBatch([]);
+    if (pendingRef.current.length && !draftRef.current) {
+      void (async () => {
+        await replaceOpenDraft();
+        beginQueue(ready);
+      })();
+      return;
+    }
     if (draftRef.current) {
       queueRef.current.push(...ready);
       if (!queueMetaRef.current.total) queueMetaRef.current = { n: 0, total: ready.length };
@@ -630,34 +668,31 @@ export function Shelf() {
             lang,
           })
         : null;
-      setDraft((cur) =>
-        cur && cur.id === next.id
-          ? {
-              ...cur,
-              analyzing: false,
-              type: ai?.type || cur.type,
-              tags: ai?.tags || cur.tags,
-              title:
-                shelfTitle({
-                  aiTitle: ai?.miss ? "" : ai?.title,
-                  domain: cur.domain,
-                  url: cur.url,
-                  fallback: looksLikeAddress(cur.title, cur.domain, cur.url) ? "" : cur.title,
-                }) || cur.title,
-              text: ai?.summary || ai?.body || cur.text,
-              previewText: ai?.analysis || cur.previewText,
-              ...classifyFlags(ai),
-              storedMedia: uploaded.storedMedia,
-              mediaPath: uploaded.mediaPath,
-              dataUrl: uploaded.dataUrl || cur.dataUrl,
-              posterPath: next.posterPath || cur.posterPath,
-              posterUrl: next.posterUrl || cur.posterUrl,
-              posterUrls: next.posterUrls.length ? next.posterUrls : cur.posterUrls,
-              pages: next.pages || cur.pages,
-            }
-          : cur,
-      );
+      const settled: Scrap = {
+        ...next,
+        analyzing: false,
+        type: ai?.type || next.type,
+        tags: ai?.tags || next.tags,
+        title:
+          shelfTitle({
+            aiTitle: ai?.miss ? "" : ai?.title,
+            domain: next.domain,
+            url: next.url,
+            fallback: looksLikeAddress(next.title, next.domain, next.url) ? "" : next.title,
+          }) || next.title,
+        text: ai?.summary || ai?.body || next.text,
+        previewText: ai?.analysis || next.previewText,
+        ...classifyFlags(ai),
+        storedMedia: uploaded.storedMedia,
+        mediaPath: uploaded.mediaPath,
+        dataUrl: uploaded.dataUrl || next.dataUrl,
+        posterPath: next.posterPath,
+        posterUrl: next.posterUrl,
+        posterUrls: next.posterUrls.length ? next.posterUrls : next.posterUrl ? [next.posterUrl] : [],
+        pages: next.pages,
+      };
       setUploadRatio(null);
+      settleAnalyzedDraft(settled);
       if (skipped) {
         setError(t("guestMediaSkipped"));
         await alert(t("guestMediaSkipped"));
@@ -704,19 +739,13 @@ export function Shelf() {
     }
   }
 
-  async function persist() {
-    if (!user || !draft || draft.analyzing) return;
-    if (!getSupabase()) {
-      setError(t("syncError"));
-      await alert(t("syncError"));
-      return;
-    }
-    if (needsGuestNotice(() => void persist())) return;
-    let nextDraft = draft;
-    if (needsOgCoverSnapshot(draft)) {
+  async function persistOne(source: Scrap): Promise<void> {
+    if (!user) return;
+    let nextDraft = source;
+    if (needsOgCoverSnapshot(source)) {
       try {
-        const poster = await snapshotOgCover(user, draft);
-        if (poster) nextDraft = { ...draft, ...poster };
+        const poster = await snapshotOgCover(user, source);
+        if (poster) nextDraft = { ...source, ...poster };
       } catch {
         /* keep the remote og image if the copy fails */
       }
@@ -726,45 +755,57 @@ export function Shelf() {
     let dataUrl = nextDraft.dataUrl;
     let posterUrl = nextDraft.posterUrl;
     let posterUrls = nextDraft.posterUrls.length ? nextDraft.posterUrls : posterUrl ? [posterUrl] : [];
+
+    if (nextDraft.mediaPath && dataUrl.startsWith("blob:")) dataUrl = "";
+    else if (!nextDraft.mediaPath && dataUrl.startsWith("blob:")) dataUrl = await blobUrlToDataUrl(dataUrl);
+
+    if (nextDraft.posterPath) {
+      if (posterUrl.startsWith("blob:")) posterUrl = "";
+      posterUrls = posterUrls.filter((url) => !url.startsWith("blob:"));
+    } else {
+      if (posterUrl.startsWith("blob:")) posterUrl = await blobUrlToDataUrl(posterUrl);
+      posterUrls = await Promise.all(posterUrls.map((url) => (url.startsWith("blob:") ? blobUrlToDataUrl(url) : url)));
+      if (!posterUrls.length && posterUrl) posterUrls = [posterUrl];
+    }
+
+    const savedTitle = shelfTitle({
+      aiTitle: looksLikeAddress(nextDraft.title, nextDraft.domain, nextDraft.url) ? "" : nextDraft.title,
+      ogTitle: nextDraft.og?.title,
+      ogDescription: nextDraft.og?.description,
+      domain: nextDraft.domain,
+      url: nextDraft.url,
+      fallback: nextDraft.title,
+    });
+    const saved = {
+      ...nextDraft,
+      title: savedTitle || nextDraft.title,
+      dataUrl,
+      posterUrl: posterUrl || posterUrls[0] || "",
+      posterUrls,
+      pages: nextDraft.pages || posterUrls.length,
+      updatedAt: Date.now(),
+      analyzing: false,
+      classifyFallback: undefined,
+      classifyMiss: undefined,
+    };
+    await saveScrap(user, saved);
+    if (previewBlob) URL.revokeObjectURL(previewBlob);
+    posterBlobs.forEach((url) => URL.revokeObjectURL(url));
+  }
+
+  async function persist() {
+    if (!user || !draft || draft.analyzing) return;
+    if (!getSupabase()) {
+      setError(t("syncError"));
+      await alert(t("syncError"));
+      return;
+    }
+    if (needsGuestNotice(() => void persist())) return;
     try {
-      if (nextDraft.mediaPath && dataUrl.startsWith("blob:")) dataUrl = "";
-      else if (!nextDraft.mediaPath && dataUrl.startsWith("blob:")) dataUrl = await blobUrlToDataUrl(dataUrl);
-
-      if (nextDraft.posterPath) {
-        if (posterUrl.startsWith("blob:")) posterUrl = "";
-        posterUrls = posterUrls.filter((url) => !url.startsWith("blob:"));
-      } else {
-        if (posterUrl.startsWith("blob:")) posterUrl = await blobUrlToDataUrl(posterUrl);
-        posterUrls = await Promise.all(posterUrls.map((url) => (url.startsWith("blob:") ? blobUrlToDataUrl(url) : url)));
-        if (!posterUrls.length && posterUrl) posterUrls = [posterUrl];
-      }
-
-      const savedTitle = shelfTitle({
-        aiTitle: looksLikeAddress(nextDraft.title, nextDraft.domain, nextDraft.url) ? "" : nextDraft.title,
-        ogTitle: nextDraft.og?.title,
-        ogDescription: nextDraft.og?.description,
-        domain: nextDraft.domain,
-        url: nextDraft.url,
-        fallback: nextDraft.title,
-      });
-      const saved = {
-        ...nextDraft,
-        title: savedTitle || nextDraft.title,
-        dataUrl,
-        posterUrl: posterUrl || posterUrls[0] || "",
-        posterUrls,
-        pages: nextDraft.pages || posterUrls.length,
-        updatedAt: Date.now(),
-        analyzing: false,
-        classifyFallback: undefined,
-        classifyMiss: undefined,
-      };
-      await saveScrap(user, saved);
+      await persistOne(draft);
       draftRef.current = null;
       setDraft(null);
       await refresh();
-      if (previewBlob) URL.revokeObjectURL(previewBlob);
-      posterBlobs.forEach((url) => URL.revokeObjectURL(url));
       advanceQueue();
     } catch (err) {
       const message = err instanceof GuestQuotaError ? t("guestQuotaMsg") : t("syncError");
@@ -773,23 +814,37 @@ export function Shelf() {
     }
   }
 
-  /** Drop an unsaved draft and remove any Storage object uploaded for Claude classify. */
-  async function discardDraft() {
-    if (!draft) return;
-    if (
-      !(await confirm({
-        title: t("leaveDraftTitle"),
-        body: t("leaveDraftConfirm"),
-        confirmLabel: t("leaveDraftDiscard"),
-        cancelLabel: t("cancel"),
-        danger: true,
-      }))
-    )
+  async function persistPendingAll() {
+    if (!user || !pendingDrafts.length || savingBatch) return;
+    if (!getSupabase()) {
+      setError(t("syncError"));
+      await alert(t("syncError"));
       return;
-    const doomed = draft;
-    setUploadRatio(null);
-    draftRef.current = null;
-    setDraft(null);
+    }
+    if (needsGuestNotice(() => void persistPendingAll())) return;
+    const queue = [...pendingDrafts];
+    setSavingBatch(true);
+    setSaveRatio(0);
+    try {
+      for (let i = 0; i < queue.length; i++) {
+        await persistOne(queue[i]);
+        const left = queue.slice(i + 1);
+        pendingRef.current = left;
+        setPendingDrafts(left);
+        setSaveRatio((i + 1) / queue.length);
+      }
+      await refresh();
+    } catch (err) {
+      const message = err instanceof GuestQuotaError ? t("guestQuotaMsg") : t("syncError");
+      setError(message);
+      await alert(message);
+    } finally {
+      setSavingBatch(false);
+      setSaveRatio(null);
+    }
+  }
+
+  async function revokeDraftMedia(doomed: Scrap) {
     if (doomed.dataUrl.startsWith("blob:")) URL.revokeObjectURL(doomed.dataUrl);
     for (const url of [doomed.posterUrl, ...doomed.posterUrls]) {
       if (url.startsWith("blob:")) URL.revokeObjectURL(url);
@@ -815,11 +870,50 @@ export function Shelf() {
         }
       }
     }
+  }
+
+  /** Drop an unsaved draft and remove any Storage object uploaded for Claude classify. */
+  async function discardDraft() {
+    if (!draft) return;
+    if (
+      !(await confirm({
+        title: t("leaveDraftTitle"),
+        body: t("leaveDraftConfirm"),
+        confirmLabel: t("leaveDraftDiscard"),
+        cancelLabel: t("cancel"),
+        danger: true,
+      }))
+    )
+      return;
+    const doomed = draft;
+    setUploadRatio(null);
+    draftRef.current = null;
+    setDraft(null);
+    await revokeDraftMedia(doomed);
     advanceQueue();
   }
 
+  async function discardPendingAll() {
+    if (!pendingDrafts.length || savingBatch) return;
+    if (
+      !(await confirm({
+        title: t("leaveDraftTitle"),
+        body: t("leaveDraftConfirm"),
+        confirmLabel: t("leaveDraftDiscard"),
+        cancelLabel: t("cancel"),
+        danger: true,
+      }))
+    )
+      return;
+    const doomed = [...pendingDrafts];
+    pendingRef.current = [];
+    setPendingDrafts([]);
+    for (const item of doomed) await revokeDraftMedia(item);
+  }
+
   const stickDisabled = !canStick().ok || !getSupabase();
-  const draftPresence = usePresence(Boolean(draft));
+  const reviewingBatch = pendingDrafts.length > 0 && !draft;
+  const draftPresence = usePresence(Boolean(draft) || reviewingBatch);
   const batchPresence = usePresence(batch.length > 0);
   const draftHeld = useRef<ReactNode>(null);
   const batchHeld = useRef<ReactNode>(null);
@@ -839,6 +933,58 @@ export function Shelf() {
     />
   ) : null;
 
+  const reviewPanel =
+    reviewingBatch ? (
+      <div className="classify-batch-review">
+        <div className="list-tools-head">
+          <p className="list-tools-label">{t("classifyDone")}</p>
+          <p className="list-tools-label">{t("batchProgress", { n: pendingDrafts.length, total: pendingDrafts.length })}</p>
+        </div>
+        {pendingDrafts.map((item) => (
+          <div key={item.id} className="classify-batch-review-item">
+            <DraftCard
+              draft={item}
+              hideActions
+              saving={savingBatch}
+              onChange={(patch) =>
+                setPendingDrafts((cur) => cur.map((row) => (row.id === item.id ? { ...row, ...patch } : row)))
+              }
+              onSave={() => void persistPendingAll()}
+              onCancel={() => void discardPendingAll()}
+            />
+          </div>
+        ))}
+        <div className="classify-draft-actions">
+          <button type="button" className="auth-link-utility" onClick={() => void discardPendingAll()} disabled={savingBatch}>
+            {t("cancel")}
+          </button>
+          <button
+            type="button"
+            className={"auth-btn-primary classify-save-btn px-4" + (savingBatch ? " is-saving" : "")}
+            disabled={savingBatch}
+            onClick={() => void persistPendingAll()}
+          >
+            {savingBatch && saveRatio != null ? (
+              <span className="classify-save-ring" aria-hidden>
+                <svg viewBox="0 0 36 36">
+                  <circle className="classify-save-ring-track" cx="18" cy="18" r="15" fill="none" />
+                  <circle
+                    className="classify-save-ring-fill"
+                    cx="18"
+                    cy="18"
+                    r="15"
+                    fill="none"
+                    style={{ strokeDashoffset: `${94.2 * (1 - Math.min(1, Math.max(0, saveRatio)))}` }}
+                  />
+                </svg>
+              </span>
+            ) : null}
+            <span>{t("save")}</span>
+          </button>
+        </div>
+      </div>
+    ) : null;
+
   const draftPanel = draft ? (
     <DraftCard
       draft={draft}
@@ -848,7 +994,9 @@ export function Shelf() {
       onSave={() => void persist()}
       onCancel={() => void discardDraft()}
     />
-  ) : null;
+  ) : (
+    reviewPanel
+  );
   if (draftPanel) draftHeld.current = draftPanel;
   if (batchPanel) batchHeld.current = batchPanel;
 

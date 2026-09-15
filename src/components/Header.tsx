@@ -56,19 +56,20 @@ export function Header({ onEnter, onSettings, back }: Props) {
         )}
       </div>
       {searching ? <div id="search-header-slot" className="header-search-slot" /> : null}
-      {user && !searching ? (
-        <button
-          type="button"
-          className="header-search"
-          onClick={() => navigate("/search")}
-          aria-label={tLook("searchOpen")}
-        >
-          <Search className="size-4 shrink-0 text-muted" strokeWidth={1.8} />
-          <span className="header-search-text">{tLook("searchPlaceholder")}</span>
-        </button>
-      ) : null}
       {searching ? null : (
       <div className="flex shrink-0 items-center gap-2">
+        {user ? (
+          <IconTip label={tLook("searchOpen")}>
+            <button
+              type="button"
+              className="header-search-icon"
+              onClick={() => navigate("/search")}
+              aria-label={tLook("searchOpen")}
+            >
+              <Search className="size-[20px]" strokeWidth={1.8} />
+            </button>
+          </IconTip>
+        ) : null}
         {!user ? (
           <button
             type="button"

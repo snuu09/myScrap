@@ -16,6 +16,7 @@ import { formatWhen } from "../lib/time";
 import { formatBytes, mediaKindOf } from "../lib/tagger";
 import { spineColor, typeBookIds } from "../lib/typeColor";
 import { scrapFaceTitle } from "../lib/scrapFace";
+import { FAVICON_HOLDER } from "../lib/audioCover";
 import { prefersReducedMotion } from "../lib/presence";
 
 const TYPES: ScrapType[] = ["text", "image", "video", "audio", "link", "document"];
@@ -86,7 +87,10 @@ function ScrapCardThumb({
     return (
       <div className="scrap-book-cover">
         <span className="scrap-book-cover-spine" />
-        <span className="scrap-book-cover-face">{plate}</span>
+        <span className="scrap-book-cover-face">
+          <img src={FAVICON_HOLDER} alt="" className="scrap-thumb-holder" />
+          {plate}
+        </span>
       </div>
     );
   }
@@ -167,7 +171,9 @@ function ScrapRow({ item, index, priority = false }: { item: Scrap; index: numbe
                 className="scrap-book-photo"
                 frameClassName="scrap-row-photo"
               />
-            ) : null}
+            ) : (
+              <img src={FAVICON_HOLDER} alt="" className="scrap-thumb-holder scrap-thumb-holder--row" />
+            )}
           </span>
         </span>
         <span className="scrap-row-copy">

@@ -604,12 +604,12 @@ export function ScrapDetail() {
             <GlassCluster className="detail-action-group">
             <IconTip label={t("editItem")}>
               <button type="button" className="detail-action" aria-label={t("editItem")} disabled={busy} onClick={beginEdit}>
-                <Pencil className="size-5" strokeWidth={1.8} />
+                <Pencil className="size-[18px]" strokeWidth={1.8} />
               </button>
             </IconTip>
             <IconTip label={t("deleteItem")}>
               <button type="button" className="detail-action" aria-label={t("deleteItem")} disabled={busy} onClick={() => void peel()}>
-                <Trash2 className="size-5" strokeWidth={1.8} />
+                <Trash2 className="size-[18px]" strokeWidth={1.8} />
               </button>
             </IconTip>
             </GlassCluster>
@@ -622,13 +622,13 @@ export function ScrapDetail() {
                 disabled={busy || aiBusy}
                 onClick={() => void runAiAnalyze()}
               >
-                <Sparkles className="size-5" strokeWidth={1.8} />
+                <Sparkles className="size-[18px]" strokeWidth={1.8} />
               </button>
             </IconTip>
             {item.url ? (
               <IconTip label={t("share")}>
                 <button type="button" className="detail-action" aria-label={t("share")} onClick={() => void share()} disabled={busy}>
-                  <Share2 className="size-5" strokeWidth={1.8} />
+                  <Share2 className="size-[18px]" strokeWidth={1.8} />
                 </button>
               </IconTip>
             ) : null}
@@ -643,7 +643,7 @@ export function ScrapDetail() {
                 disabled={busy}
                 onClick={() => void patch({ ...item, bookmarked: !item.bookmarked })}
               >
-                {item.bookmarked ? <BookmarkCheck className="size-5" strokeWidth={1.8} /> : <Bookmark className="size-5" strokeWidth={1.8} />}
+                {item.bookmarked ? <BookmarkCheck className="size-[18px]" strokeWidth={1.8} /> : <Bookmark className="size-[18px]" strokeWidth={1.8} />}
               </button>
             </IconTip>
             <IconTip label={t(read ? "markUnread" : "markRead")}>
@@ -655,7 +655,7 @@ export function ScrapDetail() {
                 disabled={busy}
                 onClick={() => void patch({ ...item, readAt: read ? null : Date.now() })}
               >
-                {read ? <BookOpenCheck className="size-5" strokeWidth={1.8} /> : <BookOpen className="size-5" strokeWidth={1.8} />}
+                {read ? <BookOpenCheck className="size-[18px]" strokeWidth={1.8} /> : <BookOpen className="size-[18px]" strokeWidth={1.8} />}
               </button>
             </IconTip>
             <IconTip label={t("remind")}>
@@ -666,7 +666,7 @@ export function ScrapDetail() {
                 disabled={busy}
                 onClick={() => setRemindOpen(true)}
               >
-                {item.remindAt ? <Bell className="size-5" strokeWidth={1.8} /> : <BellOff className="size-5" strokeWidth={1.8} />}
+                {item.remindAt ? <Bell className="size-[18px]" strokeWidth={1.8} /> : <BellOff className="size-[18px]" strokeWidth={1.8} />}
               </button>
             </IconTip>
             </GlassCluster>
@@ -674,7 +674,7 @@ export function ScrapDetail() {
         ) : null}
         {item.url ? (
           <div className="inline-action-row">
-            <a href={item.url} className="scrap-card-link min-w-0 flex-1 truncate" target="_blank" rel="noreferrer">
+            <a href={item.url} className="scrap-card-link scrap-card-link--full min-w-0 flex-1" target="_blank" rel="noreferrer">
               {item.url}
             </a>
             <GlassCluster className="liquid-hit">
@@ -737,13 +737,13 @@ export function ScrapDetail() {
         ) : null}
         {item.text ? (
           <div className="detail-ai-block">
-            <p className="list-tools-label">{t("aiSummary")}</p>
+            <p className="detail-section-title">{t("aiSummary")}</p>
             <p className="detail-ai-text">{item.text}</p>
           </div>
         ) : null}
         {item.previewText ? (
           <div className="detail-ai-block">
-            <p className="list-tools-label">{t("aiAnalysis")}</p>
+            <p className="detail-section-title">{t("aiAnalysis")}</p>
             <p className="detail-ai-text">{item.previewText}</p>
           </div>
         ) : null}
@@ -758,7 +758,7 @@ export function ScrapDetail() {
                 size="sm"
                 className="scrap-card-file-mark"
               />
-              <span className="truncate">
+              <span className="scrap-source-full">
                 {item.filename}
                 {item.size ? ` · ${formatBytes(item.size)}` : ""}
               </span>
@@ -846,21 +846,25 @@ export function ScrapDetail() {
               ))}
               </TagCluster> : null}
             </p>
-            <DetailHistory
-              item={item}
-              busy={busy}
-              onRevert={(revision) => void patch(applyRevision(item, revision))}
-              onDelete={(revision) =>
-                void patch({
-                  ...item,
-                  revisions: (item.revisions || []).filter((row) => row.id !== revision.id),
-                })
-              }
-            />
-            <RelatedPages item={item} scraps={scraps} />
           </>
         )}
       </article>
+      {!editing ? (
+        <>
+          <DetailHistory
+            item={item}
+            busy={busy}
+            onRevert={(revision) => void patch(applyRevision(item, revision))}
+            onDelete={(revision) =>
+              void patch({
+                ...item,
+                revisions: (item.revisions || []).filter((row) => row.id !== revision.id),
+              })
+            }
+          />
+          <RelatedPages item={item} scraps={scraps} />
+        </>
+      ) : null}
       </div>
         <div className="detail-peek-slot detail-peek-slot--next">
           {!editing && next ? (

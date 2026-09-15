@@ -14,6 +14,7 @@ import { CLOSE_OVERLAYS_EVENT } from "./components/StickDock";
 import { Intro } from "./pages/Intro";
 import { Shelf } from "./pages/Shelf";
 import { Dashboard } from "./pages/Dashboard";
+import { DashboardEditor } from "./pages/DashboardEditor";
 import { ScrapDetail } from "./pages/ScrapDetail";
 import { SearchPage } from "./pages/SearchPage";
 import { Legal } from "./pages/Legal";
@@ -181,6 +182,56 @@ function DashboardPage() {
   );
 }
 
+function DashboardEditorPage({ kind }: { kind: "types" | "tags" }) {
+  const { user, ready } = useAuth();
+  const { lang } = usePrefs();
+  const navigate = useNavigate();
+  const { setScrapsForUsage } = usePlan();
+  const pageGenie = usePageGenie();
+  const [scraps, setScraps] = useState<Scrap[]>([]);
+  const [enter, setEnter] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    void loadScraps(user)
+      .then(async (next) => {
+        setScraps(next);
+        setScrapsForUsage(next);
+      })
+      .catch(() => setScraps([]));
+  }, [user, setScrapsForUsage]);
+
+  useEffect(() => {
+    function onCloseOverlays() {
+      setEnter(false);
+    }
+    window.addEventListener(CLOSE_OVERLAYS_EVENT, onCloseOverlays);
+    return () => window.removeEventListener(CLOSE_OVERLAYS_EVENT, onCloseOverlays);
+  }, []);
+
+  if (!ready) {
+    return <AuthWaiting />;
+  }
+  if (!user) {
+    return <Navigate to="/" replace />;
+  }
+
+  return (
+    <div className="grid min-h-dvh grid-rows-[auto_1fr_auto]">
+      <Header
+        onEnter={() => openSheet(setEnter)}
+        onSettings={() => navigate("/settings")}
+        back={{ label: t(lang, "back"), to: "/dashboard" }}
+      />
+      <main id="main" className={"min-h-0" + pageGenie}>
+        <DashboardEditor scraps={scraps} onScrapsChange={setScraps} kind={kind} />
+      </main>
+      <Footer />
+      <AuthSheet open={enter} onClose={() => setEnter(false)} />
+    </div>
+  );
+}
+
 function ScrapDetailPage() {
   const { user, ready } = useAuth();
   const { lang } = usePrefs();
@@ -333,6 +384,8 @@ export default function App() {
                   <Route path="/stick" element={null} />
                 </Route>
                 <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/dashboard/types" element={<DashboardEditorPage kind="types" />} />
+                <Route path="/dashboard/tags" element={<DashboardEditorPage kind="tags" />} />
                 <Route path="/settings" element={<SettingsLayout />} />
                 <Route path="/search" element={<SearchPageShell />} />
                 <Route path="/scrap/:id" element={<ScrapDetailPage />} />
