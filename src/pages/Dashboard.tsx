@@ -2,9 +2,10 @@ import { Link, useNavigate } from "react-router-dom";
 import { typeLabel } from "../i18n";
 import { usePlan } from "../context/Plan";
 import { usePrefs } from "../context/Prefs";
-import { PlanTierMeta, StorageGauge } from "../components/PlanUsageBlock";
+import { StorageGauge } from "../components/PlanUsageBlock";
 import { ScrapBookCard } from "../components/ScrapList";
 import { aggregateStats } from "../lib/scrapFilters";
+import { formatBytes } from "../lib/tagger";
 import { spineColor } from "../lib/typeColor";
 import type { Scrap } from "../lib/types";
 import { useT } from "../lib/useT";
@@ -39,39 +40,39 @@ function TypeBubbles({
         const countSize = Math.max(11, Math.min(16, row.r * 0.48));
         const labelSize = Math.max(9, Math.min(12, row.r * 0.34));
         return (
-          <g
-            key={row.id}
-            className="dashboard-bubble"
-            transform={`translate(${row.x} ${row.y})`}
-            onClick={() => onSelect(row.id)}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                onSelect(row.id);
-              }
-            }}
-          >
-            <circle className="dashboard-bubble-disc" cx={0} cy={0} r={row.r} fill={row.color} />
-            <text
-              x={0}
-              y={-2}
-              textAnchor="middle"
-              className="dashboard-bubble-count"
-              style={{ fontSize: `${countSize}px` }}
+          <g key={row.id} transform={`translate(${row.x} ${row.y})`}>
+            <g
+              className="dashboard-bubble"
+              onClick={() => onSelect(row.id)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  onSelect(row.id);
+                }
+              }}
             >
-              {row.count}
-            </text>
-            <text
-              x={0}
-              y={countSize * 0.85}
-              textAnchor="middle"
-              className="dashboard-bubble-label"
-              style={{ fontSize: `${labelSize}px` }}
-            >
-              {row.label.length > 8 ? row.label.slice(0, 7) + "…" : row.label}
-            </text>
+              <circle className="dashboard-bubble-disc" cx={0} cy={0} r={row.r} fill={row.color} />
+              <text
+                x={0}
+                y={-2}
+                textAnchor="middle"
+                className="dashboard-bubble-count"
+                style={{ fontSize: `${countSize}px` }}
+              >
+                {row.count}
+              </text>
+              <text
+                x={0}
+                y={countSize * 0.85}
+                textAnchor="middle"
+                className="dashboard-bubble-label"
+                style={{ fontSize: `${labelSize}px` }}
+              >
+                {row.label.length > 8 ? row.label.slice(0, 7) + "…" : row.label}
+              </text>
+            </g>
           </g>
         );
       })}
@@ -131,11 +132,11 @@ export function Dashboard({ scraps }: Props) {
         <h1 className="dashboard-title">{t("dashboardTitle")}</h1>
       </div>
 
-      <section className="dashboard-panel" aria-label={t("planLabel")}>
-        <div className="settings-pref-row settings-account-row">
-          <p className="list-tools-label">{t("planLabel")}</p>
-          <PlanTierMeta />
-        </div>
+      <section className="dashboard-panel" aria-label={t("statsStorage")}>
+        <p className="list-tools-label">{t("statsStorage")}</p>
+        <p className="dashboard-storage-summary">
+          {t("dbUsageSummary", { count: stats.totalCount, bytes: formatBytes(stats.totalBytes) })}
+        </p>
         <StorageGauge usageBytes={usageBytes} storageLimit={storageLimit} />
       </section>
 

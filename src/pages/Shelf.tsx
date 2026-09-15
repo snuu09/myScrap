@@ -220,6 +220,9 @@ export function Shelf() {
     };
   }, [user, listReady, paged.shown, typeFilter]);
 
+  const userId = user?.id ?? null;
+  const lastLoadedUserId = useRef<string | null>(null);
+
   const refresh = useCallback(async () => {
     if (!user) return;
     try {
@@ -227,17 +230,20 @@ export function Shelf() {
       setScraps(next);
       setScrapsForUsage(next);
       setListReady(true);
+      lastLoadedUserId.current = user.id;
     } catch {
       setError(t("syncError"));
       setListReady(true);
     }
-  }, [user, t, setScrapsForUsage]);
+  }, [userId, user, t, setScrapsForUsage]);
 
   useEffect(() => {
-    setListReady(false);
-    setScraps([]);
+    if (lastLoadedUserId.current !== userId) {
+      setListReady(false);
+      setScraps([]);
+    }
     void refresh();
-  }, [refresh]);
+  }, [refresh, userId]);
 
   useEffect(() => {
     if (!scraps.length || typeof Notification === "undefined") return;

@@ -4774,8 +4774,14 @@ body {
 
   .dashboard-bubble-disc {
     opacity: 0.92;
+    fill-opacity: 1;
+    stroke: transparent;
+    stroke-width: 0;
+    vector-effect: non-scaling-stroke;
     transition:
       opacity 180ms var(--ease-out),
+      stroke 180ms var(--ease-out),
+      stroke-width 180ms var(--ease-out),
       filter 180ms var(--ease-out);
   }
 
@@ -4804,14 +4810,21 @@ body {
   @media (hover: hover) and (pointer: fine) {
     .dashboard-bubble:hover,
     .dashboard-bubble:focus-visible {
-      transform: scale(1.1);
+      transform: scale(1.08);
     }
 
     .dashboard-bubble:hover .dashboard-bubble-disc,
     .dashboard-bubble:focus-visible .dashboard-bubble-disc {
       opacity: 1;
-      filter: brightness(1.08) saturate(1.08);
+      stroke: var(--color-magnet);
+      stroke-width: 2.5px;
+      filter: brightness(1.06) saturate(1.06);
     }
+  }
+
+  .dashboard-bubble:focus-visible .dashboard-bubble-disc {
+    stroke: var(--color-magnet);
+    stroke-width: 2.5px;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -4824,6 +4837,13 @@ body {
     .dashboard-bubble:focus-visible {
       transform: none;
     }
+  }
+
+  .dashboard-storage-summary {
+    margin: 0 0 0.35rem;
+    font-size: 0.9375rem;
+    font-weight: 650;
+    color: var(--color-ink);
   }
 
   .dashboard-tag-bars {

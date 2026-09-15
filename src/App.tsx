@@ -178,7 +178,7 @@ function DashboardPage() {
         setScrapsForUsage(next);
       })
       .catch(() => setScraps([]));
-  }, [user, setScrapsForUsage]);
+  }, [user?.id, setScrapsForUsage]);
 
   useEffect(() => {
     function onCloseOverlays() {
@@ -229,7 +229,7 @@ function DashboardEditorPage({ kind }: { kind: "types" | "tags" }) {
         setScrapsForUsage(next);
       })
       .catch(() => setScraps([]));
-  }, [user, setScrapsForUsage]);
+  }, [user?.id, setScrapsForUsage]);
 
   useEffect(() => {
     function onCloseOverlays() {

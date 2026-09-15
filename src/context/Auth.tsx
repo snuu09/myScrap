@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { AuthChangeEvent, Session, User } from "@supabase/supabase-js";
 import { getSupabase, isSupabaseConfigured } from "../lib/supabase";
 
@@ -54,6 +54,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(!configured);
   const [session, setSession] = useState<Session | null>(null);
   const [recoveryPending, setRecoveryPending] = useState(false);
+  const sessionRef = useRef<Session | null>(null);
+
+  useEffect(() => {
+    sessionRef.current = session;
+  }, [session]);
 
   useEffect(() => {
     const supabase = getSupabase();
@@ -64,12 +69,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let alive = true;
     supabase.auth.getSession().then(({ data }) => {
       if (!alive) return;
+      sessionRef.current = data.session ?? null;
       setSession(data.session ?? null);
       setReady(true);
     });
     const { data } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, next) => {
-      setSession(next);
       if (event === "PASSWORD_RECOVERY") setRecoveryPending(true);
+      const prev = sessionRef.current;
+      if (
+        prev?.user?.id === next?.user?.id &&
+        prev?.access_token === next?.access_token &&
+        prev?.refresh_token === next?.refresh_token
+      ) {
+        return;
+      }
+      // Same signed-in user with a refreshed access token: keep the existing
+      // user object identity so dependents keyed on `user` do not remount.
+      if (
+        event === "TOKEN_REFRESHED" &&
+        prev?.user?.id &&
+        next?.user?.id === prev.user.id &&
+        next
+      ) {
+        const merged: Session = { ...next, user: prev.user };
+        sessionRef.current = merged;
+        setSession(merged);
+        return;
+      }
+      sessionRef.current = next;
+      setSession(next);
     });
     return () => {
       alive = false;

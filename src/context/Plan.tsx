@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { loadProfile } from "../lib/profiles";
 import {
   canStickText,
@@ -35,28 +35,45 @@ const PlanContext = createContext<PlanState | null>(null);
 
 export function PlanProvider({ children }: { children: ReactNode }) {
   const { user, configured } = useAuth();
+  const userId = user?.id ?? null;
   const [profile, setProfile] = useState<Profile | null>(null);
   const [ready, setReady] = useState(!configured);
   const [usageBytes, setUsageBytes] = useState(0);
   const [scrapCount, setScrapCount] = useState(0);
+  const lastUserIdRef = useRef<string | null>(null);
+
+  const setScrapsForUsage = useCallback((scraps: Scrap[]) => {
+    setUsageBytes(computeUsageBytes(scraps));
+    setScrapCount(scraps.length);
+  }, []);
+
+  const setUsageSnapshot = useCallback(({ count, bytes }: { count: number; bytes: number }) => {
+    setScrapCount(count);
+    setUsageBytes(bytes);
+  }, []);
 
   const refreshProfile = useCallback(async () => {
-    if (!user || !configured) {
+    if (!userId || !configured) {
       setProfile(null);
       setReady(true);
       return;
     }
-    const row = await loadProfile(user.id);
+    const row = await loadProfile(userId);
     setProfile(row);
     setReady(true);
-  }, [user, configured]);
+  }, [userId, configured]);
 
   useEffect(() => {
-    setReady(false);
-    setUsageBytes(0);
-    setScrapCount(0);
+    const changed = lastUserIdRef.current !== userId;
+    lastUserIdRef.current = userId;
+    if (changed) {
+      setReady(false);
+      setUsageBytes(0);
+      setScrapCount(0);
+      setProfile(null);
+    }
     void refreshProfile();
-  }, [refreshProfile]);
+  }, [userId, refreshProfile]);
 
   const guest = isBrowseUser(user);
 
@@ -66,14 +83,8 @@ export function PlanProvider({ children }: { children: ReactNode }) {
       ready,
       usageBytes,
       scrapCount,
-      setScrapsForUsage: (scraps) => {
-        setUsageBytes(computeUsageBytes(scraps));
-        setScrapCount(scraps.length);
-      },
-      setUsageSnapshot: ({ count, bytes }) => {
-        setScrapCount(count);
-        setUsageBytes(bytes);
-      },
+      setScrapsForUsage,
+      setUsageSnapshot,
       canUpload: (addingBytes) => {
         if (guest) {
           if (addingBytes > GUEST_FILE_LIMIT || usageBytes + addingBytes > GUEST_TOTAL_LIMIT) {
@@ -90,7 +101,7 @@ export function PlanProvider({ children }: { children: ReactNode }) {
       trialDaysLeft: guest ? null : trialDaysLeft(profile),
       refreshProfile,
     }),
-    [profile, ready, usageBytes, scrapCount, refreshProfile, guest],
+    [profile, ready, usageBytes, scrapCount, setScrapsForUsage, setUsageSnapshot, refreshProfile, guest],
   );
 
   return <PlanContext.Provider value={value}>{children}</PlanContext.Provider>;

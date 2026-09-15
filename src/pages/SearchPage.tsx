@@ -38,6 +38,7 @@ export function SearchPage() {
   const [tagFilter, setTagFilter] = useState<string[]>(() => searchParams.getAll("tag"));
   const [tagsOpen, setTagsOpen] = useState(false);
   const [headerSlot, setHeaderSlot] = useState<HTMLElement | null>(null);
+  const scrapsLoaded = useRef<string | null>(null);
 
   const typeParam = searchParams.get("type") || "";
   const dayParam = searchParams.get("day") || "";
@@ -70,21 +71,26 @@ export function SearchPage() {
 
   const refresh = useCallback(async () => {
     if (!user) return;
-    setLoading(true);
+    const quiet = scrapsLoaded.current && scrapsLoaded.current === user.id;
+    if (!quiet) setLoading(true);
     try {
       const next = await loadScraps(user);
       setScraps(next);
       setScrapsForUsage(next);
+      scrapsLoaded.current = user.id;
     } catch {
-      setScraps([]);
+      if (!quiet) setScraps([]);
     } finally {
       setLoading(false);
     }
-  }, [user, setScrapsForUsage]);
+  }, [user?.id, user, setScrapsForUsage]);
 
   useEffect(() => {
+    if (scrapsLoaded.current !== user?.id) {
+      scrapsLoaded.current = null;
+    }
     void refresh();
-  }, [refresh]);
+  }, [refresh, user?.id]);
 
   useEffect(() => {
     function onChange() {

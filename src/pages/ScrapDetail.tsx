@@ -216,7 +216,7 @@ export function ScrapDetail() {
       setError(t("syncError"));
       setReady(true);
     }
-  }, [user, t, setScrapsForUsage]);
+  }, [user?.id, user, t, setScrapsForUsage]);
 
   useEffect(() => {
     void refresh();
