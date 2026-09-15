@@ -5422,6 +5422,21 @@ body {
     gap: 1rem;
   }
 
+  .classify-batch-save-mode {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .classify-batch-save-mode .settings-seg-track {
+    width: 100%;
+  }
+
+  .classify-batch-save-mode .settings-seg {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
   .classify-batch-nav {
     position: sticky;
     top: 0.35rem;

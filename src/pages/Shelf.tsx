@@ -7,6 +7,7 @@ import { isBrowseUser, useAuth } from "../context/Auth";
 import { usePlan } from "../context/Plan";
 import { DraftCard } from "../components/DraftCard";
 import { FileBatch, type BatchItem } from "../components/FileBatch";
+import { GlassCluster } from "../components/GlassCluster";
 import { BusyOverlay } from "../components/BusyOverlay";
 import { GuestNoticeSheet } from "../components/GuestNoticeSheet";
 import { ScrapList } from "../components/ScrapList";
@@ -65,6 +66,7 @@ export function Shelf() {
   const [draft, setDraft] = useState<Scrap | null>(null);
   const [pendingDrafts, setPendingDrafts] = useState<Scrap[]>([]);
   const [batch, setBatch] = useState<BatchItem[]>([]);
+  const [batchSaveMode, setBatchSaveMode] = useState<"one" | "many">("one");
   const [queueLabel, setQueueLabel] = useState("");
   const [queueMeta, setQueueMeta] = useState({ n: 0, total: 0 });
   const [savingBatch, setSavingBatch] = useState(false);
@@ -829,17 +831,28 @@ export function Shelf() {
     }
     if (needsGuestNotice(() => void persistPendingAll())) return;
     const queue = [...pendingDrafts];
+    const asOne = batchSaveMode === "one" && queue.length > 1;
+    const ids = queue.map((item) => item.id);
+    const prepared = asOne
+      ? queue.map((item) => ({
+          ...item,
+          linkedIds: [...new Set([...(item.linkedIds || []), ...ids.filter((id) => id !== item.id)])],
+        }))
+      : queue;
     saveAbortRef.current = false;
     setSavingBatch(true);
     try {
-      for (let i = 0; i < queue.length; i++) {
+      for (let i = 0; i < prepared.length; i++) {
         if (saveAbortRef.current) break;
-        await persistOne(queue[i]);
-        const left = queue.slice(i + 1);
+        await persistOne(prepared[i]);
+        const left = prepared.slice(i + 1);
         pendingRef.current = left;
         setPendingDrafts(left);
       }
-      if (!saveAbortRef.current) await refresh();
+      if (!saveAbortRef.current) {
+        setBatchSaveMode("one");
+        await refresh();
+      }
     } catch (err) {
       const message = err instanceof GuestQuotaError ? t("guestQuotaMsg") : t("syncError");
       setError(message);
@@ -914,6 +927,7 @@ export function Shelf() {
     const doomed = [...pendingDrafts];
     pendingRef.current = [];
     setPendingDrafts([]);
+    setBatchSaveMode("one");
     for (const item of doomed) await revokeDraftMedia(item);
   }
 
@@ -946,6 +960,31 @@ export function Shelf() {
           <p className="list-tools-label">{t("classifyDone")}</p>
           <p className="list-tools-label">{t("batchProgress", { n: pendingDrafts.length, total: pendingDrafts.length })}</p>
         </div>
+        {pendingDrafts.length >= 2 ? (
+          <div className="classify-batch-save-mode" role="group" aria-label={t("batchSaveMode")}>
+            <p className="list-tools-label">{t("batchSaveMode")}</p>
+            <GlassCluster className="settings-seg-track" label={t("batchSaveMode")} restOnPressed>
+              <button
+                type="button"
+                className="settings-seg"
+                aria-pressed={batchSaveMode === "one"}
+                disabled={savingBatch}
+                onClick={() => setBatchSaveMode("one")}
+              >
+                {t("batchSaveAsOne")}
+              </button>
+              <button
+                type="button"
+                className="settings-seg"
+                aria-pressed={batchSaveMode === "many"}
+                disabled={savingBatch}
+                onClick={() => setBatchSaveMode("many")}
+              >
+                {t("batchSaveAsMany")}
+              </button>
+            </GlassCluster>
+          </div>
+        ) : null}
         {pendingDrafts.length >= 3 ? (
           <nav className="classify-batch-nav" aria-label={t("classifyTitle")}>
             {pendingDrafts.map((item, index) => (
