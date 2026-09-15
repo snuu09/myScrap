@@ -8,7 +8,7 @@ import { useDialog } from "../lib/dialog";
 import { useT } from "../lib/useT";
 import { formatBytes } from "../lib/tagger";
 import { markArriveGenie } from "../lib/pageGenie";
-import { PlanUsageBlock, StorageGauge } from "./PlanUsageBlock";
+import { PlanTierMeta, StorageGauge } from "./PlanUsageBlock";
 import { GlassCluster } from "./GlassCluster";
 
 function Seg({
@@ -42,7 +42,7 @@ export function SettingsPage() {
   const { lang, theme, palette, look, setLang, setTheme, setPalette, setLook } = usePrefs();
   const t = useT();
   const { user, signOut } = useAuth();
-  const { setScrapsForUsage, setUsageSnapshot, scrapCount, usageBytes, storageLimit } = usePlan();
+  const { setScrapsForUsage, setUsageSnapshot, scrapCount, usageBytes, storageLimit, showAds } = usePlan();
   const { alert, confirm } = useDialog();
   const navigate = useNavigate();
   const [resetting, setResetting] = useState(false);
@@ -118,14 +118,16 @@ export function SettingsPage() {
       {user ? (
         <section className="settings-card" aria-label={t("settingsAccount")}>
           <p className="settings-card-label">{t("settingsAccount")}</p>
-          <p className="settings-session-chip">
-            {t("sessionIn")}
-            <strong>{sessionLabel}</strong>
-          </p>
-          <div>
-            <p className="settings-section-label">{t("planLabel")}</p>
-            <PlanUsageBlock showAdsNote />
+          <div className="settings-pref-row settings-account-row">
+            <p className="settings-section-label">{t("sessionIn")}</p>
+            <strong className="settings-account-value">{sessionLabel}</strong>
           </div>
+          <div className="settings-pref-row settings-account-row">
+            <p className="settings-section-label">{t("planLabel")}</p>
+            <PlanTierMeta />
+          </div>
+          <StorageGauge usageBytes={usageBytes} storageLimit={storageLimit} />
+          {showAds ? <span className="plan-ads-note">{t("adPlaceholder")}</span> : null}
           <GlassCluster className="liquid-solo" label={t("logout")} ripple>
             <button
               type="button"

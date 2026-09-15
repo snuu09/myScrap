@@ -7,7 +7,6 @@ import type { PlanTier } from "../lib/plans";
 
 type Props = {
   showAdsNote?: boolean;
-  planUpgradeHint?: boolean;
 };
 
 function planName(lang: "ko" | "en", tier: PlanTier | undefined) {
@@ -55,21 +54,19 @@ export function StorageGauge({
   );
 }
 
-export function PlanUsageBlock({ showAdsNote = false, planUpgradeHint = true }: Props) {
+/** Tier name + trial lines, for a label | value settings row. */
+export function PlanTierMeta() {
   const { lang } = usePrefs();
-  const { profile, usageBytes, storageLimit, trialDaysLeft, trialExpired, showAds } = usePlan();
+  const { profile, trialDaysLeft, trialExpired } = usePlan();
 
   if (!profile) {
     return <p className="text-[0.8125rem] text-muted">{t(lang, "noPlanProfile")}</p>;
   }
 
-  const showTrialDate =
-    !trialExpired &&
-    trialDaysLeft !== null &&
-    profile.trialEndsAt != null;
+  const showTrialDate = !trialExpired && trialDaysLeft !== null && profile.trialEndsAt != null;
 
   return (
-    <div className="plan-usage-block">
+    <div className="plan-usage-meta">
       <strong className="plan-usage-tier">{planName(lang, profile.planTier)}</strong>
       {trialExpired ? (
         <span className="plan-trial-msg plan-trial-msg--danger">{t(lang, "trialExpiredMsg")}</span>
@@ -81,11 +78,23 @@ export function PlanUsageBlock({ showAdsNote = false, planUpgradeHint = true }: 
           {t(lang, "trialEndsOn", { date: formatTrialEndDate(profile.trialEndsAt!, lang) })}
         </span>
       ) : null}
+    </div>
+  );
+}
+
+export function PlanUsageBlock({ showAdsNote = false }: Props) {
+  const { lang } = usePrefs();
+  const { profile, usageBytes, storageLimit, showAds } = usePlan();
+
+  if (!profile) {
+    return <p className="text-[0.8125rem] text-muted">{t(lang, "noPlanProfile")}</p>;
+  }
+
+  return (
+    <div className="plan-usage-block">
+      <PlanTierMeta />
       <StorageGauge usageBytes={usageBytes} storageLimit={storageLimit} />
-      {showAdsNote && showAds ? (
-        <span className="plan-ads-note">{t(lang, "adPlaceholder")}</span>
-      ) : null}
-      {planUpgradeHint ? <span className="plan-upgrade-hint">{t(lang, "planUpgradeHint")}</span> : null}
+      {showAdsNote && showAds ? <span className="plan-ads-note">{t(lang, "adPlaceholder")}</span> : null}
     </div>
   );
 }

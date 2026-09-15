@@ -9,7 +9,7 @@ const TERMS = {
     "저장: 조각은 Supabase Postgres에, 파일은 비공개 Storage에 계정별로 남습니다. 환경 변수가 없으면 책장을 열 수 없습니다.",
     "운영: 운영 주체, 대표, 주소, 연락처는 아래에 표시합니다. 값이 없으면 「표시 예정」입니다. 이 문서는 없는 번호를 만들지 않습니다.",
     "책임: 붙인 내용의 권리는 붙인 사람에게 있습니다. 자동 분류는 도울 뿐, 외부 사이트의 내용을 보증하지 않습니다.",
-    "등급: 무료는 가입 후 14일 체험과 100MB 업로드 한도, 광고가 있습니다. 중간은 1GB와 광고, 고급·관리자는 무제한 용량과 광고 없음입니다. 결제 연동은 없으며 등급 변경은 운영자가 합니다.",
+    "등급: 무료는 가입 후 14일 체험과 100MB 업로드 한도, 광고가 있습니다. 중간은 1GB와 광고, 고급·관리자는 무제한 용량과 광고 없음입니다. 결제 연동은 준비 중이며, 이후 유료 플랜으로 사용자가 등급을 선택합니다.",
   ],
   en: [
     "MyBrary is a personal capture box for things you saw on the web, photos, and files. It is not a team space or a store.",
@@ -17,7 +17,7 @@ const TERMS = {
     "Storage: Scraps live in Supabase Postgres. Files go in a private Storage bucket per account. Without env vars the shelf does not open.",
     "Operator: Operator, representative, address, and contact appear below. Empty fields read “To be shown”. This page does not invent registration numbers.",
     "Responsibility: Rights in stuck material stay with the person who stuck it. Auto-classify helps. It does not guarantee third-party pages.",
-    "Plans: Free includes a 14-day trial, 100MB upload cap, and ads. Standard allows 1GB with ads. Premium and Admin have unlimited storage and no ads. There is no payment integration in this build. Plan changes are handled by the operator.",
+    "Plans: Free includes a 14-day trial, 100MB upload cap, and ads. Standard allows 1GB with ads. Premium and Admin have unlimited storage and no ads. Payment is not wired yet. Later, paid plans will let users choose their tier.",
   ],
 };
 

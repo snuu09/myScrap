@@ -1084,9 +1084,16 @@ body {
     width: fit-content;
     max-width: 100%;
     flex-wrap: wrap;
-    gap: 0.25rem;
-    padding: 0.2rem;
-    border-radius: 999px;
+    align-content: flex-start;
+    gap: 0.3rem;
+    padding: 0.4rem 0.55rem;
+    /* Stadium radius clips multi-line chips; keep a soft panel corner instead. */
+    border-radius: var(--radius-lg);
+  }
+
+  .search-tag-row .tag-cluster {
+    flex: 1 1 auto;
+    min-width: 0;
   }
 
   html[data-look="glass"] .tag-cluster .scrap-tag--btn,
@@ -4596,6 +4603,20 @@ body {
     gap: 0.375rem;
   }
 
+  .plan-usage-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.2rem;
+    min-width: 0;
+    text-align: right;
+  }
+
+  .plan-usage-block > .plan-usage-meta {
+    align-items: flex-start;
+    text-align: left;
+  }
+
   .plan-usage-tier {
     display: block;
     font-size: 0.9375rem;
@@ -4693,8 +4714,7 @@ body {
     color: var(--color-muted);
   }
 
-  .plan-ads-note,
-  .plan-upgrade-hint {
+  .plan-ads-note {
     font-size: 0.75rem;
     color: var(--color-muted);
   }
@@ -4744,16 +4764,66 @@ body {
     max-height: 14rem;
   }
 
+  .dashboard-bubble {
+    cursor: pointer;
+    outline: none;
+    transition: transform 180ms var(--ease-out);
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+
+  .dashboard-bubble-disc {
+    opacity: 0.92;
+    transition:
+      opacity 180ms var(--ease-out),
+      filter 180ms var(--ease-out);
+  }
+
   .dashboard-bubble-count {
-    fill: var(--color-magnet-ink);
-    font-size: 0.75rem;
-    font-weight: 700;
+    fill: var(--color-paper);
+    font-weight: 750;
+    letter-spacing: -0.03em;
+    paint-order: stroke fill;
+    stroke: color-mix(in srgb, var(--color-ink) 35%, transparent);
+    stroke-width: 0.6px;
+    stroke-linejoin: round;
+    pointer-events: none;
   }
 
   .dashboard-bubble-label {
-    fill: var(--color-ink);
-    font-size: 0.625rem;
+    fill: color-mix(in srgb, var(--color-paper) 92%, white);
     font-weight: 650;
+    letter-spacing: -0.02em;
+    paint-order: stroke fill;
+    stroke: color-mix(in srgb, var(--color-ink) 28%, transparent);
+    stroke-width: 0.45px;
+    stroke-linejoin: round;
+    pointer-events: none;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .dashboard-bubble:hover,
+    .dashboard-bubble:focus-visible {
+      transform: scale(1.1);
+    }
+
+    .dashboard-bubble:hover .dashboard-bubble-disc,
+    .dashboard-bubble:focus-visible .dashboard-bubble-disc {
+      opacity: 1;
+      filter: brightness(1.08) saturate(1.08);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .dashboard-bubble,
+    .dashboard-bubble-disc {
+      transition: none;
+    }
+
+    .dashboard-bubble:hover,
+    .dashboard-bubble:focus-visible {
+      transform: none;
+    }
   }
 
   .dashboard-tag-bars {
@@ -5106,6 +5176,21 @@ body {
     padding: 0;
   }
 
+  .settings-account-row {
+    align-items: flex-start;
+  }
+
+  .settings-account-value {
+    max-width: min(65%, 16rem);
+    overflow: hidden;
+    font-size: 0.9375rem;
+    font-weight: 650;
+    color: var(--color-ink);
+    text-align: right;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .settings-pref-row {
     display: flex;
     align-items: center;
@@ -5114,9 +5199,14 @@ body {
   }
 
   @media (max-width: 520px) {
-    .settings-pref-row {
+    .settings-pref-row:not(.settings-account-row) {
       flex-direction: column;
       align-items: stretch;
+    }
+
+    .settings-account-row {
+      flex-direction: row;
+      align-items: flex-start;
     }
   }
 

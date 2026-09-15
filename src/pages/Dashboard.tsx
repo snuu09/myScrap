@@ -1,12 +1,13 @@
 import { Link, useNavigate } from "react-router-dom";
 import { typeLabel } from "../i18n";
+import { usePlan } from "../context/Plan";
 import { usePrefs } from "../context/Prefs";
-import { useT } from "../lib/useT";
-import { PlanUsageBlock } from "../components/PlanUsageBlock";
+import { PlanTierMeta, StorageGauge } from "../components/PlanUsageBlock";
 import { ScrapBookCard } from "../components/ScrapList";
 import { aggregateStats } from "../lib/scrapFilters";
 import { spineColor } from "../lib/typeColor";
 import type { Scrap } from "../lib/types";
+import { useT } from "../lib/useT";
 
 type Props = { scraps: Scrap[]; onScrapsChange: (next: Scrap[]) => void };
 
@@ -34,17 +35,46 @@ function TypeBubbles({
 
   return (
     <svg className="dashboard-chart" viewBox={`0 0 ${width} ${height}`} role="img">
-      {placed.map((row) => (
-        <g key={row.id} className="dashboard-bubble" onClick={() => onSelect(row.id)} style={{ cursor: "pointer" }}>
-          <circle cx={row.x} cy={row.y} r={row.r} fill={row.color} opacity={0.88} />
-          <text x={row.x} y={row.y - 2} textAnchor="middle" className="dashboard-bubble-count">
-            {row.count}
-          </text>
-          <text x={row.x} y={row.y + 12} textAnchor="middle" className="dashboard-bubble-label">
-            {row.label.length > 8 ? row.label.slice(0, 7) + "…" : row.label}
-          </text>
-        </g>
-      ))}
+      {placed.map((row) => {
+        const countSize = Math.max(11, Math.min(16, row.r * 0.48));
+        const labelSize = Math.max(9, Math.min(12, row.r * 0.34));
+        return (
+          <g
+            key={row.id}
+            className="dashboard-bubble"
+            transform={`translate(${row.x} ${row.y})`}
+            onClick={() => onSelect(row.id)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                onSelect(row.id);
+              }
+            }}
+          >
+            <circle className="dashboard-bubble-disc" cx={0} cy={0} r={row.r} fill={row.color} />
+            <text
+              x={0}
+              y={-2}
+              textAnchor="middle"
+              className="dashboard-bubble-count"
+              style={{ fontSize: `${countSize}px` }}
+            >
+              {row.count}
+            </text>
+            <text
+              x={0}
+              y={countSize * 0.85}
+              textAnchor="middle"
+              className="dashboard-bubble-label"
+              style={{ fontSize: `${labelSize}px` }}
+            >
+              {row.label.length > 8 ? row.label.slice(0, 7) + "…" : row.label}
+            </text>
+          </g>
+        );
+      })}
     </svg>
   );
 }
@@ -78,6 +108,7 @@ export function Dashboard({ scraps }: Props) {
   const { lang, shelfLayout } = usePrefs();
   const t = useT();
   const navigate = useNavigate();
+  const { usageBytes, storageLimit } = usePlan();
   const stats = aggregateStats(scraps);
   const recent = [...scraps].sort((a, b) => b.createdAt - a.createdAt).slice(0, 10);
   const asList = shelfLayout !== "gallery";
@@ -101,8 +132,11 @@ export function Dashboard({ scraps }: Props) {
       </div>
 
       <section className="dashboard-panel" aria-label={t("planLabel")}>
-        <p className="list-tools-label">{t("planLabel")}</p>
-        <PlanUsageBlock planUpgradeHint={false} />
+        <div className="settings-pref-row settings-account-row">
+          <p className="list-tools-label">{t("planLabel")}</p>
+          <PlanTierMeta />
+        </div>
+        <StorageGauge usageBytes={usageBytes} storageLimit={storageLimit} />
       </section>
 
       <section className="dashboard-panel" aria-label={t("statsByType")}>
