@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { usePrefs } from "../context/Prefs";
 import { t } from "../i18n";
 
@@ -10,7 +11,7 @@ type Props = {
   titleClassName?: string;
   bodyClassName?: string;
   /** Optional control row under the title (e.g. open-link). */
-  aside?: React.ReactNode;
+  aside?: ReactNode;
 };
 
 /** Readable source excerpt with a short collapse for long paste/page text. */
@@ -18,9 +19,21 @@ export function SourceExcerpt({ text, className, titleClassName, bodyClassName, 
   const { lang } = usePrefs();
   const clean = text.trim();
   const [open, setOpen] = useState(false);
+  const toggleRef = useRef<HTMLButtonElement>(null);
   if (!clean && !aside) return null;
   const long = clean.length > COLLAPSE_CHARS;
   const shown = !clean ? "" : long && !open ? clean.slice(0, COLLAPSE_CHARS).trimEnd() + "…" : clean;
+
+  function toggle() {
+    const next = !open;
+    setOpen(next);
+    if (!next) {
+      requestAnimationFrame(() => {
+        toggleRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      });
+    }
+  }
+
   return (
     <div className={className || "draft-ai-block"}>
       <div className="source-excerpt-head">
@@ -29,8 +42,15 @@ export function SourceExcerpt({ text, className, titleClassName, bodyClassName, 
       </div>
       {shown ? <p className={bodyClassName || "draft-ai-text"}>{shown}</p> : null}
       {long ? (
-        <button type="button" className="source-excerpt-toggle auth-link-utility" onClick={() => setOpen((v) => !v)}>
-          {t(lang, open ? "sourceShowLess" : "sourceShowMore")}
+        <button
+          ref={toggleRef}
+          type="button"
+          className="source-excerpt-toggle"
+          aria-expanded={open}
+          aria-label={t(lang, open ? "sourceShowLess" : "sourceShowMore")}
+          onClick={toggle}
+        >
+          {open ? <ChevronUp className="size-4" strokeWidth={1.8} /> : <ChevronDown className="size-4" strokeWidth={1.8} />}
         </button>
       ) : null}
     </div>

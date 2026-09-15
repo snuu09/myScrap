@@ -900,14 +900,17 @@ export function ScrapDetail() {
         ) : null}
         {editing ? (
           <>
-            <textarea
-              value={editMemo}
-              onChange={(e) => setEditMemo(e.target.value)}
-              placeholder={t("memoPlaceholder")}
-              rows={3}
-              className="classify-draft-memo"
-              disabled={busy}
-            />
+            <div className="detail-ai-block">
+              <p className="detail-section-title">{t("historyMemo")}</p>
+              <textarea
+                value={editMemo}
+                onChange={(e) => setEditMemo(e.target.value)}
+                placeholder={t("memoPlaceholder")}
+                rows={3}
+                className="classify-draft-memo"
+                disabled={busy}
+              />
+            </div>
             <div className="scrap-card-tags">
               {editTags.length ? <TagCluster>
               {editTags.map((tag) => (
@@ -951,7 +954,12 @@ export function ScrapDetail() {
           </>
         ) : (
           <>
-            {item.memo ? <p className="m-0 text-[0.9375rem] text-ink">{item.memo}</p> : null}
+            {item.memo ? (
+              <div className="detail-ai-block">
+                <p className="detail-section-title">{t("historyMemo")}</p>
+                <p className="m-0 text-[0.9375rem] text-ink">{item.memo}</p>
+              </div>
+            ) : null}
             <p className="scrap-card-tags">
               {item.tags.length ? <TagCluster>
               {item.tags.map((tag) => (
