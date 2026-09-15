@@ -62,6 +62,8 @@ export type Scrap = {
   bookmarked: boolean;
   readAt: number | null;
   remindAt: number | null;
+  /** User-bundled peer scrap ids (stored both ways when linking). */
+  linkedIds: string[];
   og: ScrapOg | null;
   ogStatus: string;
   /** Prior title, memo, tags, type, and body. Newest first. */

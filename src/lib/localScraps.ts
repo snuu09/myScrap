@@ -27,6 +27,7 @@ function normalize(item: Scrap): Scrap {
     bookmarked: Boolean(item.bookmarked),
     readAt: item.readAt ?? null,
     remindAt: item.remindAt ?? null,
+    linkedIds: Array.isArray(item.linkedIds) ? item.linkedIds.filter(Boolean) : [],
     og: item.og ?? null,
     ogStatus: item.ogStatus || "",
     sourceText: item.sourceText || "",

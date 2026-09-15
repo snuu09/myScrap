@@ -33,8 +33,9 @@ import { looksLikeAddress, shelfTitle } from "../lib/scrapFace";
 import { usePagedSlice } from "../lib/usePagedSlice";
 import { useDialog } from "../lib/dialog";
 import { getSupabase } from "../lib/supabase";
-import { analyzeFile, analyzeText, uid } from "../lib/tagger";
+import { analyzeFile, analyzeText } from "../lib/tagger";
 import { blobToObjectUrl, blobUrlToDataUrl, captureCover } from "../lib/captureCover";
+import { blankScrap } from "../lib/blankScrap";
 import type { AnalyzeResult, Scrap } from "../lib/types";
 
 const REMIND_NOTIFIED_KEY = "mybrary.remind.notified";
@@ -44,43 +45,6 @@ function classifyFlags(ai: AnalyzeResult | null): Pick<Scrap, "classifyFallback"
   return {
     classifyFallback: Boolean(ai.fallback),
     classifyMiss: ai.miss || "",
-  };
-}
-
-function blankScrap(partial: Partial<Scrap>): Scrap {
-  const now = Date.now();
-  return {
-    id: uid(),
-    createdAt: now,
-    updatedAt: now,
-    type: "text",
-    tags: ["text"],
-    title: "",
-    text: "",
-    url: "",
-    filename: "",
-    mime: "",
-    extension: "",
-    size: 0,
-    dataUrl: "",
-    posterPath: "",
-    posterUrl: "",
-    posterUrls: [],
-    pages: 0,
-    previewText: "",
-    sourceText: "",
-    sample: false,
-    storedMedia: false,
-    domain: "",
-    error: "",
-    memo: "",
-    mediaPath: "",
-    bookmarked: false,
-    readAt: null,
-    remindAt: null,
-    og: null,
-    ogStatus: "",
-    ...partial,
   };
 }
 

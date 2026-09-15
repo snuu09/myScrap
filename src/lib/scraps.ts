@@ -48,6 +48,7 @@ type Row = {
   bookmarked?: boolean;
   read_at?: string | null;
   remind_at?: string | null;
+  linked_ids?: string[] | null;
   revisions?: unknown;
 };
 
@@ -255,6 +256,7 @@ function toRow(userId: string, scrap: Scrap): Row {
     bookmarked: !!scrap.bookmarked,
     read_at: scrap.readAt ? new Date(scrap.readAt).toISOString() : null,
     remind_at: scrap.remindAt ? new Date(scrap.remindAt).toISOString() : null,
+    linked_ids: Array.isArray(scrap.linkedIds) ? scrap.linkedIds.filter(Boolean) : [],
     revisions: parseRevisions(scrap.revisions),
   };
 }
@@ -291,6 +293,7 @@ function fromRow(row: Row): Scrap {
     bookmarked: !!row.bookmarked,
     readAt: row.read_at ? Date.parse(row.read_at) || null : null,
     remindAt: row.remind_at ? Date.parse(row.remind_at) || null : null,
+    linkedIds: Array.isArray(row.linked_ids) ? row.linked_ids.map(String).filter(Boolean) : [],
     og: parseOg(row.og),
     ogStatus: row.og_status || "",
     revisions: parseRevisions(row.revisions),

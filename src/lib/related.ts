@@ -23,10 +23,11 @@ function scorePair(item: Scrap, other: Scrap) {
   return shared * 3 + bodyOverlap * 2 + titleOverlap + domain + type;
 }
 
-/** Related pages from summary, analysis, memo, and tags. No extra classify call. */
-export function relatedScraps(item: Scrap, all: Scrap[]) {
+/** Similar pages from summary, analysis, memo, and tags. No extra classify call. */
+export function relatedScraps(item: Scrap, all: Scrap[], excludeIds: string[] = []) {
+  const skip = new Set([item.id, ...excludeIds]);
   return all
-    .filter((other) => other.id !== item.id)
+    .filter((other) => !skip.has(other.id))
     .map((other) => ({ other, score: scorePair(item, other) }))
     .filter((row) => row.score >= 3)
     .sort((a, b) => b.score - a.score || b.other.createdAt - a.other.createdAt)

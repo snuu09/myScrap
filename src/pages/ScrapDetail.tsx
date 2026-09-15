@@ -10,8 +10,10 @@ import {
   BookOpenCheck,
   ChevronLeft,
   ChevronRight,
+  Combine,
   Download,
   ExternalLink,
+  Folders,
   Pencil,
   Share2,
   Sparkles,
@@ -23,6 +25,7 @@ import { usePrefs } from "../context/Prefs";
 import { useAuth } from "../context/Auth";
 import { usePlan } from "../context/Plan";
 import { RemindSheet } from "../components/RemindSheet";
+import { LinkBundleSheet } from "../components/LinkBundleSheet";
 import { AuthWaiting } from "../components/AuthWaiting";
 import { BusyOverlay } from "../components/BusyOverlay";
 import { ScrapMedia } from "../components/ScrapMedia";
@@ -30,6 +33,7 @@ import { DocPreview } from "../components/DocPreview";
 import { requestAnalyze } from "../lib/analyze";
 import { captureCover } from "../lib/captureCover";
 import { deleteScrap, hydrateSignedMedia, isPagedPosterPath, loadScraps, saveScrap, uploadPosters } from "../lib/scraps";
+import { detachAllLinks, unlinkScrap } from "../lib/links";
 import { fetchOgPreview, youtubeEmbedUrl } from "../lib/og";
 import { needsOgCoverSnapshot, snapshotOgCover } from "../lib/ogCover";
 import { useDialog } from "../lib/dialog";
@@ -43,6 +47,7 @@ import { formatBytes, isPdf, mediaKindOf } from "../lib/tagger";
 import { isImeComposing } from "../lib/ime";
 import { DocumentMark } from "../components/DocumentMark";
 import { DetailHistory } from "../components/DetailHistory";
+import { BundledPages } from "../components/BundledPages";
 import { RelatedPages } from "../components/RelatedPages";
 import { applyRevision, pushRevision } from "../lib/revisions";
 import { looksLikeAddress, scrapCover, scrapFaceTitle, shelfTitle } from "../lib/scrapFace";
@@ -103,6 +108,7 @@ export function ScrapDetail() {
   const [ready, setReady] = useState(false);
   const [error, setError] = useState("");
   const [remindOpen, setRemindOpen] = useState(false);
+  const [linkOpen, setLinkOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -421,11 +427,37 @@ export function ScrapDetail() {
     if (!user) return;
     if (!(await confirm({ body: t("peelConfirm"), danger: true, confirmLabel: t("deleteItem") }))) return;
     try {
+      await detachAllLinks(user, item, scraps);
       await deleteScrap(user, item);
       navigate("/");
     } catch {
       setError(t("syncError"));
     }
+  }
+
+  async function unlinkPeer(peerId: string) {
+    if (!user) return;
+    setBusy(true);
+    try {
+      const { a, peer } = await unlinkScrap(user, item, peerId, scraps);
+      setScraps((list) => {
+        const updated = list.map((row) => {
+          if (row.id === a.id) return a;
+          if (peer && row.id === peer.id) return peer;
+          return row;
+        });
+        setScrapsForUsage(updated);
+        return updated;
+      });
+    } catch {
+      setError(t("syncError"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function jumpToBundled() {
+    document.getElementById("detail-bundled")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   async function runAiAnalyze() {
@@ -593,8 +625,13 @@ export function ScrapDetail() {
     <div className="dashboard-door dashboard-door--detail">
       {error ? <p className="m-0 text-[0.8125rem] text-danger">{error}</p> : null}
 
-      <div className={"detail-stage" + (turning ? " detail-stage--turn-" + turning : "")}>
-        <div className="detail-peek-slot detail-peek-slot--prev">
+      <div
+        className={
+          "detail-stage" +
+          (turning ? " detail-stage--turn-" + turning : "") +
+          (!prev && !next ? " detail-stage--solo" : !prev ? " detail-stage--no-prev" : !next ? " detail-stage--no-next" : "")
+        }
+      >        <div className="detail-peek-slot detail-peek-slot--prev">
           {!editing && prev ? (
             <NeighborPeek scrap={prev} side="prev" label={t("prevScrap")} onClick={() => turnTo(prev.id, "prev")} />
           ) : null}
@@ -614,7 +651,12 @@ export function ScrapDetail() {
             )}
           </div>
         ) : null}
-      <article ref={turnOutRef} className="dashboard-panel detail-turn-out" aria-labelledby="scrap-detail-title">
+      <article
+        ref={turnOutRef}
+        className={"dashboard-panel detail-turn-out" + (item.bookmarked ? " detail-turn-out--bookmarked" : "")}
+        aria-labelledby="scrap-detail-title"
+      >
+        {item.bookmarked ? <span className="scrap-bookmark-ribbon" aria-hidden /> : null}
         {editing ? (
           <label className="grid gap-1">
             <span className="list-tools-label">{t("untitled")}</span>
@@ -705,19 +747,51 @@ export function ScrapDetail() {
                 {item.remindAt ? <Bell className="size-[18px]" strokeWidth={1.8} /> : <BellOff className="size-[18px]" strokeWidth={1.8} />}
               </button>
             </IconTip>
+            <IconTip label={t("bundledLink")}>
+              <button
+                type="button"
+                className="detail-action"
+                aria-label={t("bundledLink")}
+                disabled={busy}
+                onClick={() => setLinkOpen(true)}
+              >
+                <Combine className="size-[18px]" strokeWidth={1.8} />
+              </button>
+            </IconTip>
+            {(item.linkedIds || []).length ? (
+              <IconTip label={t("bundledJump")}>
+                <button
+                  type="button"
+                  className="detail-action"
+                  aria-label={t("bundledJump")}
+                  disabled={busy}
+                  onClick={jumpToBundled}
+                >
+                  <Folders className="size-[18px]" strokeWidth={1.8} />
+                </button>
+              </IconTip>
+            ) : null}
             </GlassCluster>
           </div>
         ) : null}
-        {item.url ? (
-          <div className="inline-action-row">
-            <a href={item.url} className="scrap-card-link scrap-card-link--full min-w-0 flex-1" target="_blank" rel="noreferrer">
-              {item.url}
-            </a>
-            <GlassCluster className="liquid-hit">
-              <a href={item.url} className="inline-action" target="_blank" rel="noreferrer" aria-label={t("openLink")}>
-                <ExternalLink className="size-4" strokeWidth={1.8} />
-              </a>
-            </GlassCluster>
+        {item.text || item.previewText ? (
+          <div className="detail-ai-group">
+            <p className="detail-ai-group-head">
+              <Sparkles className="size-4" strokeWidth={1.8} aria-hidden />
+              {t("aiGroupLabel")}
+            </p>
+            {item.text ? (
+              <div className="detail-ai-block">
+                <p className="detail-section-title">{t("aiSummary")}</p>
+                <p className="detail-ai-text">{renderAiHighlight(item.text)}</p>
+              </div>
+            ) : null}
+            {item.previewText ? (
+              <div className="detail-ai-block">
+                <p className="detail-section-title">{t("aiAnalysis")}</p>
+                <p className="detail-ai-text">{renderAiHighlight(item.previewText)}</p>
+              </div>
+            ) : null}
           </div>
         ) : null}
         {showOgCard ? (
@@ -770,26 +844,30 @@ export function ScrapDetail() {
             frameClassName="detail-media-frame"
           />
         ) : null}
-        {item.sourceText || item.og?.description ? (
-          <SourceExcerpt
-            text={item.sourceText || item.og?.description || ""}
-            className="detail-ai-block"
-            titleClassName="detail-section-title"
-            bodyClassName="detail-ai-text"
-          />
-        ) : null}
-        {item.text ? (
-          <div className="detail-ai-block">
-            <p className="detail-section-title">{t("aiSummary")}</p>
-            <p className="detail-ai-text">{renderAiHighlight(item.text)}</p>
-          </div>
-        ) : null}
-        {item.previewText ? (
-          <div className="detail-ai-block">
-            <p className="detail-section-title">{t("aiAnalysis")}</p>
-            <p className="detail-ai-text">{renderAiHighlight(item.previewText)}</p>
-          </div>
-        ) : null}
+        {(() => {
+          const base = (item.sourceText || item.og?.description || "").trim();
+          const url = (item.url || "").trim();
+          const withUrl =
+            url && !base.includes(url) ? (base ? base + "\n\n" + url : url) : base;
+          if (!withUrl && !url) return null;
+          return (
+            <SourceExcerpt
+              text={withUrl}
+              className="detail-ai-block"
+              titleClassName="detail-section-title"
+              bodyClassName="detail-ai-text"
+              aside={
+                url ? (
+                  <GlassCluster className="liquid-hit">
+                    <a href={url} className="inline-action" target="_blank" rel="noreferrer" aria-label={t("openLink")}>
+                      <ExternalLink className="size-4" strokeWidth={1.8} />
+                    </a>
+                  </GlassCluster>
+                ) : null
+              }
+            />
+          );
+        })()}
         {item.filename ? (
           <div className="inline-action-row">
             <p className="scrap-card-file min-w-0 flex-1">
@@ -891,6 +969,7 @@ export function ScrapDetail() {
             </p>
           </>
         )}
+        {!editing ? <BundledPages item={item} scraps={scraps} busy={busy} onUnlink={(id) => void unlinkPeer(id)} /> : null}
       </article>
       </div>
         <div className="detail-peek-slot detail-peek-slot--next">
@@ -926,6 +1005,26 @@ export function ScrapDetail() {
           void patch({ ...item, remindAt });
         }}
       />
+
+      {user ? (
+        <LinkBundleSheet
+          open={linkOpen}
+          user={user}
+          item={item}
+          scraps={scraps}
+          onClose={() => setLinkOpen(false)}
+          onDone={(nextItem, extras) => {
+            setScraps((list) => {
+              const byId = new Map(list.map((row) => [row.id, row]));
+              byId.set(nextItem.id, nextItem);
+              for (const extra of extras) byId.set(extra.id, extra);
+              const updated = [...byId.values()].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+              setScrapsForUsage(updated);
+              return updated;
+            });
+          }}
+        />
+      ) : null}
 
       <BusyOverlay open={aiBusy} label={t("aiAnalyzingBusy")} onCancel={cancelAiAnalyze} />
     </div>

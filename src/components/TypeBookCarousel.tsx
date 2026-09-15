@@ -23,6 +23,9 @@ export function TypeBookCarousel({ types, counts, active, loading, contained, on
   const [fit, setFit] = useState(false);
   const books: { id: string; label: string; count: number }[] = [
     { id: "all", label: t("filterAll"), count: counts.all || 0 },
+    ...(counts.bookmarked
+      ? [{ id: "bookmarked", label: t("filterBookmark"), count: counts.bookmarked }]
+      : []),
     ...types.map((type) => ({
       id: type,
       label: typeLabel(lang, type),
@@ -110,7 +113,7 @@ export function TypeBookCarousel({ types, counts, active, loading, contained, on
             >
               <span className="type-book-spine" aria-hidden />
               <span className="type-book-cover">
-                {book.id !== "all" ? <DocumentMark type={book.id} size="sm" /> : null}
+                {book.id !== "all" && book.id !== "bookmarked" ? <DocumentMark type={book.id} size="sm" /> : null}
                 <span className="type-book-title">{book.label}</span>
                 <span className="type-book-count">{loading ? "…" : book.count}</span>
               </span>

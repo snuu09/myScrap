@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { ChevronDown, Download, ExternalLink, X } from "lucide-react";
+import { ChevronDown, Download, ExternalLink, Sparkles, X } from "lucide-react";
 import { t, typeLabel, detectedLabel } from "../i18n";
 import { usePrefs } from "../context/Prefs";
 import { SiteIcon } from "./SiteIcon";
@@ -413,20 +413,28 @@ export function DraftCard({
           ) : null}
         </div>
       ) : null}
+      {!draft.analyzing && (draft.text || draft.previewText) ? (
+        <div className="draft-ai-group">
+          <p className="detail-ai-group-head">
+            <Sparkles className="size-4" strokeWidth={1.8} aria-hidden />
+            {t(lang, "aiGroupLabel")}
+          </p>
+          {draft.text ? (
+            <div className="draft-ai-block">
+              <p className="list-tools-label">{t(lang, "aiSummary")}</p>
+              <p className="draft-ai-text">{renderAiHighlight(draft.text)}</p>
+            </div>
+          ) : null}
+          {draft.previewText ? (
+            <div className="draft-ai-block">
+              <p className="list-tools-label">{t(lang, "aiAnalysis")}</p>
+              <p className="draft-ai-text">{renderAiHighlight(draft.previewText)}</p>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
       {!draft.analyzing && (draft.sourceText || draft.og?.description) ? (
         <SourceExcerpt text={draft.sourceText || draft.og?.description || ""} />
-      ) : null}
-      {!draft.analyzing && draft.text ? (
-        <div className="draft-ai-block">
-          <p className="list-tools-label">{t(lang, "aiSummary")}</p>
-          <p className="draft-ai-text">{renderAiHighlight(draft.text)}</p>
-        </div>
-      ) : null}
-      {!draft.analyzing && draft.previewText ? (
-        <div className="draft-ai-block">
-          <p className="list-tools-label">{t(lang, "aiAnalysis")}</p>
-          <p className="draft-ai-text">{renderAiHighlight(draft.previewText)}</p>
-        </div>
       ) : null}
       <textarea
         value={draft.memo}

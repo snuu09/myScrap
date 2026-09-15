@@ -21,9 +21,22 @@ type Props = {
   disabledHint?: string;
   draftSlot?: ReactNode;
   below?: ReactNode;
+  /** Inline composer for sheets (no fixed bottom float). */
+  embedded?: boolean;
 };
 
-export function StickDock({ value, onChange, onSubmitText, onFiles, dropping, disabled, disabledHint, draftSlot, below }: Props) {
+export function StickDock({
+  value,
+  onChange,
+  onSubmitText,
+  onFiles,
+  dropping,
+  disabled,
+  disabledHint,
+  draftSlot,
+  below,
+  embedded = false,
+}: Props) {
   const { lang } = usePrefs();
   const { alert } = useDialog();
   const [menu, setMenu] = useState(false);
@@ -235,6 +248,7 @@ export function StickDock({ value, onChange, onSubmitText, onFiles, dropping, di
       <div
         className={
           "stick-float" +
+          (embedded ? " stick-float--embedded" : "") +
           (draftPresence.shown ? " stick-float--sheet" : "") +
           (!draftPresence.shown && over ? " stick-float--over" : "") +
           (!draftPresence.shown && yielding ? " stick-float--yielding" : "") +

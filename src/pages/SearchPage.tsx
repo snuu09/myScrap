@@ -99,9 +99,12 @@ export function SearchPage() {
   }, [refresh]);
 
   const typeCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: scraps.length };
+    const counts: Record<string, number> = { all: scraps.length, bookmarked: 0 };
     for (const type of TYPES) counts[type] = 0;
-    for (const item of scraps) counts[item.type] = (counts[item.type] || 0) + 1;
+    for (const item of scraps) {
+      counts[item.type] = (counts[item.type] || 0) + 1;
+      if (item.bookmarked) counts.bookmarked += 1;
+    }
     return counts;
   }, [scraps]);
 

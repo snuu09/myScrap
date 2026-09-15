@@ -3,9 +3,9 @@ import { typeLabel } from "../i18n";
 import { usePrefs } from "../context/Prefs";
 import { useT } from "../lib/useT";
 import { PlanUsageBlock } from "../components/PlanUsageBlock";
+import { ScrapBookCard } from "../components/ScrapList";
 import { aggregateStats } from "../lib/scrapFilters";
 import { spineColor } from "../lib/typeColor";
-import { formatWhen } from "../lib/time";
 import type { Scrap } from "../lib/types";
 
 type Props = { scraps: Scrap[]; onScrapsChange: (next: Scrap[]) => void };
@@ -75,11 +75,13 @@ function TagBars({
 }
 
 export function Dashboard({ scraps }: Props) {
-  const { lang } = usePrefs();
+  const { lang, shelfLayout } = usePrefs();
   const t = useT();
   const navigate = useNavigate();
   const stats = aggregateStats(scraps);
   const recent = [...scraps].sort((a, b) => b.createdAt - a.createdAt).slice(0, 10);
+  const asList = shelfLayout !== "gallery";
+  const listClass = asList ? "scrap-list scrap-list--list" : "scrap-list scrap-list--gallery";
   const typeRows = [...stats.byType.entries()]
     .filter(([, count]) => count > 0)
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
@@ -138,16 +140,9 @@ export function Dashboard({ scraps }: Props) {
       <section className="dashboard-panel" aria-label={t("statsTimeline")}>
         <p className="list-tools-label">{t("statsTimeline")}</p>
         {recent.length ? (
-          <ul className="dashboard-timeline">
-            {recent.map((item) => (
-              <li key={item.id}>
-                <Link to={"/scrap/" + item.id} className="dashboard-timeline-item no-underline">
-                  <p className="dashboard-timeline-title">{item.title || t("untitled")}</p>
-                  <p className="dashboard-timeline-meta">
-                    {typeLabel(lang, item.type)} · {formatWhen(item.createdAt, lang)}
-                  </p>
-                </Link>
-              </li>
+          <ul className={listClass}>
+            {recent.map((item, index) => (
+              <ScrapBookCard key={item.id} item={item} index={index} row={asList} />
             ))}
           </ul>
         ) : (

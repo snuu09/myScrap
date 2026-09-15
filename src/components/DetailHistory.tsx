@@ -3,7 +3,7 @@ import { typeLabel } from "../i18n";
 import { usePrefs } from "../context/Prefs";
 import { useT } from "../lib/useT";
 import { formatWhen } from "../lib/time";
-import { renderAiHighlight, stripAiMarks } from "../lib/aiHighlight";
+import { stripAiMarks } from "../lib/aiHighlight";
 import { TagCluster } from "./GlassCluster";
 import type { Scrap, ScrapRevision } from "../lib/types";
 
@@ -20,9 +20,8 @@ function DiffText({ before, after, side }: { before: string; after: string; side
   const right = stripAiMarks(after || "").trim();
   const source = side === "before" ? left : right;
   const other = side === "before" ? right : left;
-  const raw = side === "before" ? before : after;
   if (!source) return <span className="detail-history-empty">·</span>;
-  if (source === other) return <>{renderAiHighlight(raw || source)}</>;
+  if (source === other) return <>{source}</>;
 
   const otherSet = new Set(other.split(/\s+/).filter(Boolean));
   const nodes: ReactNode[] = [];

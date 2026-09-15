@@ -486,10 +486,11 @@ export function ScrapList({
   const gallery = shelfLayout === "gallery";
 
   const typeCounts = (() => {
-    const counts: Record<string, number> = { all: scraps.length };
+    const counts: Record<string, number> = { all: scraps.length, bookmarked: 0 };
     for (const type of TYPES) counts[type] = 0;
     for (const item of scraps) {
       counts[item.type] = (counts[item.type] || 0) + 1;
+      if (item.bookmarked) counts.bookmarked += 1;
     }
     return counts;
   })();
@@ -498,6 +499,10 @@ export function ScrapList({
 
   useEffect(() => {
     if (loading || typeFilter === "all") return;
+    if (typeFilter === "bookmarked") {
+      if (!scraps.some((item) => item.bookmarked)) onType("all");
+      return;
+    }
     const count = scraps.filter((item) => item.type === typeFilter).length;
     if (count === 0) onType("all");
   }, [loading, typeFilter, scraps, onType]);

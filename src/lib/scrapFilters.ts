@@ -18,7 +18,11 @@ export function localDayKey(ms: number) {
 export function filterScraps(scraps: Scrap[], state: ScrapFilterState) {
   const q = state.query.trim().toLowerCase();
   return scraps.filter((item) => {
-    if (state.type !== "all" && item.type !== state.type) return false;
+    if (state.type === "bookmarked") {
+      if (!item.bookmarked) return false;
+    } else if (state.type !== "all" && item.type !== state.type) {
+      return false;
+    }
     if (state.day && localDayKey(item.createdAt) !== state.day) return false;
     if (state.tags?.length && !item.tags.some((tag) => state.tags?.includes(tag))) return false;
     if (!q) return true;
