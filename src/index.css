@@ -1393,6 +1393,15 @@ body {
     text-align: left;
   }
 
+  .type-book-bookmark.scrap-bookmark-ribbon {
+    position: relative;
+    top: auto;
+    right: auto;
+    flex: none;
+    width: 0.85rem;
+    height: 1.35rem;
+  }
+
   .type-book-title {
     font-size: 0.6875rem;
     font-weight: 750;
@@ -3486,7 +3495,7 @@ body {
 
     .detail-stage {
       display: grid;
-      grid-template-columns: minmax(9rem, 0.85fr) minmax(18rem, 1.6fr) minmax(9rem, 0.85fr);
+      grid-template-columns: minmax(0, 1fr) minmax(0, 8fr) minmax(0, 1fr);
       gap: 0.85rem;
       align-items: stretch;
       justify-content: stretch;
@@ -3497,11 +3506,11 @@ body {
     }
 
     .detail-stage--no-prev {
-      grid-template-columns: minmax(18rem, 1fr) minmax(9rem, 0.85fr);
+      grid-template-columns: minmax(0, 9fr) minmax(0, 1fr);
     }
 
     .detail-stage--no-next {
-      grid-template-columns: minmax(9rem, 0.85fr) minmax(18rem, 1fr);
+      grid-template-columns: minmax(0, 1fr) minmax(0, 9fr);
     }
 
     .detail-peek-slot,
