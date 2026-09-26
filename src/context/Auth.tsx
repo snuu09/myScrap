@@ -33,6 +33,8 @@ type AuthState = {
   requestLoginReminder: (email: string) => Promise<{ error: string | null }>;
   requestPasswordReset: (email: string) => Promise<{ error: string | null }>;
   updatePassword: (password: string) => Promise<{ error: string | null }>;
+  updateProfile: (displayName: string) => Promise<{ error: string | null }>;
+  deleteAccount: () => Promise<{ error: string | null }>;
   browse: () => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
 };
@@ -77,6 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (event === "PASSWORD_RECOVERY") setRecoveryPending(true);
       const prev = sessionRef.current;
       if (
+        event !== "USER_UPDATED" &&
         prev?.user?.id === next?.user?.id &&
         prev?.access_token === next?.access_token &&
         prev?.refresh_token === next?.refresh_token
@@ -189,6 +192,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const { error } = await withTimeout(supabase.auth.updateUser({ password }));
           if (!error) setRecoveryPending(false);
           return { error: error ? error.message : null };
+        } catch (err) {
+          return { error: err instanceof Error && err.message === "timeout" ? "timeout" : "auth_error" };
+        }
+      },
+      async updateProfile(displayName) {
+        const supabase = getSupabase();
+        if (!supabase) return { error: "config" };
+        const name = displayName.trim();
+        if (!name) return { error: "name_required" };
+        try {
+          const { data, error } = await withTimeout(
+            supabase.auth.updateUser({ data: { full_name: name, name } }),
+          );
+          if (error) return { error: error.message };
+          if (data.user) {
+            setSession((prev) => (prev ? { ...prev, user: data.user! } : prev));
+          }
+          return { error: null };
+        } catch (err) {
+          return { error: err instanceof Error && err.message === "timeout" ? "timeout" : "auth_error" };
+        }
+      },
+      async deleteAccount() {
+        const supabase = getSupabase();
+        if (!supabase) return { error: "config" };
+        try {
+          const { data: sess } = await supabase.auth.getSession();
+          const token = sess.session?.access_token;
+          if (!token) return { error: "auth" };
+          const { data, error } = await withTimeout(
+            supabase.functions.invoke("delete-account", { method: "POST" }),
+            45_000,
+          );
+          if (error) return { error: error.message || "auth_error" };
+          if (data && typeof data === "object" && "error" in data && data.error) {
+            return { error: String(data.error) };
+          }
+          setRecoveryPending(false);
+          setSession(null);
+          try {
+            await withTimeout(supabase.auth.signOut(), 15_000);
+          } catch {
+            /* session already gone after delete */
+          }
+          return { error: null };
         } catch (err) {
           return { error: err instanceof Error && err.message === "timeout" ? "timeout" : "auth_error" };
         }
