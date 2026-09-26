@@ -20,7 +20,7 @@ import { ScrapListSkeleton } from "./ScrapListSkeleton";
 import { ScrapMedia } from "./ScrapMedia";
 import { TypeBookCarousel } from "./TypeBookCarousel";
 import { ShelfEmptyGuide } from "./ShelfEmptyGuide";
-import { GlassCluster } from "./GlassCluster";
+import { IconTip } from "./IconTip";
 import type { Scrap, ScrapType } from "../lib/types";
 import { formatWhen } from "../lib/time";
 import { formatBytes, mediaKindOf } from "../lib/tagger";
@@ -330,21 +330,21 @@ export function LayoutSwitch() {
     <section className="list-tools list-tools--slim" aria-label={t("layoutSwitch")}>
       <div className="list-tools-head">
         <div className="list-tools-head-actions">
-          <GlassCluster className="layout-seg layout-seg--labeled" label={t("layoutSwitch")} restOnPressed>
-            {LAYOUTS.map(({ id, icon: Icon, labelKey, tipKey }) => (
-              <button
-                key={id}
-                type="button"
-                className="layout-seg-btn"
-                aria-pressed={shelfLayout === id}
-                aria-label={t(tipKey)}
-                title={t(labelKey)}
-                onClick={() => setShelfLayout(id)}
-              >
-                <Icon className="size-[16px] shrink-0" strokeWidth={1.8} />
-              </button>
+          <div className="layout-seg" role="group" aria-label={t("layoutSwitch")}>
+            {LAYOUTS.map(({ id, icon: Icon, tipKey }) => (
+              <IconTip key={id} label={t(tipKey)}>
+                <button
+                  type="button"
+                  className="icon-quiet-btn layout-seg-btn"
+                  aria-pressed={shelfLayout === id}
+                  aria-label={t(tipKey)}
+                  onClick={() => setShelfLayout(id)}
+                >
+                  <Icon className="size-4 shrink-0" strokeWidth={1.8} />
+                </button>
+              </IconTip>
             ))}
-          </GlassCluster>
+          </div>
         </div>
       </div>
     </section>

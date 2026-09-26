@@ -139,13 +139,8 @@ export function Dashboard({ scraps }: Props) {
 
   return (
     <div className="dashboard-door">
-      <div className="dashboard-head">
-        <h1 className="dashboard-title">{t("dashboardTitle")}</h1>
-      </div>
-
       {!scraps.length ? (
         <PageEmptyGuide
-          eyebrow={t("statsEmptyAwaiting")}
           title={t("statsEmptyTitle")}
           body={t("statsEmptyBody")}
           ctaLabel={t("statsEmptyCta")}

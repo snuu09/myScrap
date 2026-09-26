@@ -72,6 +72,10 @@ export function useNotices() {
   const seen = readSeenNoticeIds();
   const unreadIds = notices.filter((item) => isNoticeUnread(item.id, seen)).map((item) => item.id);
   const unreadCount = unreadIds.length;
+  const historyUnreadIds = history
+    .filter((entry) => !entry.dismissed && isNoticeUnread(entry.id, seen))
+    .map((entry) => entry.id);
+  const historyUnreadCount = historyUnreadIds.length;
 
   const dismissOnboarding = useCallback(() => {
     dismissOnboardingPrefs();
@@ -88,9 +92,10 @@ export function useNotices() {
   );
 
   const markAllSeen = useCallback(() => {
-    markNoticesSeen(notices.map((item) => item.id));
+    const ids = [...new Set([...notices.map((item) => item.id), ...history.map((entry) => entry.id)])];
+    markNoticesSeen(ids);
     setTick((n) => n + 1);
-  }, [notices]);
+  }, [notices, history]);
 
   const onDismiss = useCallback((id: string) => {
     dismissNotice(id);
@@ -108,6 +113,7 @@ export function useNotices() {
     count: notices.length,
     historyCount: history.length,
     unreadCount,
+    historyUnreadCount,
     isUnread: (id: string) => isNoticeUnread(id, seen),
     panelMax: NOTICE_PANEL_MAX,
     panelItems: notices.slice(0, NOTICE_PANEL_MAX),

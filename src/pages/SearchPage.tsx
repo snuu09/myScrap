@@ -358,7 +358,6 @@ export function SearchPage() {
 
       {libraryEmpty ? (
         <PageEmptyGuide
-          eyebrow={t("exploreEmptyAwaiting")}
           title={t("exploreEmptyTitle")}
           body={t("exploreEmptyBody")}
           ctaLabel={t("exploreEmptyCta")}

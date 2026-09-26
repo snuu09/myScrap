@@ -10,8 +10,6 @@ export function ShelfEmptyGuide() {
   return (
     <section className="shelf-empty-guide" aria-live="polite">
       <div className="shelf-empty-hero">
-        <p className="shelf-empty-awaiting">{t("emptyAwaiting")}</p>
-
         <div className="shelf-empty-spines" aria-hidden>
           <span className="shelf-empty-spine shelf-empty-spine--a">
             <span className="shelf-empty-spine-mark">MEMO</span>

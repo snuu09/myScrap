@@ -56,7 +56,6 @@ export function EmptyTemplateHints({ withCta = false, showHead = false }: Props)
       {showHead ? (
         <div className="shelf-empty-onboard-head">
           <h3 className="shelf-empty-onboard-title">{t("emptyOnboarding")}</h3>
-          <p className="shelf-empty-onboard-eyebrow">{t("emptyOnboardingEyebrow")}</p>
         </div>
       ) : null}
       <ul className="shelf-empty-onboard-grid">

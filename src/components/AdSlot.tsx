@@ -20,21 +20,17 @@ export function AdSlot() {
       });
   }, [showAds, configured]);
 
-  if (!showAds) return null;
+  if (!showAds || !configured) return null;
 
   return (
     <aside className="ad-slot" role="complementary" aria-label={t(lang, "adPlaceholder")}>
-      {configured ? (
-        <ins
-          className="adsbygoogle block min-h-[50px] w-full"
-          data-ad-client={admobPublisherId()}
-          data-ad-slot={admobBannerSlot()}
-          data-ad-format="horizontal"
-          data-full-width-responsive="true"
-        />
-      ) : (
-        <p className="ad-slot-dev">{t(lang, "adMobSetupHint")}</p>
-      )}
+      <ins
+        className="adsbygoogle block min-h-[50px] w-full"
+        data-ad-client={admobPublisherId()}
+        data-ad-slot={admobBannerSlot()}
+        data-ad-format="horizontal"
+        data-full-width-responsive="true"
+      />
     </aside>
   );
 }

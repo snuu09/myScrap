@@ -5,6 +5,7 @@ import { useDialog } from "../lib/dialog";
 import type { NoticeLogEntry } from "../lib/notices";
 import { useNotices } from "../lib/useNotices";
 import { useT } from "../lib/useT";
+import { IconTip } from "../components/IconTip";
 
 function formatNoticeWhen(at: number, lang: string) {
   try {
@@ -23,12 +24,10 @@ function HistoryRow({
   entry,
   unread,
   onActivate,
-  onDismiss,
 }: {
   entry: NoticeLogEntry;
   unread: boolean;
   onActivate: (entry: NoticeLogEntry) => void;
-  onDismiss: (id: string) => void;
 }) {
   const t = useT();
   const { lang } = usePrefs();
@@ -51,22 +50,10 @@ function HistoryRow({
         <span className={"notices-page-unread" + (unread ? " is-on" : "")} aria-hidden />
         <span className="notices-page-item-copy">
           <span className="notices-page-item-title">{t(entry.titleKey, entry.titleVars)}</span>
-          <span className="notices-page-item-meta">
-            {entry.dismissed ? t("noticesStatusDismissed") : t("noticesStatusActive")}
-            {when ? ` · ${when}` : ""}
-          </span>
+          {when ? <span className="notices-page-item-meta">{when}</span> : null}
         </span>
         <ChevronRight className="notices-page-item-go size-4 shrink-0" strokeWidth={1.8} aria-hidden />
       </Link>
-      {!entry.dismissed ? (
-        <button
-          type="button"
-          className="settings-arch-chip settings-arch-chip--ghost notices-page-item-dismiss"
-          onClick={() => onDismiss(entry.id)}
-        >
-          {t("noticesDismiss")}
-        </button>
-      ) : null}
     </li>
   );
 }
@@ -76,11 +63,10 @@ export function NoticesPage() {
   const { confirm } = useDialog();
   const {
     history,
-    unreadCount,
+    historyUnreadCount,
     isUnread,
     onNoticeActivate,
     markAllSeen,
-    onDismiss,
     onClearHistory,
   } = useNotices();
 
@@ -98,46 +84,51 @@ export function NoticesPage() {
 
   return (
     <div className="notices-page">
-      <div className="notices-page-head">
-        <div className="dashboard-head-title">
-          <h1 className="dashboard-title">{t("noticesPageTitle")}</h1>
+      <section className="settings-arch-section notices-page-frame" aria-label={t("noticesPageTitle")}>
+        <div className="notices-page-head">
           <p className="notices-page-lead">{t("noticesPageLead")}</p>
+          {history.length > 0 ? (
+            <div className="notices-page-actions">
+              <IconTip label={t("noticesMarkAllRead")}>
+                <button
+                  type="button"
+                  className="icon-quiet-btn"
+                  aria-label={t("noticesMarkAllRead")}
+                  disabled={historyUnreadCount === 0}
+                  onClick={markAllSeen}
+                >
+                  <CheckCheck className="size-4" strokeWidth={1.8} aria-hidden />
+                </button>
+              </IconTip>
+              <IconTip label={t("noticesClear")}>
+                <button
+                  type="button"
+                  className="icon-quiet-btn is-danger"
+                  aria-label={t("noticesClear")}
+                  onClick={() => void clearHistory()}
+                >
+                  <Trash2 className="size-4" strokeWidth={1.8} aria-hidden />
+                </button>
+              </IconTip>
+            </div>
+          ) : null}
         </div>
-        {history.length > 0 ? (
-          <div className="notices-page-actions liquid-glass glass-cluster">
-            {unreadCount > 0 ? (
-              <button type="button" className="settings-arch-chip" onClick={markAllSeen}>
-                <CheckCheck className="size-3.5" strokeWidth={1.8} aria-hidden />
-                {t("noticesMarkAllRead")}
-              </button>
-            ) : null}
-            <button
-              type="button"
-              className="settings-arch-chip settings-arch-chip--danger"
-              onClick={() => void clearHistory()}
-            >
-              <Trash2 className="size-3.5" strokeWidth={1.8} aria-hidden />
-              {t("noticesClear")}
-            </button>
-          </div>
-        ) : null}
-      </div>
 
-      {history.length === 0 ? (
-        <p className="notices-page-empty">{t("noticesHistoryEmpty")}</p>
-      ) : (
-        <ul className="notices-page-list">
-          {history.map((entry) => (
-            <HistoryRow
-              key={entry.id}
-              entry={entry}
-              unread={!entry.dismissed && isUnread(entry.id)}
-              onActivate={onNoticeActivate}
-              onDismiss={onDismiss}
-            />
-          ))}
-        </ul>
-      )}
+        {history.length === 0 ? (
+          <p className="notices-page-empty">{t("noticesHistoryEmpty")}</p>
+        ) : (
+          <ul className="notices-page-list">
+            {history.map((entry) => (
+              <HistoryRow
+                key={entry.id}
+                entry={entry}
+                unread={!entry.dismissed && isUnread(entry.id)}
+                onActivate={onNoticeActivate}
+              />
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }
