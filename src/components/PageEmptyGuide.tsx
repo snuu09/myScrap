@@ -1,4 +1,5 @@
 import { Plus } from "lucide-react";
+import { EmptyTemplateHints } from "./EmptyTemplateHints";
 
 type Props = {
   eyebrow: string;
@@ -6,10 +7,12 @@ type Props = {
   body: string;
   ctaLabel: string;
   onCta: () => void;
+  /** Search empty: show shelf template cards without seed/담기 CTAs. */
+  showTemplateHints?: boolean;
 };
 
-/** Compact Soft Deckle empty card (no spines / onboarding). Shared by Explore and Stats. */
-export function PageEmptyGuide({ eyebrow, title, body, ctaLabel, onCta }: Props) {
+/** Compact Soft Deckle empty card. Optional static template hints (search). */
+export function PageEmptyGuide({ eyebrow, title, body, ctaLabel, onCta, showTemplateHints = false }: Props) {
   return (
     <section className="shelf-empty-guide page-empty-guide" aria-live="polite">
       <div className="shelf-empty-hero">
@@ -20,6 +23,7 @@ export function PageEmptyGuide({ eyebrow, title, body, ctaLabel, onCta }: Props)
           <Plus className="size-4 shrink-0" strokeWidth={2.2} aria-hidden />
           {ctaLabel}
         </button>
+        {showTemplateHints ? <EmptyTemplateHints /> : null}
       </div>
     </section>
   );

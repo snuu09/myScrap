@@ -150,6 +150,7 @@ export function Dashboard({ scraps }: Props) {
           body={t("statsEmptyBody")}
           ctaLabel={t("statsEmptyCta")}
           onCta={() => navigate("/")}
+          showTemplateHints
         />
       ) : (
         <>

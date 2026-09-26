@@ -1,10 +1,13 @@
 import { useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ArrowLeft, BarChart3, LibraryBig, LogIn, Monitor, Moon, Search, Sun, User } from "lucide-react";
+import { ArrowLeft, BarChart3, LibraryBig, LogIn, Search, User } from "lucide-react";
 import { t } from "../i18n";
-import { usePrefs, type ThemeChoice } from "../context/Prefs";
+import { usePrefs } from "../context/Prefs";
 import { useAuth } from "../context/Auth";
 import { useT } from "../lib/useT";
+import { accountAvatarUrl } from "../lib/accountAvatar";
+import { markArriveGenie } from "../lib/pageGenie";
+import { HeaderNotices } from "./HeaderNotices";
 import { IconTip } from "./IconTip";
 
 type BackAction = {
@@ -20,45 +23,6 @@ type Props = {
   onSettings?: () => void;
   back?: BackAction;
 };
-
-const NEXT_THEME: Record<ThemeChoice, ThemeChoice> = {
-  light: "dark",
-  dark: "system",
-  system: "light",
-};
-
-const THEME_ICON: Record<ThemeChoice, typeof Sun> = {
-  light: Sun,
-  dark: Moon,
-  system: Monitor,
-};
-
-function ThemeToggle() {
-  const { theme, setTheme } = usePrefs();
-  const t = useT();
-  const Icon = THEME_ICON[theme];
-  const label =
-    t("themeToggle") + " · " + t(theme === "light" ? "themeLight" : theme === "dark" ? "themeDark" : "themeSystem");
-  return (
-    <IconTip label={label}>
-      <button
-        type="button"
-        className="header-icon-btn"
-        aria-label={label}
-        onClick={() => setTheme(NEXT_THEME[theme])}
-      >
-        <Icon className="size-[18px]" strokeWidth={1.8} />
-      </button>
-    </IconTip>
-  );
-}
-
-function accountAvatarUrl(user: { user_metadata?: Record<string, unknown> } | null): string | null {
-  const meta = user?.user_metadata;
-  if (!meta) return null;
-  const url = meta.avatar_url ?? meta.picture;
-  return typeof url === "string" && url.trim() ? url.trim() : null;
-}
 
 const NAV_TABS = [
   { to: "/", key: "navLibrary" as const, icon: LibraryBig, end: true },
@@ -78,6 +42,9 @@ function HeaderNav() {
               to={to}
               className={"header-nav-tab" + (active ? " is-active" : "")}
               aria-current={active ? "page" : undefined}
+              onClick={() => {
+                if (to === "/" && pathname !== "/") markArriveGenie();
+              }}
             >
               <Icon className="size-[18px]" strokeWidth={1.8} />
               <span className="header-nav-label">{t(lang, key)}</span>
@@ -118,7 +85,14 @@ export function Header({ onEnter, back }: Props) {
         {back ? (
           <IconTip label={back.label}>
             {back.to ? (
-              <Link to={back.to} className="header-back no-underline" aria-label={back.label}>
+              <Link
+                to={back.to}
+                className="header-back no-underline"
+                aria-label={back.label}
+                onClick={() => {
+                  if (back.to === "/") markArriveGenie();
+                }}
+              >
                 <ArrowLeft className="size-[22px]" strokeWidth={1.8} />
               </Link>
             ) : (
@@ -129,7 +103,14 @@ export function Header({ onEnter, back }: Props) {
           </IconTip>
         ) : null}
         <div className="header-logo-stack">
-          <Link to="/" className="header-logo" aria-label={t(lang, "appName")}>
+          <Link
+            to="/"
+            className="header-logo"
+            aria-label={t(lang, "appName")}
+            onClick={() => {
+              if (pathname !== "/") markArriveGenie();
+            }}
+          >
             <span className="header-logo-my">My</span>
             <span className="header-logo-brary">Brary</span>
           </Link>
@@ -150,7 +131,7 @@ export function Header({ onEnter, back }: Props) {
             </button>
           </IconTip>
         ) : null}
-        <ThemeToggle />
+        {user ? <HeaderNotices /> : null}
         {user ? (
           <IconTip label={settingsLabel}>
             <Link

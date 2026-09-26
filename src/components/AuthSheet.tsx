@@ -5,7 +5,6 @@ import { usePrefs } from "../context/Prefs";
 import { useAuth } from "../context/Auth";
 import { localScrapCount } from "../lib/localScraps";
 import { GoogleMark } from "./GoogleMark";
-import { GlassCluster } from "./GlassCluster";
 import { markArriveGenie } from "../lib/pageGenie";
 import { sheetGenieClass, usePresence } from "../lib/presence";
 
@@ -42,6 +41,144 @@ function titleKey(mode: Mode) {
   if (mode === "resetPassword") return "resetPassword";
   if (mode === "newPassword") return "resetPassword";
   return "emailSignIn";
+}
+
+function fieldClass(invalid: boolean) {
+  return "auth-field" + (invalid ? " is-invalid" : "");
+}
+
+function AuthConfirmField({
+  lang,
+  confirm,
+  error,
+  onChange,
+}: {
+  lang: "ko" | "en";
+  confirm: string;
+  error?: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="auth-field-label">
+      <span className="auth-field-caption">{t(lang, "confirmPassword")}</span>
+      <input
+        type="password"
+        autoComplete="new-password"
+        value={confirm}
+        aria-invalid={Boolean(error)}
+        aria-describedby={error ? "auth-confirm-error" : undefined}
+        onChange={(e) => onChange(e.target.value)}
+        className={fieldClass(Boolean(error))}
+      />
+      {error ? (
+        <span id="auth-confirm-error" className="text-[0.75rem] text-danger">
+          {error}
+        </span>
+      ) : null}
+    </label>
+  );
+}
+
+function AuthEmailField({
+  lang,
+  email,
+  error,
+  withIcon,
+  onChange,
+}: {
+  lang: "ko" | "en";
+  email: string;
+  error?: string;
+  withIcon?: boolean;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className={"auth-field-label" + (withIcon ? " auth-field-label--icon" : "")}>
+      <span className="auth-field-caption">{t(lang, "email")}</span>
+      <span className={withIcon ? "auth-field-shell" : undefined}>
+        {withIcon ? <Mail className="auth-field-icon" strokeWidth={1.7} aria-hidden /> : null}
+        <input
+          type="email"
+          autoComplete="email"
+          value={email}
+          placeholder={withIcon ? "archivist@mybrary.archive" : undefined}
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? "auth-email-error" : undefined}
+          onChange={(e) => onChange(e.target.value)}
+          className={fieldClass(Boolean(error)) + (withIcon ? " auth-field--icon" : "")}
+        />
+      </span>
+      {error ? (
+        <span id="auth-email-error" className="text-[0.75rem] text-danger">
+          {error}
+        </span>
+      ) : null}
+    </label>
+  );
+}
+
+function AuthPasswordField({
+  lang,
+  mode,
+  password,
+  error,
+  showPassword,
+  withIcon,
+  withToggle,
+  onChange,
+  onToggleShow,
+}: {
+  lang: "ko" | "en";
+  mode: Mode;
+  password: string;
+  error?: string;
+  showPassword: boolean;
+  withIcon?: boolean;
+  withToggle?: boolean;
+  onChange: (value: string) => void;
+  onToggleShow: () => void;
+}) {
+  return (
+    <label className={"auth-field-label" + (withIcon ? " auth-field-label--icon" : "")}>
+      <span className="auth-field-caption">{t(lang, mode === "newPassword" ? "newPassword" : "password")}</span>
+      <span className={withIcon || withToggle ? "auth-field-shell" : undefined}>
+        {withIcon ? <KeyRound className="auth-field-icon" strokeWidth={1.7} aria-hidden /> : null}
+        <input
+          type={withToggle && showPassword ? "text" : "password"}
+          autoComplete={mode === "up" || mode === "newPassword" ? "new-password" : "current-password"}
+          value={password}
+          placeholder={withIcon ? "••••••••" : undefined}
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? "auth-password-error" : "auth-password-hint"}
+          onChange={(e) => onChange(e.target.value)}
+          className={
+            fieldClass(Boolean(error)) +
+            (withIcon ? " auth-field--icon" : "") +
+            (withToggle ? " auth-field--toggle" : "")
+          }
+        />
+        {withToggle ? (
+          <button
+            type="button"
+            className="auth-field-eye"
+            aria-label={t(lang, showPassword ? "hidePassword" : "showPassword")}
+            onClick={onToggleShow}
+          >
+            {showPassword ? <Eye className="size-4" strokeWidth={1.7} /> : <EyeOff className="size-4" strokeWidth={1.7} />}
+          </button>
+        ) : null}
+      </span>
+      {error ? (
+        <span id="auth-password-error" className="text-[0.75rem] text-danger">
+          {error}
+        </span>
+      ) : (
+        <span id="auth-password-hint" className="text-[0.75rem] text-muted">
+          {t(lang, "passwordHint")}
+        </span>
+      )}
+    </label>
+  );
 }
 
 function GoogleHintCallout({ lang }: { lang: "ko" | "en" }) {
@@ -297,9 +434,6 @@ export function AuthSheet({
     }
   }
 
-  const inputClass = (invalid: boolean) =>
-    "auth-field" + (invalid ? " is-invalid" : "");
-
   const localCount = localScrapCount();
   const isChooser = mode === "chooser";
   const isRecovery = mode === "findId" || mode === "resetPassword";
@@ -326,124 +460,36 @@ export function AuthSheet({
     return busyKind === kind ? " is-progress" : "";
   }
 
+  function onEmailChange(value: string) {
+    setEmail(value);
+    if (fields.email) setFields((prev) => ({ ...prev, email: undefined }));
+  }
+
+  function onPasswordChange(value: string) {
+    setPassword(value);
+    if (fields.password) setFields((prev) => ({ ...prev, password: undefined }));
+  }
+
+  function onConfirmChange(value: string) {
+    setConfirm(value);
+    if (fields.confirm) setFields((prev) => ({ ...prev, confirm: undefined }));
+  }
+
   let feedback: ReactNode = null;
   if (success) feedback = <p className="auth-feedback-ok">{success}</p>;
   else if (message) feedback = <p className="auth-feedback-error">{message}</p>;
 
-  function ConfirmField() {
-    return (
-      <label className="auth-field-label">
-        <span className="auth-field-caption">{t(lang, "confirmPassword")}</span>
-        <input
-          type="password"
-          autoComplete="new-password"
-          value={confirm}
-          aria-invalid={Boolean(fields.confirm)}
-          aria-describedby={fields.confirm ? "auth-confirm-error" : undefined}
-          onChange={(e) => {
-            setConfirm(e.target.value);
-            if (fields.confirm) setFields((prev) => ({ ...prev, confirm: undefined }));
-          }}
-          className={inputClass(Boolean(fields.confirm))}
-        />
-        {fields.confirm ? (
-          <span id="auth-confirm-error" className="text-[0.75rem] text-danger">
-            {fields.confirm}
-          </span>
-        ) : null}
-      </label>
-    );
-  }
-
-  function EmailField({ withIcon }: { withIcon?: boolean }) {
-    return (
-      <label className={"auth-field-label" + (withIcon ? " auth-field-label--icon" : "")}>
-        <span className="auth-field-caption">{t(lang, "email")}</span>
-        <span className={withIcon ? "auth-field-shell" : undefined}>
-          {withIcon ? <Mail className="auth-field-icon" strokeWidth={1.7} aria-hidden /> : null}
-          <input
-            type="email"
-            autoComplete="email"
-            value={email}
-            placeholder={withIcon ? "archivist@mybrary.archive" : undefined}
-            aria-invalid={Boolean(fields.email)}
-            aria-describedby={fields.email ? "auth-email-error" : undefined}
-            onChange={(e) => {
-              setEmail(e.target.value);
-              if (fields.email) setFields((prev) => ({ ...prev, email: undefined }));
-            }}
-            className={inputClass(Boolean(fields.email)) + (withIcon ? " auth-field--icon" : "")}
-          />
-        </span>
-        {fields.email ? (
-          <span id="auth-email-error" className="text-[0.75rem] text-danger">
-            {fields.email}
-          </span>
-        ) : null}
-      </label>
-    );
-  }
-
-  function PasswordField({ withIcon, withToggle }: { withIcon?: boolean; withToggle?: boolean }) {
-    return (
-      <label className={"auth-field-label" + (withIcon ? " auth-field-label--icon" : "")}>
-        <span className="auth-field-caption">{t(lang, mode === "newPassword" ? "newPassword" : "password")}</span>
-        <span className={withIcon || withToggle ? "auth-field-shell" : undefined}>
-          {withIcon ? <KeyRound className="auth-field-icon" strokeWidth={1.7} aria-hidden /> : null}
-          <input
-            type={withToggle && showPassword ? "text" : "password"}
-            autoComplete={mode === "up" || mode === "newPassword" ? "new-password" : "current-password"}
-            value={password}
-            placeholder={withIcon ? "••••••••" : undefined}
-            aria-invalid={Boolean(fields.password)}
-            aria-describedby={fields.password ? "auth-password-error" : "auth-password-hint"}
-            onChange={(e) => {
-              setPassword(e.target.value);
-              if (fields.password) setFields((prev) => ({ ...prev, password: undefined }));
-            }}
-            className={
-              inputClass(Boolean(fields.password)) +
-              (withIcon ? " auth-field--icon" : "") +
-              (withToggle ? " auth-field--toggle" : "")
-            }
-          />
-          {withToggle ? (
-            <button
-              type="button"
-              className="auth-field-eye"
-              aria-label={t(lang, showPassword ? "hidePassword" : "showPassword")}
-              onClick={() => setShowPassword((v) => !v)}
-            >
-              {showPassword ? <Eye className="size-4" strokeWidth={1.7} /> : <EyeOff className="size-4" strokeWidth={1.7} />}
-            </button>
-          ) : null}
-        </span>
-        {fields.password ? (
-          <span id="auth-password-error" className="text-[0.75rem] text-danger">
-            {fields.password}
-          </span>
-        ) : (
-          <span id="auth-password-hint" className="text-[0.75rem] text-muted">
-            {t(lang, "passwordHint")}
-          </span>
-        )}
-      </label>
-    );
-  }
-
   const googleButton = (
-    <GlassCluster className="liquid-solo">
-      <button
-        type="button"
-        disabled={busy}
-        aria-busy={busyKind === "google"}
-        className={"auth-btn-tertiary" + (isPage ? " login-google-btn" : "") + progressClass("google")}
-        onClick={() => void onGoogle()}
-      >
-        <GoogleMark />
-        {t(lang, "googleContinue")}
-      </button>
-    </GlassCluster>
+    <button
+      type="button"
+      disabled={busy}
+      aria-busy={busyKind === "google"}
+      className={"auth-btn-tertiary" + (isPage ? " login-google-btn" : "") + progressClass("google")}
+      onClick={() => void onGoogle()}
+    >
+      <GoogleMark />
+      <span>{t(lang, "googleContinue")}</span>
+    </button>
   );
 
   const dossierBody = (
@@ -462,17 +508,15 @@ export function AuthSheet({
         {localCount > 0 ? (
           <div className="auth-resume">
             <p className="auth-callout">{t(lang, "guestResume", { n: localCount }, look)}</p>
-            <GlassCluster className="liquid-solo">
-              <button
-                type="button"
-                disabled={busy}
-                aria-busy={busyKind === "browse"}
-                className={"auth-btn-secondary" + progressClass("browse")}
-                onClick={() => void onBrowse()}
-              >
-                {t(lang, "guestResumeCta")}
-              </button>
-            </GlassCluster>
+            <button
+              type="button"
+              disabled={busy}
+              aria-busy={busyKind === "browse"}
+              className={"auth-btn-secondary" + progressClass("browse")}
+              onClick={() => void onBrowse()}
+            >
+              <span>{t(lang, "guestResumeCta")}</span>
+            </button>
           </div>
         ) : null}
 
@@ -480,21 +524,31 @@ export function AuthSheet({
         {mode === "in" ? <AuthDivider lang={lang} labelKey="authOrEmail" /> : null}
 
         <form className="login-dossier-form" noValidate onSubmit={onSubmit}>
-          <EmailField withIcon />
-          <PasswordField withIcon withToggle />
-          {mode === "up" ? <ConfirmField /> : null}
+          <AuthEmailField lang={lang} email={email} error={fields.email} withIcon onChange={onEmailChange} />
+          <AuthPasswordField
+            lang={lang}
+            mode={mode}
+            password={password}
+            error={fields.password}
+            showPassword={showPassword}
+            withIcon
+            withToggle
+            onChange={onPasswordChange}
+            onToggleShow={() => setShowPassword((v) => !v)}
+          />
+          {mode === "up" ? (
+            <AuthConfirmField lang={lang} confirm={confirm} error={fields.confirm} onChange={onConfirmChange} />
+          ) : null}
 
-          <GlassCluster className="liquid-solo" magnet ripple>
-            <button
-              type="submit"
-              disabled={busy}
-              aria-busy={busyKind === "submit"}
-              className={"auth-btn-primary login-open-btn" + progressClass("submit")}
-            >
-              <span>{submitLabel}</span>
-              {mode === "in" ? <ArrowRight className="size-4" strokeWidth={1.8} aria-hidden /> : null}
-            </button>
-          </GlassCluster>
+          <button
+            type="submit"
+            disabled={busy}
+            aria-busy={busyKind === "submit"}
+            className={"auth-btn-primary login-open-btn" + progressClass("submit")}
+          >
+            <span>{submitLabel}</span>
+            {mode === "in" ? <ArrowRight className="size-4" strokeWidth={1.8} aria-hidden /> : null}
+          </button>
           {feedback}
 
           {mode === "in" ? (
@@ -613,36 +667,6 @@ export function AuthSheet({
           {localCount > 0 ? (
             <div className="auth-resume">
               <p className="auth-callout">{t(lang, "guestResume", { n: localCount }, look)}</p>
-              <GlassCluster className="liquid-solo">
-                <button
-                  type="button"
-                  disabled={busy}
-                  aria-busy={busyKind === "browse"}
-                  className={"auth-btn-secondary" + progressClass("browse")}
-                  onClick={() => void onBrowse()}
-                >
-                  {t(lang, "guestResumeCta")}
-                </button>
-              </GlassCluster>
-            </div>
-          ) : null}
-          {googleButton}
-          <GlassCluster className="liquid-solo" magnet ripple>
-            <button
-              type="button"
-              disabled={busy}
-              className="auth-btn-primary"
-              onClick={() => {
-                setMode("in");
-                setMessage("");
-                setFields({});
-              }}
-            >
-              {t(lang, "emailSignIn")}
-            </button>
-          </GlassCluster>
-          {localCount > 0 ? null : (
-            <GlassCluster className="liquid-solo">
               <button
                 type="button"
                 disabled={busy}
@@ -650,9 +674,33 @@ export function AuthSheet({
                 className={"auth-btn-secondary" + progressClass("browse")}
                 onClick={() => void onBrowse()}
               >
-                {t(lang, "browse")}
+                <span>{t(lang, "guestResumeCta")}</span>
               </button>
-            </GlassCluster>
+            </div>
+          ) : null}
+          {googleButton}
+          <button
+            type="button"
+            disabled={busy}
+            className="auth-btn-primary"
+            onClick={() => {
+              setMode("in");
+              setMessage("");
+              setFields({});
+            }}
+          >
+            <span>{t(lang, "emailSignIn")}</span>
+          </button>
+          {localCount > 0 ? null : (
+            <button
+              type="button"
+              disabled={busy}
+              aria-busy={busyKind === "browse"}
+              className={"auth-btn-secondary" + progressClass("browse")}
+              onClick={() => void onBrowse()}
+            >
+              <span>{t(lang, "browse")}</span>
+            </button>
           )}
           {feedback}
           <button
@@ -676,21 +724,33 @@ export function AuthSheet({
             </div>
           ) : null}
 
-          {mode !== "newPassword" ? <EmailField /> : null}
-          {isLoginForm || mode === "newPassword" ? <PasswordField /> : null}
-          {mode === "up" || mode === "newPassword" ? <ConfirmField /> : null}
+          {mode !== "newPassword" ? (
+            <AuthEmailField lang={lang} email={email} error={fields.email} onChange={onEmailChange} />
+          ) : null}
+          {isLoginForm || mode === "newPassword" ? (
+            <AuthPasswordField
+              lang={lang}
+              mode={mode}
+              password={password}
+              error={fields.password}
+              showPassword={showPassword}
+              onChange={onPasswordChange}
+              onToggleShow={() => setShowPassword((v) => !v)}
+            />
+          ) : null}
+          {mode === "up" || mode === "newPassword" ? (
+            <AuthConfirmField lang={lang} confirm={confirm} error={fields.confirm} onChange={onConfirmChange} />
+          ) : null}
 
           <div className="flex flex-col gap-2">
-            <GlassCluster className="liquid-solo" magnet ripple>
-              <button
-                type="submit"
-                disabled={busy}
-                aria-busy={busyKind === "submit"}
-                className={"auth-btn-primary" + progressClass("submit")}
-              >
-                {submitLabel}
-              </button>
-            </GlassCluster>
+            <button
+              type="submit"
+              disabled={busy}
+              aria-busy={busyKind === "submit"}
+              className={"auth-btn-primary" + progressClass("submit")}
+            >
+              <span>{submitLabel}</span>
+            </button>
             {feedback}
           </div>
 
@@ -771,20 +831,34 @@ export function AuthSheet({
               <GoogleHintCallout lang={lang} />
             </div>
           ) : null}
-          {mode !== "newPassword" ? <EmailField withIcon /> : null}
-          {mode === "newPassword" ? <PasswordField withIcon withToggle /> : null}
-          {mode === "newPassword" ? <ConfirmField /> : null}
+          {mode !== "newPassword" ? (
+            <AuthEmailField lang={lang} email={email} error={fields.email} withIcon onChange={onEmailChange} />
+          ) : null}
+          {mode === "newPassword" ? (
+            <AuthPasswordField
+              lang={lang}
+              mode={mode}
+              password={password}
+              error={fields.password}
+              showPassword={showPassword}
+              withIcon
+              withToggle
+              onChange={onPasswordChange}
+              onToggleShow={() => setShowPassword((v) => !v)}
+            />
+          ) : null}
+          {mode === "newPassword" ? (
+            <AuthConfirmField lang={lang} confirm={confirm} error={fields.confirm} onChange={onConfirmChange} />
+          ) : null}
           <div className="flex flex-col gap-2">
-            <GlassCluster className="liquid-solo" magnet ripple>
-              <button
-                type="submit"
-                disabled={busy}
-                aria-busy={busyKind === "submit"}
-                className={"auth-btn-primary" + progressClass("submit")}
-              >
-                {submitLabel}
-              </button>
-            </GlassCluster>
+            <button
+              type="submit"
+              disabled={busy}
+              aria-busy={busyKind === "submit"}
+              className={"auth-btn-primary" + progressClass("submit")}
+            >
+              <span>{submitLabel}</span>
+            </button>
             {feedback}
           </div>
           {isRecovery ? (

@@ -5,8 +5,14 @@ import { localScrapCount } from "../lib/localScraps";
 import "./intro-hero.css";
 
 type Stage = 0 | 1 | 2 | 3;
+type FilmPhase = "hold" | "settle" | "play";
 
 type Props = { onEnter: () => void };
+
+/** Auto-loop dwell per stage (ms). Stage 1 aligns with analyze progress. */
+const STAGE_DWELL = [2400, 3200, 2800, 3000] as const;
+const FILM_HOLD_MS = 1500;
+const FILM_SETTLE_MS = 1600;
 
 const PRESETS = [
   { key: "heroPresetMemo" as const, value: "사피엔스, 읽고 나서 오래 생각하게 된 책." },
@@ -77,9 +83,14 @@ export function Intro({ onEnter }: Props) {
   const [auto, setAuto] = useState(true);
   const [source, setSource] = useState("");
   const [progressRun, setProgressRun] = useState(false);
+  const [stageTick, setStageTick] = useState(0);
+  const [film, setFilm] = useState<FilmPhase>(() => (preferReducedMotion() ? "play" : "hold"));
   const [localCount] = useState(() => localScrapCount());
   const timerRef = useRef<number | null>(null);
   const demoTimers = useRef<number[]>([]);
+  const filmTimers = useRef<number[]>([]);
+  const bootMarkRef = useRef<HTMLParagraphElement>(null);
+  const eyebrowRef = useRef<HTMLParagraphElement>(null);
 
   function clearTimers() {
     if (timerRef.current != null) window.clearTimeout(timerRef.current);
@@ -88,8 +99,14 @@ export function Intro({ onEnter }: Props) {
     demoTimers.current = [];
   }
 
+  function clearFilmTimers() {
+    for (const id of filmTimers.current) window.clearTimeout(id);
+    filmTimers.current = [];
+  }
+
   function go(next: Stage) {
     setStage(next);
+    setStageTick((n) => n + 1);
     if (next === 1) {
       setProgressRun(false);
       requestAnimationFrame(() => {
@@ -120,22 +137,131 @@ export function Intro({ onEnter }: Props) {
       demoTimers.current.push(window.setTimeout(() => go(3), 800));
       return;
     }
-    demoTimers.current.push(window.setTimeout(() => go(2), 2700));
-    demoTimers.current.push(window.setTimeout(() => go(3), 5200));
+    demoTimers.current.push(window.setTimeout(() => go(2), STAGE_DWELL[1]));
+    demoTimers.current.push(window.setTimeout(() => go(3), STAGE_DWELL[1] + STAGE_DWELL[2]));
   }
 
   useEffect(() => {
-    if (!auto || preferReducedMotion()) return;
-    const delay = stage === 0 ? 1600 : 2200;
+    const prev = history.scrollRestoration;
+    try {
+      history.scrollRestoration = "manual";
+    } catch {
+      /* ignore */
+    }
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    return () => {
+      try {
+        history.scrollRestoration = prev;
+      } catch {
+        /* ignore */
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (preferReducedMotion()) {
+      setFilm("play");
+      return;
+    }
+
+    clearFilmTimers();
+    filmTimers.current.push(
+      window.setTimeout(() => {
+        const mark = bootMarkRef.current;
+        const dest = eyebrowRef.current;
+        if (!mark || !dest) {
+          setFilm("play");
+          return;
+        }
+
+        // Freeze boot-in, then pin the mark in viewport space so we can morph
+        // font-size / position continuously (scale FLIP looked like a teleport).
+        mark.style.animation = "none";
+        mark.style.transform = "none";
+        void mark.offsetWidth;
+
+        const a = mark.getBoundingClientRect();
+        const b = dest.getBoundingClientRect();
+        // Dest can be opacity:0; still laid out. Guard against a collapsed box.
+        if (b.width < 2 || b.height < 2) {
+          setFilm("play");
+          return;
+        }
+        const fromSize = getComputedStyle(mark).fontSize;
+        const toSize = getComputedStyle(dest).fontSize;
+
+        mark.style.position = "fixed";
+        mark.style.left = `${a.left}px`;
+        mark.style.top = `${a.top}px`;
+        mark.style.margin = "0";
+        mark.style.width = "max-content";
+        mark.style.fontSize = fromSize;
+        mark.style.letterSpacing = "0.14em";
+        mark.style.transformOrigin = "left top";
+        mark.style.zIndex = "41";
+
+        // One frame so fixed pinning sticks before the morph runs.
+        void mark.offsetWidth;
+        setFilm("settle");
+
+        let settled = false;
+        function finish() {
+          if (settled) return;
+          settled = true;
+          setFilm("play");
+        }
+
+        requestAnimationFrame(() => {
+          const anim = mark.animate(
+            [
+              {
+                left: `${a.left}px`,
+                top: `${a.top}px`,
+                fontSize: fromSize,
+                letterSpacing: "0.14em",
+              },
+              {
+                left: `${b.left}px`,
+                top: `${b.top}px`,
+                fontSize: toSize,
+                letterSpacing: "0.2em",
+              },
+            ],
+            {
+              duration: FILM_SETTLE_MS,
+              easing: "cubic-bezier(0.33, 0.1, 0.25, 1)",
+              fill: "forwards",
+            },
+          );
+
+          anim.addEventListener("finish", finish);
+          filmTimers.current.push(window.setTimeout(finish, FILM_SETTLE_MS + 120));
+        });
+      }, FILM_HOLD_MS),
+    );
+
+    return () => clearFilmTimers();
+  }, []);
+
+  useEffect(() => {
+    if (film !== "play" || !auto || preferReducedMotion()) return;
     timerRef.current = window.setTimeout(() => {
       go(((stage + 1) % 4) as Stage);
-    }, delay);
+    }, STAGE_DWELL[stage]);
     return () => {
       if (timerRef.current != null) window.clearTimeout(timerRef.current);
     };
-  }, [auto, stage]);
+  }, [auto, stage, film]);
 
-  useEffect(() => () => clearTimers(), []);
+  useEffect(
+    () => () => {
+      clearTimers();
+      clearFilmTimers();
+    },
+    [],
+  );
 
   const stages: { id: Stage; label: string }[] = [
     { id: 0, label: t(lang, "heroStageAdd") },
@@ -144,10 +270,32 @@ export function Intro({ onEnter }: Props) {
     { id: 3, label: t(lang, "heroStageShelf") },
   ];
 
+  const activeLabel = stages[stage]?.label ?? t(lang, "heroBarLabel");
+  const dwellMs = STAGE_DWELL[stage];
+  const eyebrow = t(lang, "heroEyebrow");
+  const booting = film !== "play";
+
   return (
-    <section className="intro-hero" aria-labelledby="intro-hero">
+    <section
+      className={
+        "intro-hero" +
+        (film === "play" ? " is-playing" : " is-booting") +
+        (film === "settle" ? " is-settling" : "")
+      }
+      aria-labelledby="intro-hero"
+    >
+      {booting ? (
+        <div className="intro-hero-boot" aria-hidden>
+          <p ref={bootMarkRef} className="intro-hero-boot-mark">
+            {eyebrow}
+          </p>
+        </div>
+      ) : null}
+
       <div className="intro-hero-copy">
-        <p className="intro-hero-eyebrow">{t(lang, "heroEyebrow")}</p>
+        <p ref={eyebrowRef} className="intro-hero-eyebrow">
+          {eyebrow}
+        </p>
         <h1 id="intro-hero" className="intro-hero-title">
           {t(lang, "heroHeadlineBefore")}
           <br />
@@ -162,14 +310,25 @@ export function Intro({ onEnter }: Props) {
         </div>
       </div>
 
-      <div className="intro-hero-workspace" aria-live="polite">
+      <div
+        className="intro-hero-workspace"
+        data-stage={stage}
+        data-auto={auto ? "1" : "0"}
+        aria-live="polite"
+      >
         <div className="intro-hero-bar">
           <div className="intro-hero-dots" aria-hidden="true">
             <i />
             <i />
             <i />
           </div>
-          <div className="intro-hero-barlabel">{t(lang, "heroBarLabel")}</div>
+          <div className="intro-hero-barlabel">
+            <span className="intro-hero-barlabel-base">{t(lang, "heroBarLabel")}</span>
+            <span className="intro-hero-barlabel-sep" aria-hidden>
+              ·
+            </span>
+            <span className="intro-hero-barlabel-stage">{activeLabel}</span>
+          </div>
           <span />
         </div>
 
@@ -214,6 +373,12 @@ export function Intro({ onEnter }: Props) {
             <div className="intro-hero-pulse" aria-hidden="true" />
             <h3>{t(lang, "heroAnalyzeTitle")}</h3>
             <p>{t(lang, "heroAnalyzeBody")}</p>
+            <div className="intro-hero-readlines" aria-hidden="true">
+              <i />
+              <i />
+              <i />
+            </div>
+            <div className="intro-hero-scan" aria-hidden="true" />
             <div className={"intro-hero-progress" + (progressRun ? " is-run" : "")} aria-hidden="true">
               <i />
             </div>
@@ -293,7 +458,15 @@ export function Intro({ onEnter }: Props) {
                 go(item.id);
               }}
             >
-              {item.label}
+              <span className="intro-hero-control-label">{item.label}</span>
+              {stage === item.id ? (
+                <span
+                  key={`${stageTick}-${item.id}`}
+                  className="intro-hero-control-scrub"
+                  style={{ ["--intro-dwell" as string]: `${dwellMs}ms` }}
+                  aria-hidden
+                />
+              ) : null}
             </button>
           ))}
         </nav>

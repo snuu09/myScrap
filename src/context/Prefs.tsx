@@ -1,5 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { Lang } from "../i18n";
+import { markArriveGenie } from "../lib/pageGenie";
+import { prefersReducedMotion } from "../lib/presence";
 
 export type ThemeChoice = "light" | "dark" | "system";
 /** editorial = Minimal Editorial; deckle = Soft Deckle Archival (default). Legacy warm/basalt/kitchen migrate to deckle. */
@@ -7,6 +9,7 @@ export type Palette = "editorial" | "deckle";
 export type Look = "glass" | "library";
 /** micro = horizontal media rows; gallery = 4:3 visual poster grid. Legacy list→micro; accordion removed. */
 export type ShelfLayout = "micro" | "gallery";
+export type ReadingScale = 13 | 15 | 17 | 19;
 
 type Prefs = {
   lang: Lang;
@@ -14,11 +17,13 @@ type Prefs = {
   palette: Palette;
   look: Look;
   shelfLayout: ShelfLayout;
+  readingScale: ReadingScale;
   setLang: (lang: Lang) => void;
   setTheme: (theme: ThemeChoice) => void;
   setPalette: (palette: Palette) => void;
   setLook: (look: Look) => void;
   setShelfLayout: (layout: ShelfLayout) => void;
+  setReadingScale: (scale: ReadingScale) => void;
 };
 
 const PrefsContext = createContext<Prefs | null>(null);
@@ -97,6 +102,21 @@ function readShelfLayout(): ShelfLayout {
   return "gallery";
 }
 
+function readReadingScale(): ReadingScale {
+  try {
+    const n = Number(localStorage.getItem("mybrary.readingScale"));
+    if (n === 13 || n === 15 || n === 17 || n === 19) return n;
+  } catch {
+    /* ignore */
+  }
+  return 15;
+}
+
+function applyReadingScale(scale: ReadingScale) {
+  document.documentElement.style.setProperty("--reading-size", `${scale}px`);
+  document.documentElement.setAttribute("data-reading-scale", String(scale));
+}
+
 function applyChrome(theme: ThemeChoice, palette: Palette, look: Look, lang: Lang) {
   const dark =
     theme === "dark" ||
@@ -121,10 +141,15 @@ export function PrefsProvider({ children }: { children: ReactNode }) {
   const [palette, setPaletteState] = useState<Palette>(readPalette);
   const [look, setLookState] = useState<Look>(readLook);
   const [shelfLayout, setShelfLayoutState] = useState<ShelfLayout>(readShelfLayout);
+  const [readingScale, setReadingScaleState] = useState<ReadingScale>(readReadingScale);
 
   useEffect(() => {
     applyChrome(theme, palette, look, lang);
   }, [theme, palette, look, lang]);
+
+  useEffect(() => {
+    applyReadingScale(readingScale);
+  }, [readingScale]);
 
   useEffect(() => {
     if (theme !== "system") return;
@@ -141,14 +166,18 @@ export function PrefsProvider({ children }: { children: ReactNode }) {
       palette,
       look,
       shelfLayout,
+      readingScale,
       setLang(next) {
         localStorage.setItem("mybrary.lang", next);
         setLangState(next);
       },
       setTheme(next) {
+        if (next === theme) return;
         if (next === "light" || next === "dark") localStorage.setItem("mybrary.theme", next);
         else localStorage.removeItem("mybrary.theme");
         setThemeState(next);
+        applyChrome(next, palette, look, lang);
+        if (!prefersReducedMotion()) markArriveGenie();
       },
       setPalette(next) {
         localStorage.setItem("mybrary.palette", next);
@@ -164,8 +193,12 @@ export function PrefsProvider({ children }: { children: ReactNode }) {
         else localStorage.setItem("mybrary.shelfLayout", next === "micro" ? "micro" : next);
         setShelfLayoutState(next);
       },
+      setReadingScale(next) {
+        localStorage.setItem("mybrary.readingScale", String(next));
+        setReadingScaleState(next);
+      },
     }),
-    [lang, theme, palette, look, shelfLayout],
+    [lang, theme, palette, look, shelfLayout, readingScale],
   );
 
   return <PrefsContext.Provider value={value}>{children}</PrefsContext.Provider>;

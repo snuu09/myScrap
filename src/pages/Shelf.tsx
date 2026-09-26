@@ -842,6 +842,88 @@ export function Shelf() {
     posterBlobs.forEach((url) => URL.revokeObjectURL(url));
   }
 
+  async function reanalyzeDraft() {
+    const cur = draftRef.current;
+    if (!user || !cur || cur.analyzing) return;
+    const id = cur.id;
+    setDraft((d) => (d && d.id === id ? { ...d, analyzing: true } : d));
+    try {
+      if (cur.mediaPath) {
+        const ai = await requestAnalyze({
+          kind: "file",
+          mediaPath: cur.mediaPath,
+          mime: cur.mime,
+          filename: cur.filename,
+          lang,
+        });
+        setDraft((d) =>
+          d && d.id === id
+            ? {
+                ...d,
+                analyzing: false,
+                type: ai.type || d.type,
+                tags: ai.tags?.length ? ai.tags : d.tags,
+                title:
+                  shelfTitle({
+                    aiTitle: ai.miss ? "" : ai.title,
+                    domain: d.domain,
+                    url: d.url,
+                    fallback: looksLikeAddress(d.title, d.domain, d.url) ? "" : d.title,
+                  }) || d.title,
+                text: ai.summary || ai.body || d.text,
+                previewText: ai.analysis || "",
+                ...classifyFlags(ai),
+              }
+            : d,
+        );
+        return;
+      }
+
+      const text = (cur.url || cur.sourceText || cur.text || "").trim();
+      if (!text) {
+        setDraft((d) => (d && d.id === id ? { ...d, analyzing: false } : d));
+        return;
+      }
+      const ai = await requestAnalyze({
+        kind: "text",
+        text,
+        lang,
+        ogTitle: cur.og?.title,
+        ogDescription: cur.og?.description,
+        metaDescription: cur.og?.description || "",
+        pageExcerpt: cur.sourceText || "",
+      });
+      const resolvedUrl = ai.url || cur.url || "";
+      setDraft((d) =>
+        d && d.id === id
+          ? {
+              ...d,
+              analyzing: false,
+              type: ai.type || d.type,
+              tags: ai.tags?.length ? ai.tags : d.tags,
+              title:
+                shelfTitle({
+                  aiTitle: ai.miss ? "" : ai.title,
+                  ogTitle: d.og?.title,
+                  ogDescription: d.og?.description,
+                  domain: ai.domain || d.domain,
+                  url: resolvedUrl,
+                  fallback: "",
+                  preferOg: Boolean(resolvedUrl),
+                }) || d.title,
+              text: ai.summary || ai.body || d.text,
+              previewText: ai.analysis || "",
+              url: resolvedUrl || d.url,
+              domain: ai.domain || d.domain,
+              ...classifyFlags(ai),
+            }
+          : d,
+      );
+    } catch {
+      setDraft((d) => (d && d.id === id ? { ...d, analyzing: false } : d));
+    }
+  }
+
   async function persist() {
     if (!user || !draft || draft.analyzing) return;
     if (!getSupabase()) {
@@ -1094,6 +1176,7 @@ export function Shelf() {
       onChange={(patch) => setDraft((cur) => (cur ? { ...cur, ...patch } : cur))}
       onSave={() => void persist()}
       onCancel={() => void discardDraft()}
+      onReanalyze={() => void reanalyzeDraft()}
     />
   ) : (
     reviewPanel
@@ -1193,17 +1276,13 @@ export function Shelf() {
       ) : null}
       <GuestNoticeSheet open={noticeOpen} onConfirm={confirmGuestNotice} onCancel={cancelGuestNotice} />
       <BusyOverlay
-        open={Boolean(draft?.analyzing) || savingBatch}
-        label={savingBatch ? t("savingBusy") : t("classifyRunningBusy")}
-        current={savingBatch ? 0 : queueMeta.n}
-        total={savingBatch ? 0 : queueMeta.total}
-        ratio={draft?.analyzing ? uploadRatio : null}
+        open={savingBatch}
+        label={t("savingBusy")}
+        current={0}
+        total={0}
+        ratio={null}
         onCancel={() => {
-          if (savingBatch) {
-            saveAbortRef.current = true;
-            return;
-          }
-          void discardDraft({ force: true });
+          saveAbortRef.current = true;
         }}
       />
     </div>

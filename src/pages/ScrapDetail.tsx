@@ -961,7 +961,7 @@ export function ScrapDetail() {
             {item.memo ? (
               <div className="detail-ai-block">
                 <p className="detail-section-title">{t("historyMemo")}</p>
-                <p className="m-0 text-[0.9375rem] text-ink">{item.memo}</p>
+                <p className="m-0 text-ink" style={{ fontSize: "var(--reading-size, 15px)" }}>{item.memo}</p>
               </div>
             ) : null}
             <p className="scrap-card-tags">

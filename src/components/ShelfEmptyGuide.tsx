@@ -1,36 +1,7 @@
-import { BookOpen, Globe, Plus, Video } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useT } from "../lib/useT";
-import { attachStick, seedStick } from "../lib/stickBridge";
-
-const TEMPLATES = [
-  {
-    key: "memo" as const,
-    icon: BookOpen,
-    labelKey: "emptyTplMemoLabel",
-    titleKey: "emptyTplMemoTitle",
-    descKey: "emptyTplMemoDesc",
-    ctaKey: "emptyTplMemoCta",
-    seedKey: "emptyTplMemoSeed",
-  },
-  {
-    key: "link" as const,
-    icon: Globe,
-    labelKey: "emptyTplLinkLabel",
-    titleKey: "emptyTplLinkTitle",
-    descKey: "emptyTplLinkDesc",
-    ctaKey: "emptyTplLinkCta",
-    seedKey: "emptyTplLinkSeed",
-  },
-  {
-    key: "video" as const,
-    icon: Video,
-    labelKey: "emptyTplVideoLabel",
-    titleKey: "emptyTplVideoTitle",
-    descKey: "emptyTplVideoDesc",
-    ctaKey: "emptyTplVideoCta",
-    seedKey: "emptyTplVideoSeed",
-  },
-] as const;
+import { attachStick } from "../lib/stickBridge";
+import { EmptyTemplateHints } from "./EmptyTemplateHints";
 
 /** Archival empty shelf: hero + one primary CTA + quick onboarding templates. */
 export function ShelfEmptyGuide() {
@@ -72,29 +43,7 @@ export function ShelfEmptyGuide() {
           {t("emptyOpenCta")}
         </button>
 
-        <div className="shelf-empty-onboard">
-          <div className="shelf-empty-onboard-head">
-            <h3 className="shelf-empty-onboard-title">{t("emptyOnboarding")}</h3>
-            <p className="shelf-empty-onboard-eyebrow">{t("emptyOnboardingEyebrow")}</p>
-          </div>
-          <ul className="shelf-empty-onboard-grid">
-            {TEMPLATES.map(({ key, icon: Icon, labelKey, titleKey, descKey, ctaKey, seedKey }) => (
-              <li key={key} className="shelf-empty-card">
-                <Icon className="shelf-empty-card-icon size-5" strokeWidth={1.6} aria-hidden />
-                <p className="shelf-empty-card-label">{t(labelKey)}</p>
-                <h4 className="shelf-empty-card-title">{t(titleKey)}</h4>
-                <p className="shelf-empty-card-desc">{t(descKey)}</p>
-                <button
-                  type="button"
-                  className="shelf-empty-card-cta"
-                  onClick={() => seedStick(t(seedKey))}
-                >
-                  {t(ctaKey)}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <EmptyTemplateHints withCta showHead />
       </div>
     </section>
   );

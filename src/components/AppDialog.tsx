@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { TriangleAlert, Trash2, X } from "lucide-react";
+import { Trash2, X } from "lucide-react";
 import { t } from "../i18n";
 import { usePrefs } from "../context/Prefs";
 import type { DialogConfirmOpts } from "../lib/dialog";
@@ -41,12 +41,6 @@ export function AppDialog({ state, onClose }: Props) {
       ? view.title || t(lang, "dialogNotice")
       : view.opts.title || t(lang, "dialogConfirmTitle");
   const body = view.kind === "alert" ? view.message : view.opts.body;
-  const stamp =
-    view.kind === "confirm"
-      ? view.opts.stamp !== undefined
-        ? view.opts.stamp
-        : t(lang, "dialogConfirmStamp")
-      : t(lang, "dialogNoticeStamp");
   const confirmLabel =
     view.kind === "confirm"
       ? view.opts.confirmLabel || t(lang, "dialogOk")
@@ -68,12 +62,6 @@ export function AppDialog({ state, onClose }: Props) {
         >
           <div className="protocol-modal-head">
             <div className="protocol-modal-head-copy">
-              {stamp ? (
-                <div className="protocol-modal-stamp">
-                  <TriangleAlert aria-hidden strokeWidth={1.8} />
-                  <span>{stamp}</span>
-                </div>
-              ) : null}
               <h2 id="app-dialog-title" className="protocol-modal-title">
                 {title}
               </h2>

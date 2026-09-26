@@ -234,7 +234,7 @@ Archival Soft Deckle neutrals (ink-only magnet) plus Editorial white/ink as the 
 
 ### Palettes
 
-Header: brand, Find, theme toggle, account avatar. Language, **테마** (에디토리얼 / 소프트 데클), and light / system / dark live on `/settings`. No Look switcher and no AI-sensitivity control in Settings.
+Header: brand, Find, notices bell, account avatar. Language, **테마** (에디토리얼 / 소프트 데클), and light / system / dark live on `/settings` (appearance changes use a short View Transition / fade). No Look switcher and no AI-sensitivity control in Settings.
 
 - Soft Deckle (default): Zero-hue archival paper, JetBrains Mono for spine/mono labels, near-flat radius. Login folio **AI BOOKSHELF**.
 - Editorial: Theme A Minimal Editorial. White/ink, Space Grotesk + Inter, near-zero radius.
@@ -308,9 +308,9 @@ Auth, Stick, and + share 48px so the door and the header auth sheet feel like on
 
 ## Layout
 
-Header, door (main), footer. Signed out: compact header is brand and 로그인 (navigates to the dedicated `/login` page, not a sheet). Signed in: header carries two nav tabs — **나의 서재** `/`, **서재 통계** `/dashboard` (i18n `navLibrary`/`navStats`) — plus a Find icon (**페이지 찾기로 이동** / `searchOpen`, also `Cmd/Ctrl+K` → `/search`), the theme-cycle toggle (light → dark → system), and an account avatar that opens `/settings`. The door is the canvas. Intro, empty state, and clippings share a centered column. After entry, Stick is a fixed bottom dock; classify draft stacks above the field.
+Header, door (main), footer. Signed out: compact header is brand and 로그인 (navigates to the dedicated `/login` page, not a sheet). Signed in: header carries two nav tabs — **나의 서재** `/`, **서재 통계** `/dashboard` (i18n `navLibrary`/`navStats`) — plus a Find icon (**장서 탐색** / `searchOpen`, also `Cmd/Ctrl+K` → `/search`), a personal notices bell (onboarding prefs tip once; Free/browse period; storage; browse always shows period + capacity; panel overflow → `/notices`; open state uses a blurred page scrim), and an account avatar that opens `/settings`. Appearance (light / system / dark) lives only on `/settings` and cross-fades on change. The door is the canvas. Intro, empty state, and clippings share a centered column. After entry, Stick is a fixed bottom dock; classify draft stacks above the field.
 
-Intro is a Theme B integrated hero (담기 → AI 분석 → 정리 → 서재). The app capture column stays 36–40rem. Legal routes `/terms` and `/privacy`, and plans route `/upgrade`, reuse the header/footer chrome with Newsreader titles and 서재 voice.
+Intro is a Theme B integrated hero (담기 → AI 분석 → 정리 → 서재). The workspace loops as an in-page Soft Deckle promo film: longer stage dwells, crossfade/scale enters, per-stage micro-beats, and a stage scrubber under the step chips (no MP4). The app capture column stays 36–40rem. Legal routes `/terms` and `/privacy`, and plans route `/upgrade`, reuse the header/footer chrome with Newsreader titles and 서재 voice.
 
 Gutter is fluid (`clamp(16px, 4vw, 40px)`). Door padding is fluid so resize does not jump. Composer becomes two-row when the door is under 560px (container query). Fridge handle hides under 640px door width. Camera control appears under 721px or coarse pointer, including DevTools width resize.
 
@@ -337,7 +337,7 @@ Slight clipping rotation (±0.45deg) on every third scrap is optional texture, n
 ## Components
 
 - **Auth stack:** Email and password in the header 로그인 sheet (32px radius). 48px controls, 15px label. Light sheet is `--login-wall` white. Inline validation under fields. Vertical order follows **The Auth Ladder Rule** (fields → primary → feedback → divider → Google → browse → toggle → find links). **Google로 계속** is tertiary (1px outline). **둘러보기** is secondary (2px magnet outline) on the sheet only. **회원가입** label (not 가입). No Apple. Reusable classes: `auth-btn-*`, `auth-link-*`, `auth-divider`, `auth-callout`, `auth-feedback-*` in [`src/index.css`](src/index.css).
-- **Settings page:** `/settings`, not a header sheet. Follow **The Settings Ladder Rule**. Reusable classes: `settings-section-*`, `settings-seg-*`, `settings-session-chip`, `settings-btn-leave` in [`src/index.css`](src/index.css). Do not open together with the 로그인 sheet.
+- **Settings page:** `/settings`, not a header sheet. Follow **The Settings Ladder Rule**. Reusable classes: `.settings-arch-*`, `settings-section-*`, `settings-seg-*` in [`src/index.css`](src/index.css). Do not open together with the 로그인 sheet.
 - **Palette switch:** Pill track for **에디토리얼** and **소프트 데클**. Lives on `/settings`. Default is Soft Deckle.
 - **Theme switch:** Light, system, and dark magnets in a pill track, 40px cells, 18px glyphs. Also on `/settings`.
 - **Composer:** Bottom dock after entry. 24px shell; 22px +; 15px field; Stick 48px / 14px. Focus ring follows the 24px shell, not a square on the textarea and not a pill.
@@ -347,7 +347,7 @@ Slight clipping rotation (±0.45deg) on every third scrap is optional texture, n
 - **Search:** 48px capsule, 15px type. Type chips 34px / 13px.
 - **Language magnets:** Pill switch, 40px cells, 13px KO/EN.
 - **FAB:** 48px disc, 24px glyph.
-- **Footer:** policy links (caption; privacy magnet/bold) then identity (micro). Empty operator fields read 표시 예정.
+- **Footer:** Soft Deckle multi-column site footer (brand lead + catalog / ops / support columns + copyright/legal pending line). Privacy stays easy to find in the ops column. Empty operator fields read 표시 예정.
 
 States required: hover, focus-visible, disabled (Stick), loading (OG skeleton), error (OG fallback copy), empty ("항목이 없습니다." / English equivalent), pressed (`:active` scale), enter/exit for views.
 
@@ -365,9 +365,9 @@ Binding for [`src/components/AuthSheet.tsx`](src/components/AuthSheet.tsx). One 
 
 | Tier | Height | Shape | Border | Font | Color |
 | --- | --- | --- | --- | --- | --- |
-| Primary | 48px | pill | none | 15px bold | bg magnet, text magnet-ink |
-| Secondary | 48px | pill | 2px magnet | 15px bold | bg paper, text ink |
-| Tertiary | 48px | pill | 1px paper-line | 15px semibold | bg paper, text ink |
+| Primary | 48px | palette radius (`--radius-md`) | none | 15px bold | bg magnet, text magnet-ink; hover magnet-deep |
+| Secondary | 48px | palette radius (`--radius-md`) | 2px magnet | 15px bold | bg paper, text ink |
+| Tertiary | 48px | palette radius (`--radius-md`) | 1px paper-line | 15px semibold | bg paper, text ink |
 | Ghost | min 40px hit | text | none | 13px caption | magnet (toggle) or ink-soft (utility / back) |
 
 Disabled opacity 0.6. Pressed scale 0.98.
@@ -391,7 +391,7 @@ Disabled opacity 0.6. Pressed scale 0.98.
 
 Binding for [`src/components/SettingsSheet.tsx`](src/components/SettingsSheet.tsx).
 
-**The Settings Ladder Rule.** Settings is the `/settings` page, opened from the header account avatar (not a nav tab). The arrow left of the logo returns to the previous screen (or `/` if there is none). The page hides the Stick dock. Three paper cards, not one stacked track. Account: session, plan (tier, trial D-day, storage bar, ad note, link to `/upgrade`), Leave at the bottom of that card. Appearance: language, **테마** (에디토리얼 / 소프트 데클), and light·system·dark — each a label on the left, control on the right. A signed-in card with data also offers **Markdown export** (`exportMarkdown`): downloads every one of the user's scraps as one `.md` file, client-side only. Storage: page count, media bytes, gauge, and **DB 초기화** last (disabled when empty; own scraps + media only; profiles stay). No Look switcher, no AI-sensitivity slider, no auth fields.
+**The Settings Ladder Rule.** Settings is the `/settings` page, opened from the header account avatar (not a nav tab). The arrow left of the logo returns to the previous screen (or `/` if there is none). The page hides the Stick dock and has no page-level settings title (section cards start immediately). Visiting Settings dismisses the one-time prefs onboarding notice. Logout uses Protocol Stamp `confirm`. Soft Deckle **archival section cards** (`.settings-arch-*`) with a display headline only (no `SECTION // 0N` stamp or EN side label). **01 Account:** one identity card — left: profile (session label above name; browse hides profile/password), trial gauge when applicable, combined usage `페이지 N개 (used / limit)` + gauge, action chips, logout pinned to the bottom of the account column; right: tier and upgrade CTA in one horizontal row, then two feature columns (지원 / 미지원 with Check/Minus). **02 Language & theme:** KO/EN and light·system·dark segs; theme paradigm cards for **소프트 데클** / **에디토리얼** only (dark is appearance mode, not a third palette) with fixed per-card swatches; live preview plate (spine label follows palette; plate uses live `data-theme`/`data-palette`). **03 Typography:** `readingScale` 13/15/17/19 (`mybrary.readingScale`, CSS `--reading-size`) for detail/memo/card blurbs; sample body binds inline to the selected px. **04 Storage:** browse = this-device local usage + reset; signed-in = account storage + reset; Middle+ only shows cloud sync/device **준비 중** stub (hidden for Free and browse). No Markdown export. **05 Security:** stub 2FA + recovery cards (future). No Look switcher, no invented live profile/Pro/device data, no auth fields on this page. Classes in [`src/index.css`](src/index.css).
 
 **The Settings Section Rule.** Each block: caption label (13px muted) then control row. Section gap 12px (`gap-3`). Labels use `settings-section-label`.
 
@@ -457,7 +457,7 @@ Binding against [ROADMAP.md](ROADMAP.md) Phase 4. Header stays brand + 로그인
 
 **The Shelf Inspector Rule.** At ≥960px, selecting a Gallery or Micro card (`ScrapBookCard` `onSelect`) does not navigate; it sets `selectedId` and opens [`ShelfInspector`](src/components/ShelfInspector.tsx) as a sticky right-hand panel beside the list (`.shelf-with-inspector`) showing title, media, AI summary bullets, and memo, with a **조각 상세** link into `/scrap/:id` and a close control. Below 960px, the same tap navigates straight to `/scrap/:id`; there is no inspector panel on mobile. Card geometry and hover states stay identical whether or not the inspector is open.
 
-**The Workbench Rule.** The single-draft classify review at `/stick` is [`Workbench`](src/components/Workbench.tsx), not a bare `DraftCard`. It wraps `DraftCard` (`hideActions`) with a three-step mono rail — `01 입력 담기` → `02 AI 구조화 분석` → `03 양장본 분류 담기` (`workbenchStep1-3`) — driven by `draft.analyzing`, plus a right-hand CSS 3D book-cover preview (`.workbench-cover`, spine/cover wash from `spineColor`/`coverWash`) that appears at ≥720px and turns `is-shelved` once analysis finishes. Cancel/담기 (`workbenchShelve`) reuse the existing `classify-draft-actions` row and the same plan gates (`canStick`, `canUpload`) as before; batch review (`FileBatch`) keeps the plain hidden-actions `DraftCard`, not the Workbench.
+**The Workbench Rule.** The single-draft classify review at `/stick` is [`Workbench`](src/components/Workbench.tsx), not a bare `DraftCard`. Soft Deckle shell: no breadcrumb or English kicker — segmented 3-step progress (`workbenchStep1-3` from `draft.analyzing`, no full-screen classify BusyOverlay), format chip, then a two-column body (≥960px). Left wraps `DraftCard` (`hideActions` + `quietBusy`) in white paper section cards (source / edit / AI / memo) with enamel-deep inner inputs; memo auto-grows with `resize: none`. Right is a sticky hardcover folio (enlarged `.workbench-cover` + type/source meta + **서재에 담기** + **다시 분석하기** / **담기 취소**). `BusyOverlay` covers batch save only. No fake KDC, countdown %, Whisper labels, or shelf-slot pickers. Batch review (`FileBatch`) keeps the plain hidden-actions `DraftCard`, not the Workbench.
 
 **The Liquid Glass Rule.** Strong `.liquid-glass` is for button clusters: the gallery / list / accordion pill, the detail action groups, the settings choice tracks, and other control groups such as login and tag clusters. Protocol Stamp modals use solid `.protocol-modal-btn-*` instead of liquid glass on confirms. It is enamel over paper, an ink-tinted border, and a light blur, visible on a paper panel. Glass look may lay a weaker blur on cards and bordered panels. Do not put that blur on the hero. It is not a purple glass SaaS kit.
 
@@ -473,7 +473,7 @@ Binding against [ROADMAP.md](ROADMAP.md) Phase 4. Header stays brand + 로그인
 
 **The Plan Usage Rule.** Settings shows Free / Middle / High via [`PlanUsageBlock`](src/components/PlanUsageBlock.tsx) / `PlanTierMeta` (tier + one trial line) and a chevron to `/upgrade`. Dashboard shows shelf storage only (`dbUsageSummary` + `StorageGauge`). Admin unlimited omits the bar. Settings may show an ads note. Limits: Free 100MB / 1 file / ads / no remind; Middle 500MB / 3 files / ads / remind; High 1GB / unlimited batch / no ads / remind.
 
-**The Korean Footer Rule.** Intro and app show operator identity plus 이용약관 plus 개인정보처리방침. Privacy is easier to spot than the other links (bold or magnet). Placeholders until real operator data. Do not invent a 사업자등록번호 or 통신판매업 신고번호.
+**The Korean Footer Rule.** Intro and app use a Soft Deckle multi-column footer: MyBrary wordmark + lead, catalog/ops/support link columns (real routes only), then © year and operator placeholders (표시 예정). Do not invent a 사업자등록번호, ISO badge, or corporate entity name.
 
 ### Intro
 
@@ -499,7 +499,7 @@ Shipped in [`src/components/DayFilter.tsx`](src/components/DayFilter.tsx). Chip 
 - Legal routes `/terms` and `/privacy` ([`src/pages/Legal.tsx`](src/pages/Legal.tsx)) and plans route `/upgrade` ([`src/pages/Upgrade.tsx`](src/pages/Upgrade.tsx)) reuse header/footer chrome and DM Sans / Newsreader. No Inter.
 - Identity values come from placeholders; empty looks like "표시 예정", never a made-up number.
 
-**The Upgrade Page Rule.** `/upgrade` is the Plans matrix (title **등급 안내** / Plans): Free / Middle / High columns, feature rows (trial, storage, ads, classify, batch files, remind, bundle, history), disabled **결제 준비 중** CTA, and “등급 · 용량 보기” to `/settings`. Lead copy stays “서재 용량과 광고 여부는 등급에 따라 다릅니다. 결제는 아직 준비 중입니다.” Do not invent checkout or fake prices. Admin maps to the High column highlight only. Matrix cells read from `PLAN_LIMITS`. Bundle + compare/revert are High preview only until gated.
+**The Upgrade Page Rule.** `/upgrade` is the Plans matrix (title **등급 안내** / Plans) in a wide shell (`.dashboard-door--plans`, max 82.5rem): Free / Middle / High columns, feature rows (trial, storage, ads, classify, batch files, remind, bundle, history). Current tier marked with a CheckCircle2 icon (not “Current” text). Disabled **결제 준비 중** uses `.protocol-modal-btn-primary`. No footer “등급 · 용량 보기” line. Lead copy stays “서재 용량과 광고 여부는 등급에 따라 다릅니다. 결제는 아직 준비 중입니다.” Do not invent checkout or fake prices. Admin maps to the High column highlight only. Matrix cells read from `PLAN_LIMITS`. Bundle + compare/revert are High preview only until gated.
 
 ## Do's and Don'ts
 

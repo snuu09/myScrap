@@ -18,6 +18,7 @@ import { Dashboard } from "./pages/Dashboard";
 import { DashboardEditor } from "./pages/DashboardEditor";
 import { ScrapDetail } from "./pages/ScrapDetail";
 import { SearchPage } from "./pages/SearchPage";
+import { NoticesPage } from "./pages/NoticesPage";
 import { Legal } from "./pages/Legal";
 import { Upgrade } from "./pages/Upgrade";
 import { loadScraps } from "./lib/scraps";
@@ -83,7 +84,7 @@ function Home() {
   }, [user]);
 
   const endReveal = useCallback(() => setReveal(false), []);
-  const arrive = useArriveClass();
+  const pageGenie = usePageGenie();
 
   useEffect(() => {
     function onCloseOverlays() {
@@ -104,7 +105,7 @@ function Home() {
       <Header onEnter={() => navigate("/login")} />
       <main
         id="main"
-        className={(user ? "flex min-h-0 flex-1 flex-col" : "min-h-0 p-0") + arrive}
+        className={(user ? "flex min-h-0 flex-1 flex-col" : "min-h-0 p-0") + pageGenie}
       >
         {!ready ? (
           <AuthWaiting />
@@ -120,23 +121,6 @@ function Home() {
       <ShelfReveal active={Boolean(user) && reveal} onDone={endReveal} />
     </div>
   );
-}
-
-function useArriveClass() {
-  const [on, setOn] = useState(() => takeArriveGenie());
-  useEffect(() => {
-    function replay() {
-      setOn(false);
-      requestAnimationFrame(() => requestAnimationFrame(() => setOn(true)));
-    }
-    function onArrive() {
-      takeArriveGenie();
-      replay();
-    }
-    window.addEventListener(ARRIVE_GENIE_EVENT, onArrive);
-    return () => window.removeEventListener(ARRIVE_GENIE_EVENT, onArrive);
-  }, []);
-  return on ? " page-genie" : "";
 }
 
 function usePageGenie(honorSkip = false) {
@@ -326,6 +310,36 @@ function SearchPageShell() {
   );
 }
 
+function NoticesLayout() {
+  const { user, ready } = useAuth();
+  const { lang } = usePrefs();
+  const navigate = useNavigate();
+  const [enter, setEnter] = useState(false);
+  const pageGenie = usePageGenie();
+
+  if (!ready) {
+    return <AuthWaiting />;
+  }
+  if (!user) {
+    return <Navigate to="/" replace />;
+  }
+
+  return (
+    <PageChrome
+      header={
+        <Header
+          onEnter={() => navigate("/login")}
+          back={{ label: t(lang, "back"), onBack: () => (window.history.length > 1 ? navigate(-1) : navigate("/")) }}
+        />
+      }
+      mainClassName={pageGenie}
+      overlays={<AuthSheet open={enter} onClose={() => setEnter(false)} />}
+    >
+      <NoticesPage />
+    </PageChrome>
+  );
+}
+
 function SettingsLayout() {
   const { lang } = usePrefs();
   const { recoveryPending } = useAuth();
@@ -461,6 +475,7 @@ export default function App() {
                 <Route path="/login" element={<LoginLayout />} />
                 <Route path="/settings" element={<SettingsLayout />} />
                 <Route path="/search" element={<SearchPageShell />} />
+                <Route path="/notices" element={<NoticesLayout />} />
                 <Route path="/scrap/:id" element={<ScrapDetailPage />} />
                 <Route path="/terms" element={<PublicDocLayout><Legal /></PublicDocLayout>} />
                 <Route path="/privacy" element={<PublicDocLayout><Legal /></PublicDocLayout>} />

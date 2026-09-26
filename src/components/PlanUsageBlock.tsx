@@ -12,13 +12,16 @@ type Props = {
 export function StorageGauge({
   usageBytes,
   storageLimit,
+  hideLabel = false,
 }: {
   usageBytes: number;
   storageLimit: number | null;
+  /** When true, only the bar (or unlimited note if no limit). */
+  hideLabel?: boolean;
 }) {
   const { lang } = usePrefs();
   if (storageLimit === null) {
-    return <p className="plan-storage-label">{t(lang, "storageUnlimited")}</p>;
+    return hideLabel ? null : <p className="plan-storage-label">{t(lang, "storageUnlimited")}</p>;
   }
   const pct = Math.min(100, storageLimit > 0 ? (usageBytes / storageLimit) * 100 : 0);
   const label = t(lang, "storageUsed", {
@@ -27,7 +30,7 @@ export function StorageGauge({
   });
   return (
     <div className="storage-gauge">
-      <p className="plan-storage-label">{label}</p>
+      {hideLabel ? null : <p className="plan-storage-label">{label}</p>}
       <div
         className="storage-gauge-track"
         role="progressbar"
@@ -42,27 +45,36 @@ export function StorageGauge({
   );
 }
 
-/** Tier name + compact trial line (max two lines). */
-export function PlanTierMeta() {
+/** Tier name + optional trial line. Browse with no profile shows Free. */
+export function PlanTierMeta({
+  forceFree = false,
+  hideTrial = false,
+}: {
+  forceFree?: boolean;
+  hideTrial?: boolean;
+}) {
   const { lang } = usePrefs();
   const { profile, trialDaysLeft, trialExpired } = usePlan();
 
-  if (!profile) {
+  if (!profile && !forceFree) {
     return <p className="text-[0.8125rem] text-muted">{t(lang, "noPlanProfile")}</p>;
   }
 
+  const tier = profile?.planTier ?? "free";
   const trialLine =
-    trialExpired
-      ? t(lang, "trialExpiredMsg")
-      : trialDaysLeft !== null && profile.trialEndsAt != null
-        ? t(lang, "trialDaysLeft", { n: trialDaysLeft }) +
-          " · " +
-          formatTrialEndDate(profile.trialEndsAt, lang)
-        : null;
+    !hideTrial && !forceFree && profile
+      ? trialExpired
+        ? t(lang, "trialExpiredMsg")
+        : trialDaysLeft !== null && profile.trialEndsAt != null
+          ? t(lang, "trialDaysLeft", { n: trialDaysLeft }) +
+            " · " +
+            formatTrialEndDate(profile.trialEndsAt, lang)
+          : null
+      : null;
 
   return (
     <div className="plan-usage-meta">
-      <strong className="plan-usage-tier">{planDisplayName(profile.planTier)}</strong>
+      <strong className="plan-usage-tier">{planDisplayName(tier)}</strong>
       {trialLine ? (
         <span className={"plan-trial-msg" + (trialExpired ? " plan-trial-msg--danger" : "")}>{trialLine}</span>
       ) : null}

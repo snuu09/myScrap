@@ -1,6 +1,4 @@
-import { Check, Minus } from "lucide-react";
-import { Link } from "react-router-dom";
-import { GlassCluster } from "../components/GlassCluster";
+import { Check, CheckCircle2, Minus } from "lucide-react";
 import { useAuth } from "../context/Auth";
 import { usePlan } from "../context/Plan";
 import { PLAN_LIMITS, planDisplayName, type PlanTier } from "../lib/plans";
@@ -20,9 +18,12 @@ function mapCurrent(tier: PlanTier | undefined): MatrixTier | null {
   return null;
 }
 
-function storageCell(tier: MatrixTier): Cell {
+function storageCell(
+  tier: MatrixTier,
+  t: (key: string, vars?: Record<string, string | number>) => string,
+): Cell {
   const limit = PLAN_LIMITS[tier].storageBytes;
-  if (limit === null) return { kind: "text", value: "Unlimited" };
+  if (limit === null) return { kind: "text", value: t("storageUnlimited") };
   return { kind: "text", value: formatBytes(limit) };
 }
 
@@ -71,9 +72,9 @@ export function Upgrade() {
     {
       feature: t("upgradeRowStorage"),
       cells: {
-        free: storageCell("free"),
-        standard: storageCell("standard"),
-        premium: storageCell("premium"),
+        free: storageCell("free", t),
+        standard: storageCell("standard", t),
+        premium: storageCell("premium", t),
       },
     },
     {
@@ -126,13 +127,13 @@ export function Upgrade() {
     },
   ];
 
-  const currentLabel = planDisplayName(profile?.planTier ?? (user ? "free" : undefined));
-
   return (
-    <div className="dashboard-door">
+    <div className="dashboard-door dashboard-door--plans">
       <div className="dashboard-head">
-        <h1 className="dashboard-title">{t("upgradeTitle")}</h1>
-        <p className="m-0 text-[0.875rem] text-muted">{t("upgradeLead")}</p>
+        <div className="dashboard-head-title">
+          <h1 className="dashboard-title">{t("upgradeTitle")}</h1>
+          <span className="settings-coming-badge">{t("settingsComingSoonBadge")}</span>
+        </div>
       </div>
 
       <section className="plan-matrix-card" aria-label={t("upgradeTitle")}>
@@ -152,7 +153,13 @@ export function Upgrade() {
                       className={"plan-matrix-tier-head" + (isCurrent ? " is-current" : "")}
                     >
                       <span className="plan-matrix-tier-name">{planDisplayName(tier)}</span>
-                      {isCurrent ? <span className="plan-matrix-current">{t("upgradeCurrent")}</span> : null}
+                      {isCurrent ? (
+                        <CheckCircle2
+                          className="plan-matrix-current-icon size-4"
+                          strokeWidth={2}
+                          aria-label={t("upgradeCurrent")}
+                        />
+                      ) : null}
                     </th>
                   );
                 })}
@@ -178,19 +185,12 @@ export function Upgrade() {
           </table>
         </div>
 
-        <GlassCluster className="liquid-solo plan-matrix-cta" label={t("upgradePayPending")}>
-          <button type="button" className="auth-btn-primary" disabled>
+        <div className="plan-matrix-cta">
+          <button type="button" className="protocol-modal-btn-primary" disabled>
             {t("upgradePayPending")}
           </button>
-        </GlassCluster>
+        </div>
       </section>
-
-      <p className="mt-4 text-center text-[0.8125rem] text-muted">
-        {t("planLabel")}: {currentLabel} ·{" "}
-        <Link to="/settings" className="auth-link-utility no-underline">
-          {t("upgradeViewStorage")}
-        </Link>
-      </p>
     </div>
   );
 }

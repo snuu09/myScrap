@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { ChevronDown, ExternalLink, Sparkles, X } from "lucide-react";
 import { t, typeLabel, detectedLabel } from "../i18n";
 import { usePrefs } from "../context/Prefs";
@@ -26,6 +26,8 @@ type Props = {
   /** Hide Cancel/Save when a parent owns the batch footer. */
   hideActions?: boolean;
   saving?: boolean;
+  /** Workbench: no classify overlay; show form + section panels while analyzing. */
+  quietBusy?: boolean;
 };
 
 function ClassifyBusyOverlay({
@@ -185,11 +187,13 @@ export function DraftCard({
   onCancel,
   hideActions = false,
   saving = false,
+  quietBusy = false,
 }: Props) {
   const { lang } = usePrefs();
   const [tagDraft, setTagDraft] = useState("");
   const [typeOpen, setTypeOpen] = useState(false);
   const typeRef = useRef<HTMLDivElement>(null);
+  const memoRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (!typeOpen) return;
@@ -206,6 +210,14 @@ export function DraftCard({
       document.removeEventListener("keydown", onKey);
     };
   }, [typeOpen]);
+
+  useLayoutEffect(() => {
+    if (!quietBusy) return;
+    const el = memoRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.max(el.scrollHeight, 72)}px`;
+  }, [quietBusy, draft.memo]);
 
   const og = draft.og;
   const mediaKind = mediaKindOf(draft.type, draft.mime);
@@ -293,7 +305,7 @@ export function DraftCard({
       </>
     ) : null;
 
-  if (draft.analyzing && !showMedia && !showDocCover) {
+  if (draft.analyzing && !showMedia && !showDocCover && !quietBusy) {
     return (
       <AnalyzeSkeleton
         filename={draft.filename}
@@ -311,9 +323,44 @@ export function DraftCard({
     );
   }
 
-  const resultBlock = (
+  const uploadBar =
+    ratio != null ? (
+      <div
+        className="upload-progress"
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={ratio}
+        aria-valuetext={uploadLabel}
+      >
+        <div className="upload-progress-track">
+          <div className="upload-progress-fill" style={{ width: `${ratio}%` }} />
+          <span className="upload-progress-label">{uploadLabel}</span>
+        </div>
+      </div>
+    ) : null;
+
+  const sourcePanel = (
     <>
       {previewBlock}
+      {draft.filename ? (
+        <div className="inline-action-row">
+          <p className="scrap-card-file min-w-0 flex-1">
+            <span className="scrap-source-full">
+              {draft.filename}
+              {draft.size ? ` · ${formatBytes(draft.size)}` : ""}
+            </span>
+          </p>
+          {draft.dataUrl ? (
+            <MediaFileActions src={draft.dataUrl} filename={draft.filename} mime={draft.mime} />
+          ) : null}
+        </div>
+      ) : null}
+    </>
+  );
+
+  const editPanel = (
+    <>
       <label className="grid gap-1">
         <span className="list-tools-label">{t(lang, "untitled")}</span>
         <input
@@ -360,20 +407,22 @@ export function DraftCard({
       <div className="grid gap-1">
         <span className="list-tools-label">{t(lang, "addTag")}</span>
         <div className="scrap-card-tags">
-          {draft.tags.length ? <TagCluster>
-          {draft.tags.map((tag) => (
-            <button
-              key={tag}
-              type="button"
-              className="scrap-tag scrap-tag--btn detail-tag-chip"
-              disabled={draft.analyzing}
-              onClick={() => onChange({ tags: draft.tags.filter((row) => row !== tag) })}
-            >
-              {tag}
-              <X className="ml-1 inline size-3" strokeWidth={2} />
-            </button>
-          ))}
-          </TagCluster> : null}
+          {draft.tags.length ? (
+            <TagCluster>
+              {draft.tags.map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  className="scrap-tag scrap-tag--btn detail-tag-chip"
+                  disabled={draft.analyzing}
+                  onClick={() => onChange({ tags: draft.tags.filter((row) => row !== tag) })}
+                >
+                  {tag}
+                  <X className="ml-1 inline size-3" strokeWidth={2} />
+                </button>
+              ))}
+            </TagCluster>
+          ) : null}
         </div>
         <input
           value={tagDraft}
@@ -392,6 +441,95 @@ export function DraftCard({
           disabled={draft.analyzing}
         />
       </div>
+    </>
+  );
+
+  const aiPanel =
+    !draft.analyzing && (draft.text || draft.previewText || draft.sourceText || draft.og?.description) ? (
+      <>
+        {draft.text || draft.previewText ? (
+          <div className="draft-ai-group">
+            <p className="detail-ai-group-head">
+              <Sparkles className="size-4" strokeWidth={1.8} aria-hidden />
+              {t(lang, "aiGroupLabel")}
+            </p>
+            {draft.text ? (
+              <div className="draft-ai-block">
+                <p className="list-tools-label">{t(lang, "aiSummary")}</p>
+                <p className="draft-ai-text">{renderAiHighlight(draft.text)}</p>
+              </div>
+            ) : null}
+            {draft.previewText ? (
+              <div className="draft-ai-block">
+                <p className="list-tools-label">{t(lang, "aiAnalysis")}</p>
+                <p className="draft-ai-text">{renderAiHighlight(draft.previewText)}</p>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+        {draft.sourceText || draft.og?.description ? (
+          <SourceExcerpt text={draft.sourceText || draft.og?.description || ""} />
+        ) : null}
+      </>
+    ) : null;
+
+  const memoPanel = (
+    <label className="grid gap-1">
+      <span className="list-tools-label">{t(lang, "memoPlaceholder")}</span>
+      <textarea
+        ref={memoRef}
+        value={draft.memo}
+        onChange={(e) => onChange({ memo: e.target.value })}
+        placeholder={t(lang, "memoPlaceholder")}
+        rows={3}
+        className="classify-draft-memo classify-draft-memo--autogrow"
+        disabled={draft.analyzing}
+      />
+    </label>
+  );
+
+  const wrap = (key: string, body: ReactNode) =>
+    quietBusy ? (
+      <section key={key} className="workbench-panel">
+        {body}
+      </section>
+    ) : (
+      <div key={key}>{body}</div>
+    );
+
+  const resultBlock = quietBusy ? (
+    <>
+      {previewBlock || draft.filename || uploadBar
+        ? wrap(
+            "source",
+            <>
+              {uploadBar}
+              {sourcePanel}
+            </>,
+          )
+        : null}
+      {wrap("edit", editPanel)}
+      {aiPanel ? wrap("ai", aiPanel) : null}
+      {wrap("memo", memoPanel)}
+      {hideActions ? null : (
+        <div className="classify-draft-actions">
+          <button type="button" className="auth-link-utility" onClick={onCancel} disabled={saving}>
+            {t(lang, "cancel")}
+          </button>
+          <button
+            type="submit"
+            className={"auth-btn-primary classify-save-btn px-4" + (saving ? " is-progress" : "")}
+            disabled={draft.analyzing || saving}
+          >
+            <span>{t(lang, "save")}</span>
+          </button>
+        </div>
+      )}
+    </>
+  ) : (
+    <>
+      {previewBlock}
+      {editPanel}
       {draft.filename ? (
         <div className="inline-action-row">
           <p className="scrap-card-file min-w-0 flex-1">
@@ -405,29 +543,7 @@ export function DraftCard({
           ) : null}
         </div>
       ) : null}
-      {!draft.analyzing && (draft.text || draft.previewText) ? (
-        <div className="draft-ai-group">
-          <p className="detail-ai-group-head">
-            <Sparkles className="size-4" strokeWidth={1.8} aria-hidden />
-            {t(lang, "aiGroupLabel")}
-          </p>
-          {draft.text ? (
-            <div className="draft-ai-block">
-              <p className="list-tools-label">{t(lang, "aiSummary")}</p>
-              <p className="draft-ai-text">{renderAiHighlight(draft.text)}</p>
-            </div>
-          ) : null}
-          {draft.previewText ? (
-            <div className="draft-ai-block">
-              <p className="list-tools-label">{t(lang, "aiAnalysis")}</p>
-              <p className="draft-ai-text">{renderAiHighlight(draft.previewText)}</p>
-            </div>
-          ) : null}
-        </div>
-      ) : null}
-      {!draft.analyzing && (draft.sourceText || draft.og?.description) ? (
-        <SourceExcerpt text={draft.sourceText || draft.og?.description || ""} />
-      ) : null}
+      {aiPanel}
       <textarea
         value={draft.memo}
         onChange={(e) => onChange({ memo: e.target.value })}
@@ -455,7 +571,7 @@ export function DraftCard({
 
   return (
     <form
-      className="classify-draft-form"
+      className={"classify-draft-form" + (quietBusy ? " classify-draft-form--quiet" : "")}
       onSubmit={(e) => {
         e.preventDefault();
         if (!draft.analyzing) onSave();
@@ -467,28 +583,14 @@ export function DraftCard({
           {queueLabel ? <p className="list-tools-label">{queueLabel}</p> : null}
         </div>
       ) : null}
-      {draft.analyzing ? (
+      {draft.analyzing && !quietBusy ? (
         <>
           {draft.filename ? (
             <p className="scrap-card-file m-0">
               {draft.filename} · {formatBytes(draft.size)}
             </p>
           ) : null}
-          {ratio != null ? (
-            <div
-              className="upload-progress"
-              role="progressbar"
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuenow={ratio}
-              aria-valuetext={uploadLabel}
-            >
-              <div className="upload-progress-track">
-                <div className="upload-progress-fill" style={{ width: `${ratio}%` }} />
-                <span className="upload-progress-label">{uploadLabel}</span>
-              </div>
-            </div>
-          ) : null}
+          {uploadBar}
           <ClassifyBusyOverlay onCancel={onCancel}>
             {previewBlock ? (
               <div className="classify-draft-preview">{previewBlock}</div>
@@ -503,7 +605,7 @@ export function DraftCard({
         </>
       ) : (
         <>
-          <p className="classify-draft-detected">{detectedLabel(lang, draft.type)}</p>
+          {!quietBusy ? <p className="classify-draft-detected">{detectedLabel(lang, draft.type)}</p> : null}
           {draft.classifyMiss === "missing" ? (
             <p className="classify-draft-fallback">{t(lang, "classifyServerMissing")}</p>
           ) : null}

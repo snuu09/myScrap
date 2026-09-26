@@ -1,24 +1,40 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type AnimationEvent } from "react";
 import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
-import { ChevronDown, ChevronUp, X } from "lucide-react";
+import { RotateCcw, Search, X } from "lucide-react";
 import { useAuth } from "../context/Auth";
 import { usePrefs } from "../context/Prefs";
 import { usePlan } from "../context/Plan";
 import { useT } from "../lib/useT";
 import { AuthWaiting } from "../components/AuthWaiting";
 import { IconTip } from "../components/IconTip";
-import { DayFilterChip, DayFilterPanel } from "../components/DayFilter";
-import { TypeBookCarousel } from "../components/TypeBookCarousel";
+import { CalendarFilterPanel, CalendarFilterTrigger } from "../components/CalendarFilter";
 import { LayoutSwitch, ScrapBookCard } from "../components/ScrapList";
 import { PageEmptyGuide } from "../components/PageEmptyGuide";
-import { TagCluster } from "../components/GlassCluster";
+import { SearchFacets } from "../components/SearchFacets";
 import { loadScraps, SCRAPS_CHANGED_EVENT, SCRAPS_CLEARED_EVENT } from "../lib/scraps";
 import { usePagedSlice } from "../lib/usePagedSlice";
-import { filterScraps } from "../lib/scrapFilters";
-import { typeBookIds } from "../lib/typeColor";
-import type { Scrap, ScrapType } from "../lib/types";
+import {
+  countInRange,
+  filterScraps,
+  resolveDateBounds,
+} from "../lib/scrapFilters";
+import type { Scrap } from "../lib/types";
 
-const TYPES: ScrapType[] = ["text", "image", "video", "audio", "link", "document"];
+function readTypes(params: URLSearchParams): string[] {
+  const all = params.getAll("type");
+  if (!all.length) return [];
+  if (all.length === 1 && all[0].includes(",")) {
+    return all[0].split(",").map((s) => s.trim()).filter(Boolean);
+  }
+  return all.filter((t) => t && t !== "all");
+}
+
+function readDateBounds(params: URLSearchParams) {
+  const from = params.get("from");
+  const to = params.get("to");
+  const day = params.get("day");
+  return resolveDateBounds({ from, to, day });
+}
 
 export function SearchPage() {
   const t = useT();
@@ -31,31 +47,43 @@ export function SearchPage() {
   const [scraps, setScraps] = useState<Scrap[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState(() => searchParams.get("q") || "");
-  const [typeFilter, setTypeFilter] = useState<string>(() => searchParams.get("type") || "all");
-  const [dayFilter, setDayFilter] = useState<string | null>(() => searchParams.get("day"));
+  const [types, setTypes] = useState<string[]>(() => readTypes(searchParams));
+  const initialBounds = readDateBounds(searchParams);
+  const [from, setFrom] = useState<string | null>(initialBounds.from);
+  const [to, setTo] = useState<string | null>(initialBounds.to);
+  const [calendarFrom, setCalendarFrom] = useState<string | null>(initialBounds.from);
+  const [calendarTo, setCalendarTo] = useState<string | null>(initialBounds.to);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [calendarClosing, setCalendarClosing] = useState(false);
   const [calSlide, setCalSlide] = useState(false);
   const [tagFilter, setTagFilter] = useState<string[]>(() => searchParams.getAll("tag"));
-  const [tagsOpen, setTagsOpen] = useState(false);
   const scrapsLoaded = useRef<string | null>(null);
 
-  const typeParam = searchParams.get("type") || "";
+  const typeParam = searchParams.getAll("type").join(",");
+  const fromParam = searchParams.get("from") || "";
+  const toParam = searchParams.get("to") || "";
   const dayParam = searchParams.get("day") || "";
   const tagParam = searchParams.getAll("tag").join("\n");
 
   useEffect(() => {
-    const q = searchParams.get("q") || "";
-    setQuery(q);
+    setQuery(searchParams.get("q") || "");
   }, [searchParams]);
 
   useEffect(() => {
-    setTypeFilter(typeParam || "all");
+    setTypes(readTypes(searchParams));
   }, [typeParam]);
 
   useEffect(() => {
-    setDayFilter(dayParam || null);
-  }, [dayParam]);
+    const bounds = resolveDateBounds({
+      from: fromParam || null,
+      to: toParam || null,
+      day: dayParam || null,
+    });
+    setFrom(bounds.from);
+    setTo(bounds.to);
+    setCalendarFrom(bounds.from);
+    setCalendarTo(bounds.to);
+  }, [fromParam, toParam, dayParam]);
 
   useEffect(() => {
     setTagFilter(tagParam ? tagParam.split("\n") : []);
@@ -100,18 +128,6 @@ export function SearchPage() {
     };
   }, [refresh]);
 
-  const typeCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: scraps.length, bookmarked: 0 };
-    for (const type of TYPES) counts[type] = 0;
-    for (const item of scraps) {
-      counts[item.type] = (counts[item.type] || 0) + 1;
-      if (item.bookmarked) counts.bookmarked += 1;
-    }
-    return counts;
-  }, [scraps]);
-
-  const visibleTypes = typeBookIds(typeCounts, TYPES, loading);
-
   const tagCounts = useMemo(() => {
     const counts = new Map<string, number>();
     for (const item of scraps) {
@@ -120,31 +136,47 @@ export function SearchPage() {
     return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
   }, [scraps]);
 
-  const orderedTags = [
-    ...tagCounts.filter(([tag]) => tagFilter.includes(tag)),
-    ...tagCounts.filter(([tag]) => !tagFilter.includes(tag)),
-  ];
-  const shownTags = tagsOpen ? orderedTags : orderedTags.slice(0, 8);
+  const recommendedTags = tagCounts.slice(0, 5);
 
   const visible = useMemo(
-    () => filterScraps(scraps, { query, type: typeFilter, day: dayFilter, tags: tagFilter }),
-    [scraps, query, typeFilter, dayFilter, tagFilter],
+    () =>
+      filterScraps(scraps, {
+        query,
+        types: types.length ? types : ["all"],
+        from,
+        to,
+        tags: tagFilter,
+      }),
+    [scraps, query, types, from, to, tagFilter],
   );
   const paged = usePagedSlice(visible);
+  const rangeCount = countInRange(scraps, from, to);
 
-  function writeParams(patch: { q?: string; type?: string; day?: string | null; tags?: string[] }) {
+  function writeParams(patch: {
+    q?: string;
+    types?: string[];
+    from?: string | null;
+    to?: string | null;
+    tags?: string[];
+  }) {
     const next = new URLSearchParams(searchParams);
     if (patch.q !== undefined) {
       if (patch.q) next.set("q", patch.q);
       else next.delete("q");
     }
-    if (patch.type !== undefined) {
-      if (patch.type === "all") next.delete("type");
-      else next.set("type", patch.type);
+    if (patch.types !== undefined) {
+      next.delete("type");
+      const list = patch.types.filter((x) => x && x !== "all");
+      for (const type of list) next.append("type", type);
     }
-    if (patch.day !== undefined) {
-      if (patch.day) next.set("day", patch.day);
-      else next.delete("day");
+    if (patch.from !== undefined || patch.to !== undefined) {
+      next.delete("day");
+      const f = patch.from !== undefined ? patch.from : from;
+      const tt = patch.to !== undefined ? patch.to : to;
+      if (f) next.set("from", f);
+      else next.delete("from");
+      if (tt) next.set("to", tt);
+      else next.delete("to");
     }
     if (patch.tags !== undefined) {
       next.delete("tag");
@@ -153,19 +185,20 @@ export function SearchPage() {
     setSearchParams(next, { replace: true });
   }
 
-  function toggleTag(tag: string) {
-    const next = tagFilter.includes(tag) ? tagFilter.filter((item) => item !== tag) : [...tagFilter, tag];
-    writeParams({ tags: next });
-  }
-
   function updateQuery(value: string) {
     setQuery(value);
     writeParams({ q: value });
   }
 
-  function selectType(value: string) {
-    setTypeFilter(value);
-    writeParams({ type: value });
+  function resetAll() {
+    setQuery("");
+    setTypes([]);
+    setFrom(null);
+    setTo(null);
+    setCalendarFrom(null);
+    setCalendarTo(null);
+    setTagFilter([]);
+    setSearchParams(new URLSearchParams(), { replace: true });
   }
 
   useLayoutEffect(() => {
@@ -210,51 +243,117 @@ export function SearchPage() {
 
   return (
     <div className="search-page">
-      <div className="search-page-toolbar">
-        <div className="search-page-bar">
-          <div className="list-tools-search-wrap search-page-field">
+      {scraps.length > 0 ? (
+      <div className={"search-command" + (calendarOpen || calendarClosing ? " is-cal-open" : "")}>
+        <div className="search-command-bar">
+          <div className="search-command-field">
+            <Search className="search-command-icon size-[18px]" strokeWidth={1.8} aria-hidden />
             <input
               ref={inputRef}
               value={query}
               onChange={(e) => updateQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Escape" && query) {
+                  e.preventDefault();
+                  updateQuery("");
+                }
+              }}
               placeholder={t("searchPlaceholder")}
-              className="list-tools-search"
+              className="search-command-input"
               aria-label={t("searchLabel")}
             />
             {query ? (
-              <IconTip label={t("clearSearch")}>
-                <button
-                  type="button"
-                  className="list-tools-search-clear"
-                  aria-label={t("clearSearch")}
-                  onClick={() => updateQuery("")}
-                >
-                  <X className="size-[18px]" strokeWidth={1.8} />
-                </button>
-              </IconTip>
+              <button
+                type="button"
+                className="search-command-esc"
+                aria-label={t("clearSearch")}
+                onClick={() => updateQuery("")}
+              >
+                ESC
+              </button>
             ) : null}
           </div>
-          <DayFilterChip dayFilter={dayFilter} open={calendarOpen} onOpenChange={setCalendar} />
-        </div>
-      </div>
-
-      {calendarOpen || calendarClosing ? (
-        <div className={"search-cal-slot" + (calSlide && !calendarClosing ? " is-open" : "")}>
-          <div className="search-cal-slot-inner">
-            <div className={"search-page-day" + (calendarClosing ? " is-closing" : "")} onAnimationEnd={onCalendarEnd}>
-              <DayFilterPanel
-                scraps={scraps}
-                dayFilter={dayFilter}
-                open
-                onOpenChange={setCalendar}
-                onDayChange={(day) => {
-                  setDayFilter(day);
-                  writeParams({ day });
-                }}
-              />
-            </div>
+          <div className="search-command-actions">
+            <CalendarFilterTrigger
+              from={from}
+              to={to}
+              count={rangeCount}
+              open={calendarOpen}
+              onOpenChange={setCalendar}
+            />
+            <button
+              type="button"
+              className="search-command-submit"
+              onClick={() => inputRef.current?.blur()}
+            >
+              <Search className="size-4" strokeWidth={1.8} aria-hidden />
+              <span className="search-command-submit-label">{t("searchSubmit")}</span>
+            </button>
+            <IconTip label={t("clearFilters")}>
+              <button
+                type="button"
+                className="search-command-reset"
+                aria-label={t("clearFilters")}
+                onClick={resetAll}
+              >
+                <RotateCcw className="size-[18px]" strokeWidth={1.8} />
+              </button>
+            </IconTip>
           </div>
         </div>
+
+        {recommendedTags.length ? (
+          <div className="search-command-tags">
+            <span className="search-command-tags-label">{t("searchRecommendedTags")}</span>
+            {recommendedTags.map(([tag]) => (
+              <button
+                key={tag}
+                type="button"
+                className={"search-command-tag" + (tagFilter.includes(tag) ? " is-active" : "")}
+                aria-pressed={tagFilter.includes(tag)}
+                onClick={() => {
+                  const next = tagFilter.includes(tag)
+                    ? tagFilter.filter((x) => x !== tag)
+                    : [...tagFilter, tag];
+                  setTagFilter(next);
+                  writeParams({ tags: next });
+                }}
+              >
+                #{tag}
+              </button>
+            ))}
+            <span className="search-command-match">
+              {t("searchMatchRatio", { n: visible.length, total: scraps.length })}
+            </span>
+          </div>
+        ) : null}
+
+        {calendarOpen || calendarClosing ? (
+          <div className={"search-cal-slot" + (calSlide && !calendarClosing ? " is-open" : "")}>
+            <div className="search-cal-slot-inner">
+              <div
+                className={"search-cal-tray" + (calendarClosing ? " is-closing" : "")}
+                onAnimationEnd={onCalendarEnd}
+              >
+                <CalendarFilterPanel
+                  scraps={scraps}
+                  from={calendarFrom}
+                  to={calendarTo}
+                  open
+                  onOpenChange={setCalendar}
+                  onApply={({ from: f, to: tt }) => {
+                    setFrom(f);
+                    setTo(tt);
+                    setCalendarFrom(f);
+                    setCalendarTo(tt);
+                    writeParams({ from: f, to: tt });
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </div>
       ) : null}
 
       {libraryEmpty ? (
@@ -264,67 +363,45 @@ export function SearchPage() {
           body={t("exploreEmptyBody")}
           ctaLabel={t("exploreEmptyCta")}
           onCta={() => navigate("/")}
+          showTemplateHints
         />
       ) : (
         <>
-          <TypeBookCarousel
-            types={visibleTypes}
-            counts={typeCounts}
-            active={typeFilter}
-            loading={loading}
-            contained
-            onSelect={selectType}
+          <SearchFacets
+            scraps={scraps}
+            query={query}
+            from={from}
+            to={to}
+            calendarFrom={calendarFrom}
+            calendarTo={calendarTo}
+            types={types}
+            tags={tagFilter}
+            onTypesChange={(next) => {
+              setTypes(next);
+              writeParams({ types: next });
+            }}
+            onTagsChange={(next) => {
+              setTagFilter(next);
+              writeParams({ tags: next });
+            }}
+            onDateRefine={(f, tt) => {
+              setFrom(f);
+              setTo(tt);
+              writeParams({ from: f, to: tt });
+            }}
+            onResetFacets={() => {
+              setTypes([]);
+              setTagFilter([]);
+              setFrom(calendarFrom);
+              setTo(calendarTo);
+              writeParams({ types: [], tags: [], from: calendarFrom, to: calendarTo });
+            }}
           />
 
-          {tagCounts.length ? (
-            <div className="search-tag-row">
-              <TagCluster>
-                {shownTags.map(([tag, count]) => (
-                  <button
-                    key={tag}
-                    type="button"
-                    className="scrap-tag scrap-tag--btn detail-tag-chip search-tag-chip"
-                    aria-pressed={tagFilter.includes(tag)}
-                    onClick={() => toggleTag(tag)}
-                  >
-                    {tag}
-                    <span className="search-tag-count">{count}</span>
-                  </button>
-                ))}
-              </TagCluster>
-              {tagFilter.length > 1 ? (
-                <IconTip label={t("clearTags")}>
-                  <button
-                    type="button"
-                    className="search-tag-more"
-                    aria-label={t("clearTags")}
-                    onClick={() => writeParams({ tags: [] })}
-                  >
-                    <X className="size-[18px]" strokeWidth={1.8} />
-                  </button>
-                </IconTip>
-              ) : null}
-              {tagCounts.length > 8 ? (
-                <IconTip label={t(tagsOpen ? "tagsLess" : "tagsMore")}>
-                  <button
-                    type="button"
-                    className="search-tag-more"
-                    aria-expanded={tagsOpen}
-                    aria-label={t(tagsOpen ? "tagsLess" : "tagsMore")}
-                    onClick={() => setTagsOpen((open) => !open)}
-                  >
-                    {tagsOpen ? (
-                      <ChevronUp className="size-[18px]" strokeWidth={1.8} />
-                    ) : (
-                      <ChevronDown className="size-[18px]" strokeWidth={1.8} />
-                    )}
-                  </button>
-                </IconTip>
-              ) : null}
-            </div>
-          ) : null}
-
-          <LayoutSwitch />
+          <div className="search-results-head">
+            <h2 className="search-results-title">{t("searchResultsTitle")}</h2>
+            <LayoutSwitch />
+          </div>
 
           <section className="list-body search-page-results" aria-live="polite">
             {loading ? (
