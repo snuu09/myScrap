@@ -1924,7 +1924,7 @@ body {
 
   .type-book-track {
     display: flex;
-    gap: 0.65rem;
+    gap: 0.75rem;
     overflow-x: auto;
     padding: 0.55rem max(var(--gutter), calc((100vw - 88rem) / 2)) 0.85rem;
     scroll-snap-type: x mandatory;
@@ -1952,90 +1952,141 @@ body {
     position: relative;
     display: flex;
     flex: 0 0 auto;
-    width: 4.75rem;
-    aspect-ratio: 3 / 4;
+    width: 8.25rem;
+    height: 9rem;
+    aspect-ratio: auto;
     scroll-snap-align: start;
     border: 1px solid color-mix(in srgb, var(--color-paper-line) 85%, var(--color-ink));
-    border-radius: 3px 6px 6px 3px;
+    border-radius: var(--radius-md);
     background: var(--color-paper);
     box-shadow: var(--shadow-scrap);
     padding: 0;
     overflow: hidden;
     color: var(--color-ink);
+    cursor: pointer;
+    transition:
+      transform 200ms var(--ease-out),
+      box-shadow 200ms var(--ease-out),
+      border-color 160ms var(--ease-out);
   }
 
   .type-book:disabled {
     opacity: 0.72;
+    cursor: default;
   }
 
   .type-book-spine {
-    flex: 0 0 7px;
+    flex: 0 0 6px;
     align-self: stretch;
+    border-radius: var(--radius-md) 0 0 var(--radius-md);
     background: linear-gradient(
       90deg,
       color-mix(in srgb, var(--spine, var(--color-magnet)) 72%, black),
       var(--spine, var(--color-magnet))
     );
+    transition: flex-basis 160ms var(--ease-out);
+  }
+
+  .type-book:hover:not(:disabled) .type-book-spine,
+  .type-book--active .type-book-spine {
+    flex-basis: 8px;
   }
 
   .type-book-cover {
     display: flex;
     flex: 1;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
     justify-content: space-between;
-    gap: 0.35rem;
-    padding: 0.55rem 0.4rem 0.45rem;
-    background:
-      linear-gradient(
-        165deg,
-        color-mix(in srgb, var(--cover, var(--color-manila)) 55%, var(--color-paper)) 0%,
-        var(--cover, var(--color-manila)) 48%,
-        color-mix(in srgb, var(--spine, var(--color-magnet)) 18%, var(--cover, var(--color-manila))) 100%
-      );
-    text-align: left;
+    gap: 0.45rem;
+    min-width: 0;
+    padding: 0.7rem 0.55rem 0.55rem 0.5rem;
+    background: var(--color-paper);
+    text-align: center;
+  }
+
+  .type-book-head {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.4rem;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .type-book-mark {
+    flex-shrink: 0;
+    margin-top: 0;
+    color: var(--color-muted);
+  }
+
+  .type-book:hover:not(:disabled) .type-book-mark,
+  .type-book--active .type-book-mark {
+    color: var(--color-ink);
   }
 
   .type-book-title {
-    font-family: var(--font-display), Georgia, serif;
-    font-size: 0.75rem;
-    font-weight: 500;
-    line-height: 1.15;
+    font-family: var(--font-sans), system-ui, sans-serif;
+    font-size: 1.0625rem;
+    font-weight: 700;
+    line-height: 1.2;
     letter-spacing: -0.02em;
     display: -webkit-box;
-    -webkit-line-clamp: 3;
+    -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-  }
-
-  .type-book-bookmark.scrap-bookmark-ribbon {
-    position: relative;
-    top: auto;
-    right: auto;
-    flex: none;
-    width: 0.85rem;
-    height: 1.35rem;
+    color: var(--color-ink);
+    min-width: 0;
+    width: 100%;
+    text-align: center;
   }
 
   .type-book-count {
-    font-size: 0.6875rem;
+    display: flex;
+    width: 100%;
+    align-items: baseline;
+    justify-content: flex-end;
+    gap: 0.3rem;
+    padding-top: 0.45rem;
+    border-top: 1px solid var(--color-paper-line);
+  }
+
+  .type-book-count-num {
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-size: 1.25rem;
     font-weight: 700;
     font-variant-numeric: tabular-nums;
+    line-height: 1;
+    color: var(--color-ink);
+  }
+
+  .type-book-count-unit {
+    flex-shrink: 0;
+    padding: 0.15rem 0.35rem;
+    border-radius: var(--radius-xs);
+    background: var(--color-enamel-deep);
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
     color: var(--color-muted);
   }
 
   .type-book--active {
-    border-color: transparent;
-    outline: 2px solid var(--color-magnet);
-    outline-offset: 1px;
+    border-color: var(--color-ink);
+    border-width: 1.5px;
+    outline: none;
   }
 
   .type-book--active .type-book-cover {
-    background: color-mix(in srgb, var(--color-magnet) 16%, var(--color-paper));
+    background: color-mix(in srgb, var(--color-paper) 92%, var(--spine, var(--color-magnet)));
   }
 
-  .type-book--active .type-book-count {
-    color: var(--color-magnet);
+  .type-book--active .type-book-count-unit {
+    background: color-mix(in srgb, var(--color-ink) 8%, var(--color-enamel-deep));
+    color: var(--color-ink);
   }
 
   .doc-mark {
@@ -5002,24 +5053,52 @@ body {
 
   .scrap-bookmark-ribbon {
     position: absolute;
-    top: 0;
-    right: 0.75rem;
-    z-index: 2;
-    width: 1.15rem;
-    height: 1.9rem;
+    top: 0.45rem;
+    right: 0.45rem;
+    z-index: 5;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.55rem;
+    height: 1.55rem;
+    border-radius: var(--radius-xs);
     pointer-events: none;
-    background: color-mix(in srgb, var(--color-magnet) 82%, white);
-    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 78%, 0 100%);
-    box-shadow:
-      inset 0 0 0 1px color-mix(in srgb, var(--color-magnet) 35%, transparent),
-      0 2px 6px rgb(50 44 38 / 0.14);
+    background: color-mix(in srgb, var(--color-paper) 88%, transparent);
+    color: var(--color-magnet-ink);
+    box-shadow: 0 1px 4px rgb(0 0 0 / 0.12);
   }
 
   html[data-theme="dark"] .scrap-bookmark-ribbon {
-    background: color-mix(in srgb, var(--color-magnet-ink) 88%, var(--color-paper));
-    box-shadow:
-      inset 0 0 0 1px color-mix(in srgb, var(--color-paper) 55%, transparent),
-      0 2px 6px rgb(0 0 0 / 0.28);
+    background: color-mix(in srgb, var(--color-ink) 55%, transparent);
+    color: var(--color-magnet);
+  }
+
+  .scrap-bookmark-mark {
+    position: absolute;
+    top: 0.4rem;
+    right: 0.4rem;
+    z-index: 5;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.55rem;
+    height: 1.55rem;
+    border-radius: var(--radius-xs);
+    pointer-events: none;
+    background: color-mix(in srgb, var(--color-paper) 90%, transparent);
+    color: var(--color-magnet-ink);
+    box-shadow: 0 1px 4px rgb(0 0 0 / 0.14);
+  }
+
+  html[data-theme="dark"] .scrap-bookmark-mark {
+    background: color-mix(in srgb, black 55%, transparent);
+    color: var(--color-magnet);
+  }
+
+  .scrap-row-thumb .scrap-bookmark-mark,
+  .scrap-gallery-plate .scrap-bookmark-mark {
+    top: 0.4rem;
+    right: 0.4rem;
   }
 
   :is(.scrap-list--list,.scrap-list--micro) .scrap-card {
@@ -5038,7 +5117,7 @@ body {
     position: absolute;
     inset: 0 auto 0 0;
     z-index: 3;
-    width: 4px;
+    width: 8px;
     border-radius: var(--radius-md) 0 0 var(--radius-md);
     background: var(--spine, var(--color-magnet));
     pointer-events: none;
@@ -5121,6 +5200,42 @@ body {
 
   .scrap-row-meta .doc-mark {
     flex-shrink: 0;
+  }
+
+  .scrap-type-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    max-width: 100%;
+    padding: 0.15rem 0.45rem 0.15rem 0.3rem;
+    border-radius: var(--radius-xs);
+    background: var(--color-enamel-deep);
+    color: var(--color-ink);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  .scrap-type-chip-icon {
+    flex-shrink: 0;
+    color: var(--color-muted);
+  }
+
+  .scrap-type-chip-doc {
+    width: 1.1rem !important;
+    height: 1.1rem !important;
+    border-radius: 3px;
+  }
+
+  .scrap-type-chip-doc .doc-mark-icon {
+    width: 10px;
+    height: 10px;
+  }
+
+  .scrap-type-chip-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .scrap-row-extra {
@@ -5241,13 +5356,46 @@ body {
     top: 0.4rem;
     left: 0.4rem;
     z-index: 2;
-    padding: 0.12rem 0.4rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    max-width: calc(100% - 0.8rem);
+    padding: 0.2rem 0.4rem 0.2rem 0.3rem;
     border-radius: var(--radius-xs);
     background: color-mix(in srgb, black 78%, transparent);
     color: white;
-    font-size: 0.5625rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+    pointer-events: none;
+  }
+
+  .scrap-media-type-badge-icon {
+    flex-shrink: 0;
+    opacity: 0.92;
+  }
+
+  .scrap-media-type-badge > span:last-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .scrap-media-duration {
+    position: absolute;
+    right: 0.4rem;
+    bottom: 0.4rem;
+    z-index: 2;
+    padding: 0.12rem 0.35rem;
+    border-radius: var(--radius-xs);
+    background: color-mix(in srgb, black 88%, transparent);
+    color: white;
+    font-size: 0.625rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+    line-height: 1.2;
     pointer-events: none;
   }
 
@@ -5603,10 +5751,6 @@ body {
     border-radius: 999px;
     background: var(--color-magnet);
     vertical-align: middle;
-  }
-
-  .scrap-bookmark-mark {
-    display: none;
   }
 
   .dashboard-door--detail {
@@ -6054,8 +6198,9 @@ body {
     position: relative;
   }
 
+  .detail-turn-out > .scrap-bookmark-mark,
   .detail-turn-out > .scrap-bookmark-ribbon {
-    top: 0;
+    top: 0.75rem;
     right: 1rem;
   }
 
@@ -10092,13 +10237,11 @@ body {
     font-size: 0.8125rem;
   }
 
-  /* shelf toolbar — workbench control strip */
+  /* shelf toolbar — workbench strip with spine index + layout switch */
   .shelf-toolbar {
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem 1rem;
+    flex-direction: column;
+    gap: 0.75rem;
     margin-bottom: 0.85rem;
     padding: 0.85rem 1rem;
     border: 1px solid var(--color-paper-line);
@@ -10107,61 +10250,67 @@ body {
     box-shadow: var(--shadow-scrap);
   }
 
-  .shelf-toolbar-lead {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
+  .shelf-toolbar-spines {
     min-width: 0;
+    width: 100%;
   }
 
-  .shelf-toolbar-icon {
-    display: grid;
-    place-items: center;
-    flex-shrink: 0;
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: var(--radius-sm);
-    background: var(--color-enamel-deep);
-    color: var(--color-ink);
-  }
-
-  .shelf-toolbar-copy {
-    min-width: 0;
-  }
-
-  .shelf-toolbar-title-row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.4rem 0.55rem;
-  }
-
-  .shelf-toolbar-title {
-    font-family: var(--font-display), Georgia, serif;
-    font-size: 1rem;
-    font-weight: 600;
-    letter-spacing: -0.02em;
-    color: var(--color-ink);
-  }
-
-  .shelf-archival-badge {
+  .shelf-toolbar-spines .type-book-carousel {
     margin: 0;
-    padding: 0.15rem 0.45rem;
-    border-radius: var(--radius-xs);
-    background: var(--color-enamel-deep);
-    font-size: 0.6875rem;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    color: var(--color-muted);
   }
 
-  /* spine carousel: mono labels, sticky compact on scroll, stronger lift */
-  .type-book-title {
-    font-family: var(--font-mono);
+  .shelf-toolbar-spines .type-book-track {
+    padding-left: 0;
+    padding-right: 0;
+    padding-bottom: 0.35rem;
   }
 
+  .shelf-toolbar-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+  }
+
+  .shelf-toolbar-actions .list-tools {
+    margin: 0;
+  }
+
+  @media (min-width: 768px) {
+    .shelf-toolbar--sticky {
+      position: sticky;
+      top: 62px;
+      z-index: 6;
+      transition: padding 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
+    }
+
+    .shelf-toolbar--sticky:has(.type-book-carousel--compact) {
+      padding-top: 0.55rem;
+      padding-bottom: 0.55rem;
+      box-shadow: 0 8px 18px rgb(0 0 0 / 0.08);
+    }
+
+    /* carousel sticky is nested in the toolbar — avoid double dock padding */
+    .shelf-toolbar--sticky .type-book-carousel--sticky {
+      position: static;
+      top: auto;
+      z-index: auto;
+      background: transparent;
+      padding-top: 0;
+      padding-bottom: 0;
+      box-shadow: none;
+    }
+  }
+
+  /* spine carousel: Soft Deckle tactile cards, sticky compact on scroll */
   .type-book-carousel .type-book:hover:not(:disabled) {
     transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgb(0 0 0 / 0.14);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .type-book-carousel .type-book:hover:not(:disabled) {
+      transform: none;
+    }
   }
 
   @media (min-width: 768px) {
@@ -10182,7 +10331,64 @@ body {
     }
 
     .type-book-carousel--sticky.type-book-carousel--compact .type-book {
-      transform: scale(0.9);
+      width: auto;
+      height: 2.35rem;
+      min-width: 0;
+      border-radius: var(--radius-sm);
+      transform: none;
+    }
+
+    .type-book-carousel--sticky.type-book-carousel--compact .type-book-spine {
+      flex-basis: 4px;
+      border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+    }
+
+    .type-book-carousel--sticky.type-book-carousel--compact .type-book-cover {
+      flex-direction: row;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 0.4rem;
+      padding: 0.25rem 0.55rem 0.25rem 0.4rem;
+    }
+
+    .type-book-carousel--sticky.type-book-carousel--compact .type-book-head {
+      flex-direction: row;
+      align-items: center;
+      gap: 0.3rem;
+      width: auto;
+    }
+
+    .type-book-carousel--sticky.type-book-carousel--compact .type-book-mark {
+      width: 14px;
+      height: 14px;
+      order: 1;
+    }
+
+    .type-book-carousel--sticky.type-book-carousel--compact .type-book-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      -webkit-line-clamp: 1;
+      text-align: left;
+      width: auto;
+      order: 0;
+    }
+
+    .type-book-carousel--sticky.type-book-carousel--compact .type-book-count {
+      width: auto;
+      padding-top: 0;
+      border-top: 0;
+      gap: 0.15rem;
+      justify-content: flex-end;
+      margin-left: auto;
+    }
+
+    .type-book-carousel--sticky.type-book-carousel--compact .type-book-count-num {
+      font-size: 0.6875rem;
+    }
+
+    .type-book-carousel--sticky.type-book-carousel--compact .type-book-count-unit {
+      padding: 0.05rem 0.25rem;
+      font-size: 0.5625rem;
     }
   }
 

@@ -3,7 +3,6 @@ import { flushSync } from "react-dom";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import {
   Bookmark,
-  BookmarkCheck,
   Bell,
   BellOff,
   BookOpen,
@@ -663,7 +662,11 @@ export function ScrapDetail() {
         className={"dashboard-panel detail-turn-out" + (item.bookmarked ? " detail-turn-out--bookmarked" : "")}
         aria-labelledby="scrap-detail-title"
       >
-        {item.bookmarked ? <span className="scrap-bookmark-ribbon" aria-hidden /> : null}
+        {item.bookmarked ? (
+          <span className="scrap-bookmark-mark" aria-hidden>
+            <Bookmark className="size-3.5" strokeWidth={2} fill="currentColor" />
+          </span>
+        ) : null}
         {editing ? (
           <label className="grid gap-1">
             <span className="list-tools-label">{t("untitled")}</span>
@@ -728,7 +731,11 @@ export function ScrapDetail() {
                 disabled={busy}
                 onClick={() => void patch({ ...item, bookmarked: !item.bookmarked })}
               >
-                {item.bookmarked ? <BookmarkCheck className="size-[18px]" strokeWidth={1.8} /> : <Bookmark className="size-[18px]" strokeWidth={1.8} />}
+                {item.bookmarked ? (
+                  <Bookmark className="size-[18px]" strokeWidth={1.8} fill="currentColor" />
+                ) : (
+                  <Bookmark className="size-[18px]" strokeWidth={1.8} />
+                )}
               </button>
             </IconTip>
             <IconTip label={t(read ? "markUnread" : "markRead")}>

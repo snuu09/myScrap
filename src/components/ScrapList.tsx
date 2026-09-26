@@ -4,6 +4,7 @@ import {
   ArrowRight,
   AudioLines,
   BookOpen,
+  Bookmark,
   FileText,
   Image as ImageIcon,
   LayoutGrid,
@@ -11,7 +12,7 @@ import {
   Play,
   RectangleHorizontal,
 } from "lucide-react";
-import { typeLabel } from "../i18n";
+import { spineLabel } from "../i18n";
 import { usePrefs, type ShelfLayout } from "../context/Prefs";
 import { useT } from "../lib/useT";
 import { AdSlot } from "./AdSlot";
@@ -23,8 +24,10 @@ import { ShelfEmptyGuide } from "./ShelfEmptyGuide";
 import { IconTip } from "./IconTip";
 import type { Scrap, ScrapType } from "../lib/types";
 import { formatWhen } from "../lib/time";
-import { formatBytes, mediaKindOf } from "../lib/tagger";
+import { extOf, formatBytes, mediaKindOf } from "../lib/tagger";
 import { coverWash, spineColor, typeBookIds } from "../lib/typeColor";
+import { typeMarkIcon } from "../lib/typeMark";
+import { formatMediaDuration, probeMediaDuration } from "../lib/mediaDuration";
 import { scrapFaceTitle } from "../lib/scrapFace";
 
 const TYPES: ScrapType[] = ["text", "image", "video", "audio", "link", "document"];
@@ -38,6 +41,51 @@ const LAYOUTS: {
   { id: "micro", icon: RectangleHorizontal, labelKey: "layoutMicroThumb", tipKey: "layoutMicro" },
   { id: "gallery", icon: LayoutGrid, labelKey: "layoutVisualGallery", tipKey: "layoutGallery" },
 ];
+
+function hasSpecificDocMark(item: Scrap) {
+  if (item.type !== "document") return false;
+  const ext = String(item.extension || extOf(item.filename || "") || "")
+    .toLowerCase()
+    .replace(/^\./, "");
+  const mime = String(item.mime || "").toLowerCase();
+  if (!ext && !mime) return false;
+  if (ext === "pdf" || mime === "application/pdf") return true;
+  if (["doc", "docx", "xls", "xlsx", "ppt", "pptx", "hwp", "hwpx"].includes(ext)) return true;
+  if (
+    mime.includes("msword") ||
+    mime.includes("wordprocessingml") ||
+    mime.includes("spreadsheet") ||
+    mime.includes("presentation") ||
+    mime.includes("haansoft")
+  ) {
+    return true;
+  }
+  return Boolean(ext);
+}
+
+/** Type symbol + KO spine label shared with the book-spine carousel. */
+function TypeSpineChip({ item }: { item: Scrap }) {
+  const { lang } = usePrefs();
+  const Mark = typeMarkIcon(item.type);
+  const label = spineLabel(lang, item.type);
+  return (
+    <span className="scrap-type-chip">
+      {hasSpecificDocMark(item) ? (
+        <DocumentMark
+          extension={item.extension}
+          mime={item.mime}
+          type={item.type}
+          filename={item.filename}
+          size="sm"
+          className="scrap-type-chip-doc"
+        />
+      ) : (
+        <Mark className="scrap-type-chip-icon" size={14} strokeWidth={1.75} aria-hidden />
+      )}
+      <span className="scrap-type-chip-label">{label}</span>
+    </span>
+  );
+}
 
 function shelfThumb(url: string) {
   return url.replace(
@@ -94,6 +142,35 @@ function TypePlaceholder({ type, domain }: { type: string; domain?: string }) {
   );
 }
 
+function mediaDurationSrc(item: Scrap, mediaKind: ReturnType<typeof mediaKindOf>) {
+  if (mediaKind !== "video" && mediaKind !== "audio") return "";
+  if (item.dataUrl) return item.dataUrl;
+  if (item.url && /\.(mp4|webm|mov|m4v|mp3|wav|m4a|aac|ogg|flac)(\?|$)/i.test(item.url)) {
+    return item.url;
+  }
+  return "";
+}
+
+function useMediaDurationLabel(item: Scrap, mediaKind: ReturnType<typeof mediaKindOf>) {
+  const [label, setLabel] = useState("");
+  const src = mediaDurationSrc(item, mediaKind);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLabel("");
+    if (!src || (mediaKind !== "video" && mediaKind !== "audio")) return;
+    void probeMediaDuration(src, mediaKind).then((seconds) => {
+      if (cancelled || seconds == null) return;
+      setLabel(formatMediaDuration(seconds));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [src, mediaKind, item.id]);
+
+  return label;
+}
+
 function MediaThumb({
   item,
   mediaKind,
@@ -105,10 +182,14 @@ function MediaThumb({
   priority?: boolean;
   variant: "row" | "gallery";
 }) {
+  const { lang } = usePrefs();
   const candidates = thumbCandidates(item, mediaKind);
   const [exhausted, setExhausted] = useState(false);
   const primary = candidates[0] || "";
   const candidateKey = candidates.join("|");
+  const durationLabel = useMediaDurationLabel(item, mediaKind);
+  const TypeIcon = typeMarkIcon(item.type);
+  const typeName = spineLabel(lang, item.type);
 
   useEffect(() => {
     setExhausted(false);
@@ -116,6 +197,7 @@ function MediaThumb({
 
   const showPhoto = Boolean(primary) && !exhausted;
   const frameClass = variant === "row" ? "scrap-row-photo" : "scrap-gallery-photo";
+  const showDuration = (item.type === "video" || item.type === "audio") && durationLabel;
 
   return (
     <span className={variant === "row" ? "scrap-row-thumb" : "scrap-gallery-plate"}>
@@ -139,7 +221,20 @@ function MediaThumb({
           <Play className="size-4" strokeWidth={2} fill="currentColor" />
         </span>
       ) : null}
-      <span className="scrap-media-type-badge font-mono">{(item.type || "scrap").toUpperCase()}</span>
+      <span className="scrap-media-type-badge">
+        <TypeIcon className="scrap-media-type-badge-icon" size={12} strokeWidth={1.85} aria-hidden />
+        <span>{typeName}</span>
+      </span>
+      {showDuration ? (
+        <span className="scrap-media-duration font-mono" aria-label={durationLabel}>
+          {durationLabel}
+        </span>
+      ) : null}
+      {item.bookmarked ? (
+        <span className="scrap-bookmark-mark" aria-hidden>
+          <Bookmark className="size-3.5" strokeWidth={2} fill="currentColor" />
+        </span>
+      ) : null}
     </span>
   );
 }
@@ -205,7 +300,6 @@ function ScrapRow({
         ["--cover" as string]: coverWash(item.type),
       }}
     >
-      {item.bookmarked ? <span className="scrap-bookmark-ribbon" aria-hidden /> : null}
       <button
         type="button"
         className="scrap-card-hit"
@@ -215,13 +309,7 @@ function ScrapRow({
         <MediaThumb item={item} mediaKind={mediaKind} priority={priority || index < 9} variant="row" />
         <span className="scrap-row-copy">
           <span className="scrap-row-meta">
-            <DocumentMark
-              extension={item.extension}
-              mime={item.mime}
-              type={item.type}
-              filename={item.filename}
-              size="sm"
-            />
+            <TypeSpineChip item={item} />
             <span className="scrap-book-cover-date">{formatWhen(item.createdAt, lang)}</span>
             {extra ? <span className="scrap-row-extra">{extra}</span> : null}
           </span>
@@ -255,7 +343,6 @@ function GalleryCard({
   selected?: boolean;
   onSelect?: (id: string) => void;
 }) {
-  const { lang } = usePrefs();
   const t = useT();
   const navigate = useNavigate();
   const mediaKind = mediaKindOf(item.type, item.mime);
@@ -276,7 +363,6 @@ function GalleryCard({
         ["--cover" as string]: coverWash(item.type),
       }}
     >
-      {item.bookmarked ? <span className="scrap-bookmark-ribbon" aria-hidden /> : null}
       <button
         type="button"
         className="scrap-card-hit"
@@ -291,7 +377,7 @@ function GalleryCard({
           </span>
           {blurb ? <span className="scrap-gallery-blurb">{blurb}</span> : null}
           <span className="scrap-gallery-foot">
-            <span>{typeLabel(lang, item.type)}</span>
+            <TypeSpineChip item={item} />
             <span className="scrap-gallery-open">
               <ArrowRight className="size-3.5" strokeWidth={2} />
               {t("galleryOpenIndex")}
@@ -303,22 +389,35 @@ function GalleryCard({
   );
 }
 
-function ShelfToolbar({ total }: { total: number }) {
-  const t = useT();
+function ShelfToolbar({
+  types,
+  counts,
+  active,
+  loading,
+  onSelect,
+}: {
+  types: string[];
+  counts: Record<string, number>;
+  active: string;
+  loading?: boolean;
+  onSelect: (value: string) => void;
+}) {
   return (
-    <div className="shelf-toolbar">
-      <div className="shelf-toolbar-lead">
-        <span className="shelf-toolbar-icon" aria-hidden>
-          <BookOpen className="size-5" strokeWidth={1.7} />
-        </span>
-        <div className="shelf-toolbar-copy">
-          <div className="shelf-toolbar-title-row">
-            <span className="shelf-toolbar-title">{t("shelfWorkbench")}</span>
-            <span className="shelf-archival-badge font-mono">{t("archivalCount").replace("{n}", String(total))}</span>
-          </div>
-        </div>
+    <div className="shelf-toolbar shelf-toolbar--sticky">
+      <div className="shelf-toolbar-spines">
+        <TypeBookCarousel
+          types={types}
+          counts={counts}
+          active={active}
+          loading={loading}
+          contained
+          sticky
+          onSelect={onSelect}
+        />
       </div>
-      <LayoutSwitch />
+      <div className="shelf-toolbar-actions">
+        <LayoutSwitch />
+      </div>
     </div>
   );
 }
@@ -362,7 +461,6 @@ type Props = {
   sentinelRef?: RefObject<HTMLDivElement | null>;
   selectedId?: string | null;
   onSelectScrap?: (id: string) => void;
-  archivalCount?: number;
 };
 
 export function ScrapList({
@@ -376,12 +474,10 @@ export function ScrapList({
   sentinelRef,
   selectedId = null,
   onSelectScrap,
-  archivalCount,
 }: Props) {
   const { shelfLayout } = usePrefs();
   const t = useT();
   const gallery = shelfLayout === "gallery";
-  const total = archivalCount ?? scraps.length;
 
   const typeCounts = (() => {
     const counts: Record<string, number> = { all: scraps.length, bookmarked: 0 };
@@ -444,16 +540,12 @@ export function ScrapList({
 
   return (
     <div className="shelf-door">
-      {!shelfEmpty ? <ShelfToolbar total={total} /> : null}
-
       {!shelfEmpty ? (
-        <TypeBookCarousel
+        <ShelfToolbar
           types={visibleTypes}
           counts={typeCounts}
           active={typeFilter}
           loading={loading}
-          contained
-          sticky
           onSelect={onType}
         />
       ) : null}

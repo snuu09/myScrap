@@ -1,4 +1,4 @@
-import { BookmarkPlus, RefreshCw } from "lucide-react";
+import { Bookmark, RefreshCw } from "lucide-react";
 import { typeLabel } from "../i18n";
 import { usePrefs } from "../context/Prefs";
 import { useT } from "../lib/useT";
@@ -147,7 +147,7 @@ export function Workbench({
                 disabled={draft.analyzing || saving}
                 onClick={onSave}
               >
-                <BookmarkPlus className="size-5" strokeWidth={1.8} aria-hidden />
+                <Bookmark className="size-5" strokeWidth={1.8} aria-hidden />
                 <span>{t("workbenchShelve")}</span>
               </button>
               <div className="workbench-folio-secondary">

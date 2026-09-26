@@ -2,9 +2,10 @@ import { useLayoutEffect, useRef, useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { spineLabel } from "../i18n";
 import { coverWash, spineColor } from "../lib/typeColor";
-import { DocumentMark } from "./DocumentMark";
+import { typeMarkIcon } from "../lib/typeMark";
 import { usePrefs } from "../context/Prefs";
 import { useT } from "../lib/useT";
+
 type Props = {
   types: string[];
   counts: Record<string, number>;
@@ -116,6 +117,7 @@ export function TypeBookCarousel({ types, counts, active, loading, contained, st
       <div className="type-book-track" role="list" ref={trackRef}>
         {books.map((book) => {
           const pressed = active === book.id;
+          const Mark = typeMarkIcon(book.id);
           return (
             <button
               key={book.id}
@@ -132,13 +134,14 @@ export function TypeBookCarousel({ types, counts, active, loading, contained, st
             >
               <span className="type-book-spine" aria-hidden />
               <span className="type-book-cover">
-                {book.id === "bookmarked" ? (
-                  <span className="type-book-bookmark scrap-bookmark-ribbon" aria-hidden />
-                ) : book.id !== "all" ? (
-                  <DocumentMark type={book.id} size="sm" />
-                ) : null}
-                <span className="type-book-title">{book.label}</span>
-                <span className="type-book-count">{loading ? "…" : book.count}</span>
+                <span className="type-book-head">
+                  <Mark className="type-book-mark" size={18} strokeWidth={1.75} aria-hidden />
+                  <span className="type-book-title">{book.label}</span>
+                </span>
+                <span className="type-book-count">
+                  <span className="type-book-count-num">{loading ? "…" : book.count}</span>
+                  <span className="type-book-count-unit">{t("spineVolumeUnit")}</span>
+                </span>
               </span>
             </button>
           );
