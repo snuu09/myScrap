@@ -16,7 +16,6 @@ import {
   Sun,
   Trash2,
   User,
-  UserMinus,
 } from "lucide-react";
 import { usePrefs, type ReadingScale, type ThemeChoice } from "../context/Prefs";
 import { isBrowseUser, useAuth } from "../context/Auth";
@@ -31,6 +30,7 @@ import { effectivePlanTier, planFeatureRows, PLAN_TRIAL_DAYS } from "../lib/plan
 import { formatTrialEndDate } from "../lib/time";
 import { dismissOnboardingPrefs } from "../lib/notices";
 import { PlanTierMeta, StorageGauge } from "./PlanUsageBlock";
+import { ProfileEditSheet } from "./ProfileEditSheet";
 
 const READING_OPTIONS: { size: ReadingScale; labelKey: string }[] = [
   { size: 13, labelKey: "readingScaleSm" },
@@ -128,6 +128,7 @@ export function SettingsPage() {
   const [resetting, setResetting] = useState(false);
   const [usageLoading, setUsageLoading] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const [profileEditOpen, setProfileEditOpen] = useState(false);
   const [dbCount, setDbCount] = useState(scrapCount);
   const [dbBytes, setDbBytes] = useState(usageBytes);
 
@@ -177,7 +178,16 @@ export function SettingsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- refetch when the signed-in user changes
   }, [user]);
 
-  const sessionLabel = user ? (browse ? t("browse") : user.email || "—") : "";
+  const sessionLabel = user
+    ? browse
+      ? t("browse")
+      : (() => {
+          const meta = user.user_metadata || {};
+          const name = meta.full_name ?? meta.name;
+          if (typeof name === "string" && name.trim()) return name.trim();
+          return user.email || "—";
+        })()
+    : "";
 
   const hasData = dbCount > 0 || dbBytes > 0;
 
@@ -259,6 +269,16 @@ export function SettingsPage() {
                   <p className="settings-arch-profile-meta">{t("sessionIn")}</p>
                   <p className="settings-arch-profile-name">{sessionLabel}</p>
                 </div>
+                {!browse ? (
+                  <button
+                    type="button"
+                    className="settings-arch-edit-btn"
+                    onClick={() => setProfileEditOpen(true)}
+                  >
+                    <Edit3 className="size-3.5" strokeWidth={1.8} aria-hidden />
+                    <span>{t("settingsEditProfile")}</span>
+                  </button>
+                ) : null}
               </div>
 
               {showPeriod ? (
@@ -287,29 +307,6 @@ export function SettingsPage() {
                   {usageCombined(t, scrapCount, usageBytes, storageLimit)}
                 </p>
                 <StorageGauge usageBytes={usageBytes} storageLimit={storageLimit} hideLabel />
-              </div>
-
-              <div className="settings-arch-stub-row settings-arch-stub-row--actions">
-                {!browse ? (
-                  <>
-                    <button type="button" className="settings-arch-chip" onClick={() => void comingSoon()}>
-                      <Edit3 className="size-3.5" strokeWidth={1.8} aria-hidden />
-                      {t("settingsEditProfile")}
-                    </button>
-                    <button type="button" className="settings-arch-chip" onClick={() => void comingSoon()}>
-                      <KeyRound className="size-3.5" strokeWidth={1.8} aria-hidden />
-                      {t("settingsChangePassword")}
-                    </button>
-                    <button
-                      type="button"
-                      className="settings-arch-chip settings-arch-chip--danger"
-                      onClick={() => void comingSoon()}
-                    >
-                      <UserMinus className="size-3.5" strokeWidth={1.8} aria-hidden />
-                      {t("settingsWithdraw")}
-                    </button>
-                  </>
-                ) : null}
               </div>
 
               <div className="settings-arch-identity-lead-foot">
@@ -644,6 +641,19 @@ export function SettingsPage() {
           </div>
         </div>
       </section>
+      {user && !browse ? (
+        <ProfileEditSheet
+          open={profileEditOpen}
+          user={user}
+          onClose={() => setProfileEditOpen(false)}
+          onDeleted={() => {
+            void (async () => {
+              await alert(t("settingsWithdrawDone"));
+              navigate("/login");
+            })();
+          }}
+        />
+      ) : null}
     </div>
   );
 }

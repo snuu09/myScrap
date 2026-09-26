@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { createPortal } from "react-dom";
 import { KeyRound, Trash2, User, X } from "lucide-react";
 import type { User as AuthUser } from "@supabase/supabase-js";
 import { useAuth } from "../context/Auth";
@@ -144,7 +145,7 @@ export function ProfileEditSheet({ open, user, onClose, onDeleted }: Props) {
 
   const busy = savingProfile || savingPassword || withdrawing;
 
-  return (
+  return createPortal(
     <div className="protocol-modal-scrim" onClick={() => !busy && onClose()}>
       <div className="sheet-stage">
         <div
@@ -290,6 +291,7 @@ export function ProfileEditSheet({ open, user, onClose, onDeleted }: Props) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

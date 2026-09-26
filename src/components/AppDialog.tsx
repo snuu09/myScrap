@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Trash2, X } from "lucide-react";
 import { t } from "../i18n";
 import { usePrefs } from "../context/Prefs";
@@ -49,7 +50,7 @@ export function AppDialog({ state, onClose }: Props) {
     view.kind === "confirm" ? view.opts.cancelLabel || t(lang, "cancel") : t(lang, "cancel");
   const danger = view.kind === "confirm" && Boolean(view.opts.danger);
 
-  return (
+  return createPortal(
     <div className="protocol-modal-scrim" onClick={() => onClose(false)}>
       <div className="sheet-stage">
         <div
@@ -98,6 +99,7 @@ export function AppDialog({ state, onClose }: Props) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

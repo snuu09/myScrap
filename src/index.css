@@ -392,8 +392,9 @@ html[data-look="library"] .scrap-list--gallery .scrap-card-hit {
   inset: 0;
   z-index: 50;
   background: color-mix(in srgb, var(--color-ink) 40%, transparent);
-  backdrop-filter: blur(6px);
+  /* -webkit first: LightningCSS drops unprefixed if it comes before the prefix. */
   -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
 }
 
 .protocol-modal-scrim--under {
@@ -2615,8 +2616,8 @@ body {
     inset: 0;
     z-index: 40;
     background: color-mix(in srgb, var(--color-ink) 18%, transparent);
-    backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
     cursor: default;
   }
 
@@ -6783,8 +6784,8 @@ body {
     z-index: 40;
     border: 0;
     background: color-mix(in srgb, var(--color-ink) 42%, transparent);
-    backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
     cursor: pointer;
   }
 
@@ -7010,8 +7011,8 @@ body {
     z-index: 14;
     border: 0;
     background: color-mix(in srgb, var(--color-ink) 42%, transparent);
-    backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
     pointer-events: auto;
   }
 
@@ -7992,6 +7993,36 @@ body {
     gap: 0.85rem;
   }
 
+  .settings-arch-profile-copy {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .settings-arch-edit-btn {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 0.35rem;
+    margin-left: auto;
+    padding: 0.4rem 0.7rem;
+    border: 1px solid var(--color-paper-line);
+    border-radius: var(--radius-md);
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 140ms var(--ease-out), border-color 140ms var(--ease-out);
+  }
+
+  .settings-arch-edit-btn:hover {
+    background: color-mix(in srgb, var(--color-enamel) 70%, var(--color-paper));
+    border-color: color-mix(in srgb, var(--color-ink) 18%, var(--color-paper-line));
+  }
+
   .settings-arch-avatar {
     display: grid;
     flex-shrink: 0;
@@ -8018,13 +8049,6 @@ body {
     object-fit: cover;
   }
 
-  .settings-arch-profile-copy {
-    display: flex;
-    min-width: 0;
-    flex-direction: column;
-    gap: 0.2rem;
-  }
-
   .settings-arch-profile-meta {
     margin: 0;
     font-size: 0.75rem;
@@ -8039,6 +8063,53 @@ body {
     font-weight: 600;
     color: var(--color-ink);
     overflow-wrap: anywhere;
+  }
+
+  .profile-edit-panel {
+    display: flex;
+    max-height: min(88vh, 40rem);
+    flex-direction: column;
+    gap: 1.15rem;
+    overflow: auto;
+  }
+
+  .profile-edit-identity {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+  }
+
+  .profile-edit-identity-copy {
+    min-width: 0;
+  }
+
+  .profile-edit-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--color-paper-line);
+  }
+
+  .profile-edit-section-title {
+    display: inline-flex;
+    margin: 0;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.9375rem;
+    font-weight: 650;
+    color: var(--color-ink);
+  }
+
+  .profile-edit-section-lead {
+    margin: 0;
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    color: var(--color-ink-soft);
+  }
+
+  .profile-edit-section--danger .profile-edit-section-title {
+    color: var(--color-danger);
   }
 
   .settings-arch-stub-row {
