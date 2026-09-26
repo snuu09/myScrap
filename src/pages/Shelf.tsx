@@ -70,7 +70,7 @@ export function Shelf() {
   const [batch, setBatch] = useState<BatchItem[]>([]);
   const [batchSaveMode, setBatchSaveMode] = useState<"one" | "many">("one");
   const [queueLabel, setQueueLabel] = useState("");
-  const [queueMeta, setQueueMeta] = useState({ n: 0, total: 0 });
+  const [, setQueueMeta] = useState({ n: 0, total: 0 });
   const [savingBatch, setSavingBatch] = useState(false);
   const saveAbortRef = useRef(false);
   const queueRef = useRef<{ file: File; analyze: boolean }[]>([]);

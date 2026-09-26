@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type AnimationEvent } from "react";
 import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
-import { RotateCcw, Search, X } from "lucide-react";
+import { RotateCcw, Search } from "lucide-react";
 import { useAuth } from "../context/Auth";
 import { usePrefs } from "../context/Prefs";
 import { usePlan } from "../context/Plan";
