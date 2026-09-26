@@ -8,6 +8,7 @@ import { useDialog } from "../lib/dialog";
 import { isImeComposing } from "../lib/ime";
 import { IconTip } from "./IconTip";
 import { sheetGenieClass, usePresence } from "../lib/presence";
+import { STICK_ATTACH_EVENT, STICK_FOCUS_EVENT, STICK_SEED_EVENT } from "../lib/stickBridge";
 
 export const CLOSE_OVERLAYS_EVENT = "mybrary:close-overlays";
 
@@ -98,6 +99,43 @@ export function StickDock({
     window.addEventListener(CLOSE_OVERLAYS_EVENT, onCloseOverlays);
     return () => window.removeEventListener(CLOSE_OVERLAYS_EVENT, onCloseOverlays);
   }, []);
+
+  useEffect(() => {
+    function focusComposer() {
+      const el = fieldRef.current;
+      if (!el || disabled) return;
+      el.focus();
+      const end = el.value.length;
+      el.setSelectionRange(end, end);
+      el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+
+    function onFocus() {
+      focusComposer();
+    }
+
+    function onAttach() {
+      focusComposer();
+      window.setTimeout(() => fileRef.current?.click(), 40);
+    }
+
+    function onSeed(ev: Event) {
+      const detail = (ev as CustomEvent<{ text?: string }>).detail;
+      const text = detail?.text?.trim();
+      if (!text || disabled) return;
+      onChange(text);
+      requestAnimationFrame(() => focusComposer());
+    }
+
+    window.addEventListener(STICK_FOCUS_EVENT, onFocus);
+    window.addEventListener(STICK_ATTACH_EVENT, onAttach);
+    window.addEventListener(STICK_SEED_EVENT, onSeed);
+    return () => {
+      window.removeEventListener(STICK_FOCUS_EVENT, onFocus);
+      window.removeEventListener(STICK_ATTACH_EVENT, onAttach);
+      window.removeEventListener(STICK_SEED_EVENT, onSeed);
+    };
+  }, [disabled, onChange]);
 
   useEffect(() => {
     let last = window.scrollY;

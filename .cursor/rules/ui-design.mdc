@@ -1,5 +1,5 @@
 ---
-description: Theme B Warm Integrated UI tokens, Theme A Editorial compare palette, and 서재 copy. Palettes and routes in this SPA.
+description: Soft Deckle default + Editorial compare palette, 서재 copy. Palettes and routes in this SPA.
 globs: src/**/*.tsx,src/index.css,src/i18n.ts
 alwaysApply: false
 ---
@@ -8,20 +8,23 @@ alwaysApply: false
 
 Tokens live in [`src/index.css`](src/index.css) `@theme`. Product metaphor is **서재** (personal library). No door / fridge / “책장을 연다” language.
 
-Light default is **Theme B Warm Integrated** (`data-palette="warm"`): paper ground `#f5f1e9`, surface `#fbfaf7`, ink `#272521`, accent `#95704b`. Display face is **Newsreader**; UI face is **DM Sans** (SUIT Hangul fallback). Dark Warm · B is night enamel (`#2a2622` / `#1f1c19`, magnet `#c4a07a`), not toner black.
+Light default is **Soft Deckle** (`data-palette="deckle"`): zero-hue archival paper, near-black ink-only magnet, **Newsreader** display + **DM Sans** UI (SUIT Hangul fallback), **JetBrains Mono** for spine/archival labels. Near-flat radius (6–8px). Dark Soft Deckle is near-black paper (`#121214`). `/login` folio uses mono **AI BOOKSHELF**; the header wordmark has no Soft Deckle subtitle.
 
-Settings color themes (compare A/B):
+Settings theme palettes:
 
-- **Warm · B** (`warm`): default Theme B tokens above.
-- **Editorial · A** (`editorial`): Theme A Minimal Editorial — white ground, ink `#09090b`, Space Grotesk display + Inter UI, near-zero radius. Inter/Space Grotesk are allowed only under this palette.
-- **현무암** (`basalt`): charcoal accent only on warm paper; do not retint the ground.
+- **소프트 데클** / Soft Deckle (`deckle`): default above.
+- **에디토리얼** / Editorial (`editorial`): Minimal Editorial — white ground, ink `#09090b`, Space Grotesk display + Inter UI, near-zero radius. Inter/Space Grotesk are allowed only under this palette.
 
-Do not add header **AI** / celadon in this client unless PRODUCT asks. Do not revive Apple. Auth sheet follows **Auth Ladder** on login, and **Auth Recovery** on find / reset (header back icon → brief → email → primary → feedback → **또는** → Google). Use `auth-back-btn`, `auth-btn-*`, `auth-link-*` from [`src/index.css`](src/index.css). Full rules: [DESIGN.md](DESIGN.md) Auth sheet hierarchy.
+Warm · B and 현무암 are retired from Settings (legacy `warm`/`basalt`/`kitchen` localStorage values migrate to `deckle`). Do not add header **AI** / celadon unless PRODUCT asks. Auth sheet follows **Auth Ladder** on login, and **Auth Recovery** on find / reset (header back icon → brief → email → primary → feedback → **또는** → Google). Use `auth-back-btn`, `auth-btn-*`, `auth-link-*` from [`src/index.css`](src/index.css). Full rules: [DESIGN.md](DESIGN.md) Auth sheet hierarchy. New centered confirms and notice sheets use the **Protocol Stamp Modal** (`.protocol-modal-*` + [`AppDialog`](src/components/AppDialog.tsx)), not pill `auth-btn-*` or browser `confirm()`.
 
-Routes: `/` intro or library, `/stick`, `/search`, `/dashboard`, `/settings`, `/upgrade`, `/terms`, `/privacy`, `/scrap/:id`. Intro is Theme B integrated hero demo (담기 → AI 분석 → 정리 → 서재). Hero CTA opens the auth sheet; CTA copy is **내 서재로** / Enter my library.
+Routes: `/` intro or library, `/login`, `/stick`, `/search`, `/dashboard`, `/settings`, `/upgrade`, `/terms`, `/privacy`, `/scrap/:id`. Intro is Soft Deckle / Editorial integrated hero demo (담기 → AI 분석 → 정리 → 서재). Hero CTA and header 로그인 both navigate to the dedicated `/login` page (reuses `AuthSheet` with `variant="page"` as an archival dossier card: Google first, then email form, browse guest; no scrim/close-X, redirects to `/` if already signed in); CTA copy is **내 서재로** / Enter my library.
+
+Signed-in header: two nav tabs — **나의 서재** `/`, **서재 통계** `/dashboard` — plus a Find icon (`searchOpen`, also `Cmd/Ctrl+K` → `/search`), a light→dark→system theme-cycle toggle, and an account control (Google `avatar_url`/`picture` or ink User squircle) that opens `/settings`.
 
 Plan UI labels are always **Free / Middle / High** (DB ids `free` / `standard` / `premium`). Limits and gates live in [`src/lib/plans.ts`](src/lib/plans.ts). Compare matrix is [`/upgrade`](src/pages/Upgrade.tsx). Trial expiry keeps Stick open and routes classify attempts to `/upgrade`.
 
-After session: search and list above, Stick dock below (send = **분류하기** / Classify). A new stick/paste/drop replaces an open classify draft. Classify draft is a full sheet over a blur scrim. Email sheet is surface cream (light) / night enamel (dark), ~24px radius. Settings follows **Settings Ladder** in [DESIGN.md](DESIGN.md).
+After session: search and list above, Stick dock below (send = **분류하기** / Classify). A new stick/paste/drop replaces an open classify draft. The single-draft classify review at `/stick` renders as [`Workbench`](src/components/Workbench.tsx): a 3-step mono rail (`workbenchStep1-3`) plus a CSS 3D book-cover preview, wrapping the same `DraftCard` fields with `hideActions`. Email sheet is Soft Deckle / Editorial paper. Settings follows **Settings Ladder** in [DESIGN.md](DESIGN.md): language, theme palette, light·system·dark, Markdown export, storage (페이지 vocabulary) — no Look switcher, no AI-sensitivity slider.
 
-Copy: stick / peel / 나가기; composer send label is **분류하기**. Unit nouns stay 조각/scrap under glass Look; Look **서재** (`library`) swaps to 페이지/page and “서재에서 빼기” / remove from library. No em-dashes. Empty operator fields: 표시 예정. Honor `prefers-reduced-motion`. Binding visuals: [DESIGN.md](DESIGN.md).
+Shelf layout is **Gallery** (default, 4:3 visual poster grid) or **Micro** (`mybrary.shelfLayout`, horizontal media rows with 3:2 thumbs, blurb, and tags) — no accordion/list layout. The shelf opens with a workbench strip (서재 워크벤치 + archival count + labeled Micro/Gallery segment). The type book carousel (spine) always renders its 8 fixed sections (전체/책갈피/메모/사진/영상/소리/링크/문서, zero-count included), uses `--font-mono` for section titles, lifts on hover, and goes sticky + compact on desktop scroll only. On desktop (≥960px) selecting a Micro or Gallery card opens [`ShelfInspector`](src/components/ShelfInspector.tsx) as a right-hand panel instead of navigating; below that width the same tap goes straight to `/scrap/:id`.
+
+Copy: stick / peel / 나가기; composer send label is **분류하기**. Storage usage strings use 페이지/pages. Look axis may still exist in prefs/CSS without a Settings control. No em-dashes. Empty operator fields: 표시 예정. Honor `prefers-reduced-motion`. Binding visuals: [DESIGN.md](DESIGN.md).

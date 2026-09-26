@@ -5,6 +5,7 @@ import { usePlan } from "../context/Plan";
 import { usePrefs } from "../context/Prefs";
 import { StorageGauge } from "../components/PlanUsageBlock";
 import { ScrapBookCard } from "../components/ScrapList";
+import { PageEmptyGuide } from "../components/PageEmptyGuide";
 import { aggregateStats } from "../lib/scrapFilters";
 import { formatBytes } from "../lib/tagger";
 import { spineColor } from "../lib/typeColor";
@@ -142,6 +143,16 @@ export function Dashboard({ scraps }: Props) {
         <h1 className="dashboard-title">{t("dashboardTitle")}</h1>
       </div>
 
+      {!scraps.length ? (
+        <PageEmptyGuide
+          eyebrow={t("statsEmptyAwaiting")}
+          title={t("statsEmptyTitle")}
+          body={t("statsEmptyBody")}
+          ctaLabel={t("statsEmptyCta")}
+          onCta={() => navigate("/")}
+        />
+      ) : (
+        <>
       <section className="dashboard-panel" aria-label={t("statsStorage")}>
         <p className="dashboard-panel-label">{t("statsStorage")}</p>
         <p className="dashboard-storage-summary">
@@ -220,6 +231,8 @@ export function Dashboard({ scraps }: Props) {
           </div>
         )}
       </section>
+        </>
+      )}
     </div>
   );
 }

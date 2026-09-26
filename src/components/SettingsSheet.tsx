@@ -4,11 +4,13 @@ import { ChevronRight } from "lucide-react";
 import { usePrefs, type ThemeChoice } from "../context/Prefs";
 import { isBrowseUser, useAuth } from "../context/Auth";
 import { usePlan } from "../context/Plan";
-import { clearUserScraps, loadUserDbUsage, SCRAPS_CLEARED_EVENT } from "../lib/scraps";
+import { clearUserScraps, loadScraps, loadUserDbUsage, SCRAPS_CLEARED_EVENT } from "../lib/scraps";
 import { useDialog } from "../lib/dialog";
 import { useT } from "../lib/useT";
 import { formatBytes } from "../lib/tagger";
 import { markArriveGenie } from "../lib/pageGenie";
+import { scrapsToMarkdown } from "../lib/exportMarkdown";
+import { triggerAnchorDownload } from "../lib/fileDownload";
 import { PlanTierMeta, StorageGauge } from "./PlanUsageBlock";
 import { GlassCluster } from "./GlassCluster";
 import { IconTip } from "./IconTip";
@@ -41,7 +43,7 @@ function PrefRow({ label, children }: { label: string; children: ReactNode }) {
 }
 
 export function SettingsPage() {
-  const { lang, theme, palette, look, setLang, setTheme, setPalette, setLook } = usePrefs();
+  const { lang, theme, palette, setLang, setTheme, setPalette } = usePrefs();
   const t = useT();
   const { user, signOut } = useAuth();
   const { setScrapsForUsage, setUsageSnapshot, scrapCount, usageBytes, storageLimit, showAds } = usePlan();
@@ -52,6 +54,7 @@ export function SettingsPage() {
   const [signingOut, setSigningOut] = useState(false);
   const [dbCount, setDbCount] = useState(scrapCount);
   const [dbBytes, setDbBytes] = useState(usageBytes);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -85,6 +88,22 @@ export function SettingsPage() {
     : "";
 
   const hasData = dbCount > 0 || dbBytes > 0;
+
+  async function exportMarkdown() {
+    if (!user || exporting) return;
+    setExporting(true);
+    try {
+      const rows = await loadScraps(user);
+      const md = scrapsToMarkdown(rows, t("appName"));
+      const stamp = new Date().toISOString().slice(0, 10);
+      triggerAnchorDownload(new Blob([md], { type: "text/markdown;charset=utf-8" }), `mybrary-export-${stamp}.md`);
+      await alert(t("exportDone"));
+    } catch {
+      await alert(t("syncError"));
+    } finally {
+      setExporting(false);
+    }
+  }
 
   async function resetDb() {
     if (!user || resetting || !hasData) return;
@@ -171,22 +190,11 @@ export function SettingsPage() {
           </Seg>
         </PrefRow>
         <PrefRow label={t("paletteSwitch")}>
-          <Seg pressed={palette === "warm"} onClick={() => setPalette("warm")}>
-            {t("paletteWarm")}
-          </Seg>
           <Seg pressed={palette === "editorial"} onClick={() => setPalette("editorial")}>
             {t("paletteEditorial")}
           </Seg>
-          <Seg pressed={palette === "basalt"} onClick={() => setPalette("basalt")}>
-            {t("paletteBasalt")}
-          </Seg>
-        </PrefRow>
-        <PrefRow label={t("lookSwitch")}>
-          <Seg pressed={look === "glass"} onClick={() => setLook("glass")}>
-            {t("lookGlass")}
-          </Seg>
-          <Seg pressed={look === "library"} onClick={() => setLook("library")}>
-            {t("lookLibrary")}
+          <Seg pressed={palette === "deckle"} onClick={() => setPalette("deckle")}>
+            {t("paletteDeckle")}
           </Seg>
         </PrefRow>
         <PrefRow label={t("themeSwitch")}>
@@ -197,6 +205,25 @@ export function SettingsPage() {
           ))}
         </PrefRow>
       </section>
+
+      {user ? (
+        <section className="settings-card" aria-label={t("exportMarkdown")}>
+          <p className="settings-card-label">{t("exportMarkdown")}</p>
+          <div className="settings-export-row">
+            <p className="settings-export-hint">{t("dbUsageSummary", { count: dbCount, bytes: formatBytes(dbBytes) })}</p>
+            <GlassCluster className="liquid-solo" label={t("exportMarkdown")} ripple>
+              <button
+                type="button"
+                className={"settings-btn-reset" + (exporting ? " is-progress" : "")}
+                disabled={exporting || !hasData}
+                onClick={() => void exportMarkdown()}
+              >
+                {t("exportMarkdown")}
+              </button>
+            </GlassCluster>
+          </div>
+        </section>
+      ) : null}
 
       {user ? (
         <section className="settings-card" aria-label={t("dbUsageLabel")}>

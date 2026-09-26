@@ -1,30 +1,42 @@
-import { useEffect, useLayoutEffect, useRef, useState, type AnimationEvent, type RefObject } from "react";
+import { useEffect, useState, type ReactNode, type RefObject } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronDown, LayoutList, PanelsTopLeft, Rows3 } from "lucide-react";
+import {
+  ArrowRight,
+  AudioLines,
+  BookOpen,
+  FileText,
+  Image as ImageIcon,
+  LayoutGrid,
+  Link2,
+  Play,
+  RectangleHorizontal,
+} from "lucide-react";
 import { typeLabel } from "../i18n";
 import { usePrefs, type ShelfLayout } from "../context/Prefs";
 import { useT } from "../lib/useT";
 import { AdSlot } from "./AdSlot";
 import { DocumentMark } from "./DocumentMark";
-import { IconTip } from "./IconTip";
 import { ScrapListSkeleton } from "./ScrapListSkeleton";
 import { ScrapMedia } from "./ScrapMedia";
 import { TypeBookCarousel } from "./TypeBookCarousel";
+import { ShelfEmptyGuide } from "./ShelfEmptyGuide";
 import { GlassCluster } from "./GlassCluster";
 import type { Scrap, ScrapType } from "../lib/types";
 import { formatWhen } from "../lib/time";
 import { formatBytes, mediaKindOf } from "../lib/tagger";
 import { coverWash, spineColor, typeBookIds } from "../lib/typeColor";
 import { scrapFaceTitle } from "../lib/scrapFace";
-import { FAVICON_HOLDER } from "../lib/audioCover";
-import { prefersReducedMotion } from "../lib/presence";
 
 const TYPES: ScrapType[] = ["text", "image", "video", "audio", "link", "document"];
 
-const LAYOUTS: { id: ShelfLayout; icon: typeof LayoutList; labelKey: "layoutList" | "layoutGallery" | "layoutAccordion" }[] = [
-  { id: "gallery", icon: PanelsTopLeft, labelKey: "layoutGallery" },
-  { id: "list", icon: LayoutList, labelKey: "layoutList" },
-  { id: "accordion", icon: Rows3, labelKey: "layoutAccordion" },
+const LAYOUTS: {
+  id: ShelfLayout;
+  icon: typeof LayoutGrid;
+  labelKey: "layoutMicroThumb" | "layoutVisualGallery";
+  tipKey: "layoutMicro" | "layoutGallery";
+}[] = [
+  { id: "micro", icon: RectangleHorizontal, labelKey: "layoutMicroThumb", tipKey: "layoutMicro" },
+  { id: "gallery", icon: LayoutGrid, labelKey: "layoutVisualGallery", tipKey: "layoutGallery" },
 ];
 
 function shelfThumb(url: string) {
@@ -40,107 +52,59 @@ function thumbCandidates(item: Scrap, mediaKind: ReturnType<typeof mediaKindOf>)
   return [item.posterUrl, item.og?.image || "", media].filter(Boolean).map(shelfThumb);
 }
 
-function ScrapCardThumb({
+function scrapBlurb(item: Scrap): string {
+  return (item.previewText || item.memo || item.og?.description || item.text || "").trim();
+}
+
+function scrapMetaExtra(item: Scrap): string {
+  if (item.domain) return item.domain;
+  if (item.filename && item.size) return formatBytes(item.size);
+  if (item.filename) return item.filename;
+  return "";
+}
+
+function TypePlaceholder({ type, domain }: { type: string; domain?: string }) {
+  const icon =
+    type === "video" ? (
+      <Play className="size-8" strokeWidth={1.6} />
+    ) : type === "audio" ? (
+      <AudioLines className="size-8" strokeWidth={1.6} />
+    ) : type === "link" ? (
+      <Link2 className="size-8" strokeWidth={1.6} />
+    ) : type === "document" ? (
+      <FileText className="size-8" strokeWidth={1.6} />
+    ) : type === "image" ? (
+      <ImageIcon className="size-8" strokeWidth={1.6} />
+    ) : (
+      <BookOpen className="size-8" strokeWidth={1.6} />
+    );
+
+  return (
+    <span className="scrap-type-placeholder">
+      {icon}
+      {type === "link" && domain ? <span className="scrap-type-placeholder-meta">{domain}</span> : null}
+      {type === "audio" ? (
+        <span className="scrap-type-placeholder-wave" aria-hidden>
+          {Array.from({ length: 10 }, (_, i) => (
+            <span key={i} style={{ ["--h" as string]: `${30 + ((i * 37) % 70)}%` }} />
+          ))}
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
+function MediaThumb({
   item,
   mediaKind,
-  title,
-  showFileMark,
-  priority = false,
+  priority,
+  variant,
 }: {
   item: Scrap;
   mediaKind: ReturnType<typeof mediaKindOf>;
-  title: string;
-  showFileMark: boolean;
   priority?: boolean;
+  variant: "row" | "gallery";
 }) {
-  const { lang } = usePrefs();
-  const candidates = thumbCandidates(item, mediaKind);
-  const [exhausted, setExhausted] = useState(false);
-  const primary = candidates[0] || "";
-  const fallbacks = candidates.slice(1);
-  const thumbIsCover = Boolean(item.posterUrl || item.og?.image);
-  const candidateKey = candidates.join("|");
-
-  useEffect(() => {
-    setExhausted(false);
-  }, [item.id, candidateKey]);
-
-  const plate = (
-    <span className="scrap-book-plate">
-      {showFileMark ? (
-        <DocumentMark
-          extension={item.extension}
-          mime={item.mime}
-          type={item.type}
-          filename={item.filename}
-          size="sm"
-        />
-      ) : (
-        <span className="scrap-book-cover-type">{typeLabel(lang, item.type)}</span>
-      )}
-      <span className="scrap-book-cover-title">{title}</span>
-      <span className="scrap-book-cover-date">{formatWhen(item.createdAt, lang)}</span>
-    </span>
-  );
-
-  if (!primary || exhausted) {
-    return (
-      <div className="scrap-book-cover">
-        <span className="scrap-book-cover-spine" />
-        <span className="scrap-book-cover-face">
-          <img src={FAVICON_HOLDER} alt="" className="scrap-thumb-holder" />
-          {plate}
-        </span>
-      </div>
-    );
-  }
-
-  const media = (
-    <ScrapMedia
-      key={primary + fallbacks.join("|")}
-      src={primary}
-      fallbackSrcs={fallbacks}
-      kind={thumbIsCover ? "image" : mediaKind || "image"}
-      controls={false}
-      priority={priority}
-      onExhausted={() => setExhausted(true)}
-      className="scrap-book-photo"
-      frameClassName="scrap-book-photo-frame"
-    />
-  );
-
-  return (
-    <div className="scrap-book-cover">
-      <span className="scrap-book-cover-spine" />
-      <span className="scrap-book-cover-face">
-        {media}
-        {plate}
-      </span>
-    </div>
-  );
-}
-
-export function ScrapBookCard({
-  item,
-  index,
-  priority = false,
-  row = false,
-}: {
-  item: Scrap;
-  index: number;
-  priority?: boolean;
-  row?: boolean;
-}) {
-  if (row) return <ScrapRow item={item} index={index} priority={priority} />;
-  return <ShelfRow item={item} index={index} gallery priority={priority} compact />;
-}
-
-function ScrapRow({ item, index, priority = false }: { item: Scrap; index: number; priority?: boolean }) {
-  const { lang } = usePrefs();
-  const t = useT();
-  const navigate = useNavigate();
-  const mediaKind = mediaKindOf(item.type, item.mime);
-  const title = scrapFaceTitle(item, t("untitled"));
   const candidates = thumbCandidates(item, mediaKind);
   const [exhausted, setExhausted] = useState(false);
   const primary = candidates[0] || "";
@@ -151,39 +115,105 @@ function ScrapRow({ item, index, priority = false }: { item: Scrap; index: numbe
   }, [item.id, candidateKey]);
 
   const showPhoto = Boolean(primary) && !exhausted;
+  const frameClass = variant === "row" ? "scrap-row-photo" : "scrap-gallery-photo";
+
+  return (
+    <span className={variant === "row" ? "scrap-row-thumb" : "scrap-gallery-plate"}>
+      {showPhoto ? (
+        <ScrapMedia
+          key={primary}
+          src={primary}
+          fallbackSrcs={candidates.slice(1)}
+          kind={item.posterUrl || item.og?.image ? "image" : mediaKind || "image"}
+          controls={false}
+          priority={priority}
+          onExhausted={() => setExhausted(true)}
+          className="scrap-book-photo"
+          frameClassName={frameClass}
+        />
+      ) : (
+        <TypePlaceholder type={item.type} domain={item.domain} />
+      )}
+      {showPhoto && item.type === "video" ? (
+        <span className="scrap-media-play" aria-hidden>
+          <Play className="size-4" strokeWidth={2} fill="currentColor" />
+        </span>
+      ) : null}
+      <span className="scrap-media-type-badge font-mono">{(item.type || "scrap").toUpperCase()}</span>
+    </span>
+  );
+}
+
+export function ScrapBookCard({
+  item,
+  index,
+  priority = false,
+  row = false,
+  selected = false,
+  onSelect,
+}: {
+  item: Scrap;
+  index: number;
+  priority?: boolean;
+  row?: boolean;
+  selected?: boolean;
+  onSelect?: (id: string) => void;
+}) {
+  if (row) return <ScrapRow item={item} index={index} priority={priority} selected={selected} onSelect={onSelect} />;
+  return <GalleryCard item={item} index={index} priority={priority} selected={selected} onSelect={onSelect} />;
+}
+
+function openScrap(
+  id: string,
+  navigate: ReturnType<typeof useNavigate>,
+  onSelect?: (id: string) => void,
+) {
+  if (onSelect) {
+    onSelect(id);
+    return;
+  }
+  navigate(`/scrap/${id}`);
+}
+
+function ScrapRow({
+  item,
+  index,
+  priority = false,
+  selected = false,
+  onSelect,
+}: {
+  item: Scrap;
+  index: number;
+  priority?: boolean;
+  selected?: boolean;
+  onSelect?: (id: string) => void;
+}) {
+  const { lang } = usePrefs();
+  const t = useT();
+  const navigate = useNavigate();
+  const mediaKind = mediaKindOf(item.type, item.mime);
+  const title = scrapFaceTitle(item, t("untitled"));
+  const blurb = scrapBlurb(item);
+  const extra = scrapMetaExtra(item);
+  const tags = item.tags.slice(0, 3);
 
   return (
     <li
-      className="scrap-card scrap-card--row"
+      className={"scrap-card scrap-card--row" + (selected ? " scrap-card--selected" : "")}
       style={{
         ["--spine" as string]: spineColor(item.type),
         ["--cover" as string]: coverWash(item.type),
       }}
     >
       {item.bookmarked ? <span className="scrap-bookmark-ribbon" aria-hidden /> : null}
-      <span className="scrap-row-pages" aria-hidden />
-      <button type="button" className="scrap-card-hit" onClick={() => navigate(`/scrap/${item.id}`)}>
-        <span className="scrap-row-book">
-          <span className="scrap-row-face">
-            {showPhoto ? (
-              <ScrapMedia
-                key={primary}
-                src={primary}
-                fallbackSrcs={candidates.slice(1)}
-                kind={item.posterUrl || item.og?.image ? "image" : mediaKind || "image"}
-                controls={false}
-                priority={priority || index < 9}
-                onExhausted={() => setExhausted(true)}
-                className="scrap-book-photo"
-                frameClassName="scrap-row-photo"
-              />
-            ) : (
-              <img src={FAVICON_HOLDER} alt="" className="scrap-thumb-holder scrap-thumb-holder--row" />
-            )}
-          </span>
-        </span>
+      <button
+        type="button"
+        className="scrap-card-hit"
+        aria-pressed={selected || undefined}
+        onClick={() => openScrap(item.id, navigate, onSelect)}
+      >
+        <MediaThumb item={item} mediaKind={mediaKind} priority={priority || index < 9} variant="row" />
         <span className="scrap-row-copy">
-          <span className="scrap-row-title">{title}</span>
           <span className="scrap-row-meta">
             <DocumentMark
               extension={item.extension}
@@ -193,25 +223,37 @@ function ScrapRow({ item, index, priority = false }: { item: Scrap; index: numbe
               size="sm"
             />
             <span className="scrap-book-cover-date">{formatWhen(item.createdAt, lang)}</span>
+            {extra ? <span className="scrap-row-extra">{extra}</span> : null}
           </span>
+          <span className="scrap-row-title">{title}</span>
+          {blurb ? <span className="scrap-row-blurb">{blurb}</span> : null}
+          {tags.length ? (
+            <span className="scrap-row-tags">
+              {tags.map((tag) => (
+                <span key={tag} className="scrap-row-tag">
+                  {tag}
+                </span>
+              ))}
+            </span>
+          ) : null}
         </span>
       </button>
     </li>
   );
 }
 
-function ShelfRow({
+function GalleryCard({
   item,
   index,
-  gallery,
-  compact,
   priority = false,
+  selected = false,
+  onSelect,
 }: {
   item: Scrap;
   index: number;
-  gallery: boolean;
-  compact: boolean;
   priority?: boolean;
+  selected?: boolean;
+  onSelect?: (id: string) => void;
 }) {
   const { lang } = usePrefs();
   const t = useT();
@@ -219,15 +261,15 @@ function ShelfRow({
   const mediaKind = mediaKindOf(item.type, item.mime);
   const unread = !item.readAt;
   const title = scrapFaceTitle(item, t("untitled"));
-  const showFileMark = Boolean(item.type);
+  const blurb = scrapBlurb(item);
 
   return (
     <li
       className={
-        "scrap-card" +
+        "scrap-card scrap-card--gallery" +
         (unread ? " scrap-card--unread" : "") +
         (item.bookmarked ? " scrap-card--bookmarked" : "") +
-        " scrap-card--book"
+        (selected ? " scrap-card--selected" : "")
       }
       style={{
         ["--spine" as string]: spineColor(item.type),
@@ -235,71 +277,49 @@ function ShelfRow({
       }}
     >
       {item.bookmarked ? <span className="scrap-bookmark-ribbon" aria-hidden /> : null}
-      <button type="button" className="scrap-card-hit" onClick={() => navigate(`/scrap/${item.id}`)}>
-        <ScrapCardThumb
-          item={item}
-          mediaKind={mediaKind}
-          title={title}
-          showFileMark={showFileMark}
-          priority={priority || index < 9}
-        />
-        <div className="scrap-card-body">
-          <div className="scrap-card-head">
-            <div className="min-w-0 flex-1">
-              {!gallery ? (
-                <div className="scrap-card-doc-row">
-                  <div className="min-w-0">
-                    <p className="scrap-card-title">
-                      {unread ? <span className="scrap-unread-dot" aria-hidden /> : null}
-                      {title}
-                    </p>
-                    <p className="scrap-card-meta">
-                      {typeLabel(lang, item.type)} · {formatWhen(item.createdAt, lang)}
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <p className="scrap-card-title">
-                  {unread ? <span className="scrap-unread-dot" aria-hidden /> : null}
-                  {title}
-                </p>
-              )}
-            </div>
-          </div>
-          {!compact ? (
-            <>
-              {item.og?.description ? <p className="scrap-card-text">{item.og.description}</p> : null}
-              {item.text && item.type !== "image" && !item.og?.description ? (
-                <p className="scrap-card-text">{item.text}</p>
-              ) : null}
-              {item.filename ? (
-                <p className="scrap-card-file">
-                  {showFileMark ? (
-                    <DocumentMark
-                      extension={item.extension}
-                      mime={item.mime}
-                      type={item.type}
-                      filename={item.filename}
-                      size="sm"
-                      className="scrap-card-file-mark"
-                    />
-                  ) : null}
-                  {item.filename} · {formatBytes(item.size)}
-                </p>
-              ) : null}
-              {item.memo ? <p className="scrap-card-memo">{item.memo}</p> : null}
-              <p className="scrap-card-tags">
-                {item.tags.map((tag) => (
-                  <span key={tag} className="scrap-tag detail-tag-chip">
-                    {tag}
-                  </span>
-                ))}
-              </p>
-            </>
-          ) : null}
-        </div>
+      <button
+        type="button"
+        className="scrap-card-hit"
+        aria-pressed={selected || undefined}
+        onClick={() => openScrap(item.id, navigate, onSelect)}
+      >
+        <MediaThumb item={item} mediaKind={mediaKind} priority={priority || index < 9} variant="gallery" />
+        <span className="scrap-gallery-caption">
+          <span className="scrap-gallery-title-block">
+            {unread ? <span className="scrap-unread-dot" aria-hidden /> : null}
+            <span className="scrap-gallery-title">{title}</span>
+          </span>
+          {blurb ? <span className="scrap-gallery-blurb">{blurb}</span> : null}
+          <span className="scrap-gallery-foot">
+            <span>{typeLabel(lang, item.type)}</span>
+            <span className="scrap-gallery-open">
+              <ArrowRight className="size-3.5" strokeWidth={2} />
+              {t("galleryOpenIndex")}
+            </span>
+          </span>
+        </span>
       </button>
     </li>
+  );
+}
+
+function ShelfToolbar({ total }: { total: number }) {
+  const t = useT();
+  return (
+    <div className="shelf-toolbar">
+      <div className="shelf-toolbar-lead">
+        <span className="shelf-toolbar-icon" aria-hidden>
+          <BookOpen className="size-5" strokeWidth={1.7} />
+        </span>
+        <div className="shelf-toolbar-copy">
+          <div className="shelf-toolbar-title-row">
+            <span className="shelf-toolbar-title">{t("shelfWorkbench")}</span>
+            <span className="shelf-archival-badge font-mono">{t("archivalCount").replace("{n}", String(total))}</span>
+          </div>
+        </div>
+      </div>
+      <LayoutSwitch />
+    </div>
   );
 }
 
@@ -310,162 +330,25 @@ export function LayoutSwitch() {
     <section className="list-tools list-tools--slim" aria-label={t("layoutSwitch")}>
       <div className="list-tools-head">
         <div className="list-tools-head-actions">
-          <GlassCluster className="layout-seg" label={t("layoutSwitch")} restOnPressed>
-            {LAYOUTS.map(({ id, icon: Icon, labelKey }) => (
-              <IconTip key={id} label={t(labelKey)}>
-                <button
-                  type="button"
-                  className="layout-seg-btn"
-                  aria-pressed={shelfLayout === id}
-                  aria-label={t(labelKey)}
-                  onClick={() => setShelfLayout(id)}
-                >
-                  <Icon className="size-[18px]" strokeWidth={1.8} />
-                </button>
-              </IconTip>
+          <GlassCluster className="layout-seg layout-seg--labeled" label={t("layoutSwitch")} restOnPressed>
+            {LAYOUTS.map(({ id, icon: Icon, labelKey, tipKey }) => (
+              <button
+                key={id}
+                type="button"
+                className="layout-seg-btn layout-seg-btn--labeled"
+                aria-pressed={shelfLayout === id}
+                aria-label={t(tipKey)}
+                title={t(labelKey)}
+                onClick={() => setShelfLayout(id)}
+              >
+                <Icon className="size-[16px] shrink-0" strokeWidth={1.8} />
+                <span className="layout-seg-label">{t(labelKey)}</span>
+              </button>
             ))}
           </GlassCluster>
         </div>
       </div>
     </section>
-  );
-}
-
-function AccordionGroup({
-  type,
-  items,
-  start,
-  open,
-  onOpen,
-  onClose,
-}: {
-  type: string;
-  items: Scrap[];
-  start: number;
-  open: boolean;
-  onOpen: () => void;
-  onClose: () => void;
-}) {
-  const { lang } = usePrefs();
-  const [slotOpen, setSlotOpen] = useState(false);
-  const [closing, setClosing] = useState(false);
-  const closeRef = useRef(onClose);
-  closeRef.current = onClose;
-  const shown = open || closing;
-
-  useLayoutEffect(() => {
-    if (!open) {
-      setSlotOpen(false);
-      return;
-    }
-    if (prefersReducedMotion()) {
-      setSlotOpen(true);
-      return;
-    }
-    const id = requestAnimationFrame(() => setSlotOpen(true));
-    return () => cancelAnimationFrame(id);
-  }, [open]);
-
-  function finishClose() {
-    setClosing(false);
-    closeRef.current();
-  }
-
-  function toggle() {
-    if (!open) {
-      setClosing(false);
-      onOpen();
-      return;
-    }
-    if (prefersReducedMotion()) {
-      onClose();
-      return;
-    }
-    setClosing(true);
-  }
-
-  function onFoldEnd(event: AnimationEvent<HTMLUListElement>) {
-    if (event.target !== event.currentTarget) return;
-    if (!closing || event.animationName !== "accordion-fold") return;
-    finishClose();
-  }
-
-  useEffect(() => {
-    if (!closing) return;
-    const id = window.setTimeout(finishClose, 420);
-    return () => window.clearTimeout(id);
-  }, [closing]);
-
-  return (
-    <section className="shelf-accordion-group">
-      <button
-        type="button"
-        className="shelf-accordion-head"
-        aria-expanded={open && !closing}
-        onClick={toggle}
-      >
-        <span>{typeLabel(lang, type)}</span>
-        <span className="shelf-accordion-count">{items.length}</span>
-        <ChevronDown className={"size-[18px] shelf-accordion-chevron" + (open && !closing ? " is-open" : "")} strokeWidth={1.8} />
-      </button>
-      {shown ? (
-        <div className={"shelf-accordion-slot" + (slotOpen && !closing ? " is-open" : "")}>
-          <div className="shelf-accordion-slot-inner">
-            <ul
-              className={"scrap-list scrap-list--list shelf-accordion-body" + (closing ? " is-closing" : "")}
-              onAnimationEnd={onFoldEnd}
-            >
-              {items.map((item, i) => (
-                <ScrapBookCard key={item.id} item={item} index={start + i} row />
-              ))}
-            </ul>
-          </div>
-        </div>
-      ) : null}
-    </section>
-  );
-}
-
-export function ShelfAccordion({ visible }: { visible: Scrap[] }) {
-  const [opened, setOpened] = useState<ReadonlySet<string>>(() => new Set());
-  const extras = [...new Set(visible.map((item) => item.type))].filter((type) => !TYPES.includes(type as ScrapType)).sort();
-  const groups = [...TYPES, ...extras]
-    .map((type) => ({
-      type,
-      items: visible.filter((item) => item.type === type),
-    }))
-    .filter((group) => group.items.length > 0);
-
-  function setGroup(type: string, nextOpen: boolean) {
-    setOpened((cur) => {
-      const has = cur.has(type);
-      if (has === nextOpen) return cur;
-      const next = new Set(cur);
-      if (nextOpen) next.add(type);
-      else next.delete(type);
-      return next;
-    });
-  }
-
-  let index = 0;
-  return (
-    <div className="shelf-accordion">
-      {groups.map((group) => {
-        const start = index;
-        index += group.items.length;
-        return (
-          <AccordionGroup
-            key={group.type}
-            type={group.type}
-            items={group.items}
-            start={start}
-            open={opened.has(group.type)}
-            onOpen={() => setGroup(group.type, true)}
-            onClose={() => setGroup(group.type, false)}
-          />
-        );
-      })}
-    </div>
   );
 }
 
@@ -478,6 +361,9 @@ type Props = {
   hasMore?: boolean;
   onLoadMore?: () => void;
   sentinelRef?: RefObject<HTMLDivElement | null>;
+  selectedId?: string | null;
+  onSelectScrap?: (id: string) => void;
+  archivalCount?: number;
 };
 
 export function ScrapList({
@@ -489,10 +375,14 @@ export function ScrapList({
   hasMore = false,
   onLoadMore,
   sentinelRef,
+  selectedId = null,
+  onSelectScrap,
+  archivalCount,
 }: Props) {
   const { shelfLayout } = usePrefs();
   const t = useT();
   const gallery = shelfLayout === "gallery";
+  const total = archivalCount ?? scraps.length;
 
   const typeCounts = (() => {
     const counts: Record<string, number> = { all: scraps.length, bookmarked: 0 };
@@ -504,6 +394,7 @@ export function ScrapList({
     return counts;
   })();
 
+  // Built-in types with count > 0 once loaded; while loading show all built-ins.
   const visibleTypes = typeBookIds(typeCounts, TYPES, loading);
 
   useEffect(() => {
@@ -518,57 +409,60 @@ export function ScrapList({
 
   const shelfEmpty = !loading && !scraps.length;
 
-  if (shelfEmpty) {
-    return (
-      <div className="shelf-door">
-        <section className="list-body" aria-live="polite">
-          <div className="shelf-empty">
-            <p className="shelf-empty-title">{t("empty")}</p>
-            <p className="shelf-empty-hint">{t("emptyHint")}</p>
-          </div>
-        </section>
-      </div>
-    );
-  }
+  const listBody: ReactNode = shelfEmpty ? (
+    <ShelfEmptyGuide />
+  ) : (
+    <>
+      {loading ? (
+        <ScrapListSkeleton layout={shelfLayout} />
+      ) : !visible.length ? (
+        <div className="shelf-empty shelf-empty--compact">
+          <p className="shelf-empty-title">{t("noMatches")}</p>
+        </div>
+      ) : (
+        <ul className={"scrap-list scrap-list--" + (gallery ? "gallery" : "micro")}>
+          {visible.map((item, index) => (
+            <ScrapBookCard
+              key={item.id}
+              item={item}
+              index={index}
+              row={!gallery}
+              selected={selectedId === item.id}
+              onSelect={onSelectScrap}
+            />
+          ))}
+        </ul>
+      )}
+      {hasMore ? (
+        <div ref={sentinelRef} className="list-page-more">
+          <button type="button" className="auth-link-utility" onClick={onLoadMore}>
+            {t("loadMore")}
+          </button>
+        </div>
+      ) : null}
+    </>
+  );
 
   return (
     <div className="shelf-door">
-      <TypeBookCarousel
-        types={visibleTypes}
-        counts={typeCounts}
-        active={typeFilter}
-        loading={loading}
-        contained
-        onSelect={onType}
-      />
+      {!shelfEmpty ? <ShelfToolbar total={total} /> : null}
 
-      <LayoutSwitch />
+      {!shelfEmpty ? (
+        <TypeBookCarousel
+          types={visibleTypes}
+          counts={typeCounts}
+          active={typeFilter}
+          loading={loading}
+          contained
+          sticky
+          onSelect={onType}
+        />
+      ) : null}
 
-      <AdSlot />
+      {shelfEmpty ? null : <AdSlot />}
 
       <section className="list-body" aria-live="polite">
-        {loading ? (
-          <ScrapListSkeleton layout={shelfLayout} />
-        ) : !visible.length ? (
-          <div className="shelf-empty shelf-empty--compact">
-            <p className="shelf-empty-title">{t("noMatches")}</p>
-          </div>
-        ) : shelfLayout === "accordion" ? (
-          <ShelfAccordion visible={visible} />
-        ) : (
-          <ul className={"scrap-list scrap-list--" + shelfLayout}>
-            {visible.map((item, index) => (
-              <ScrapBookCard key={item.id} item={item} index={index} row={!gallery} />
-            ))}
-          </ul>
-        )}
-        {hasMore ? (
-          <div ref={sentinelRef} className="list-page-more">
-            <button type="button" className="auth-link-utility" onClick={onLoadMore}>
-              {t("loadMore")}
-            </button>
-          </div>
-        ) : null}
+        {listBody}
       </section>
     </div>
   );

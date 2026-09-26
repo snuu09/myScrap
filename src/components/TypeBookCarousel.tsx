@@ -1,6 +1,6 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { typeLabel } from "../i18n";
+import { spineLabel } from "../i18n";
 import { coverWash, spineColor } from "../lib/typeColor";
 import { DocumentMark } from "./DocumentMark";
 import { usePrefs } from "../context/Prefs";
@@ -11,27 +11,41 @@ type Props = {
   active: string;
   loading?: boolean;
   contained?: boolean;
+  /** Position:sticky compact header on desktop scroll. */
+  sticky?: boolean;
   onSelect: (value: string) => void;
 };
 
 /** Horizontal type books. Default breaks out of the 40rem column; `contained` stays in the door. */
-export function TypeBookCarousel({ types, counts, active, loading, contained, onSelect }: Props) {
+export function TypeBookCarousel({ types, counts, active, loading, contained, sticky, onSelect }: Props) {
   const { lang } = usePrefs();
   const t = useT();
   const trackRef = useRef<HTMLDivElement>(null);
   const [ends, setEnds] = useState({ left: false, right: false });
   const [fit, setFit] = useState(false);
+  const [compact, setCompact] = useState(false);
   const books: { id: string; label: string; count: number }[] = [
-    { id: "all", label: t("filterAll"), count: counts.all || 0 },
-    ...(counts.bookmarked
-      ? [{ id: "bookmarked", label: t("filterBookmark"), count: counts.bookmarked }]
+    { id: "all", label: spineLabel(lang, "all"), count: counts.all || 0 },
+    ...(loading || (counts.bookmarked || 0) > 0
+      ? [{ id: "bookmarked", label: spineLabel(lang, "bookmarked"), count: counts.bookmarked || 0 }]
       : []),
     ...types.map((type) => ({
       id: type,
-      label: typeLabel(lang, type),
+      label: spineLabel(lang, type),
       count: counts[type] || 0,
     })),
   ];
+
+  useEffect(() => {
+    if (!sticky) return;
+    function onScroll() {
+      const desktop = window.matchMedia("(min-width: 768px)").matches;
+      setCompact(desktop && window.scrollY > 160);
+    }
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [sticky]);
 
   useLayoutEffect(() => {
     const el = trackRef.current;
@@ -83,7 +97,9 @@ export function TypeBookCarousel({ types, counts, active, loading, contained, on
       className={
         "type-book-carousel" +
         (contained ? " type-book-carousel--contained" : "") +
-        (fit ? " type-book-carousel--fit" : "")
+        (fit ? " type-book-carousel--fit" : "") +
+        (sticky ? " type-book-carousel--sticky" : "") +
+        (sticky && compact ? " type-book-carousel--compact" : "")
       }
       aria-label={t("filterAll")}
     >

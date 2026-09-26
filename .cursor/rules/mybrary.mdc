@@ -5,7 +5,9 @@ alwaysApply: true
 
 # MyBrary
 
-Personal library (서재) from anything you save: stick / classify / find. Live name **MyBrary**; repo folder may still be `myScrap`. Not a team knowledge base, not a recipe app, not a fridge or door metaphor. Product voice is **서재** (library). Light UI default is **Theme B Warm Integrated** (warm paper, Newsreader + DM Sans, accent `#95704b`). Settings also ships **Theme A Minimal Editorial** (white/ink, Space Grotesk + Inter, near-zero radius) and **현무암** (basalt accent on warm paper) so A/B can be compared. See [DESIGN.md](DESIGN.md).
+Personal library (서재) from anything you save: stick / classify / find. Live name **MyBrary**; repo folder may still be `myScrap`. Not a team knowledge base, not a recipe app, not a fridge or door metaphor. Product voice is **서재** (library). Light UI default is **Soft Deckle** (zero-hue archival paper, Newsreader + DM Sans, JetBrains Mono spine labels). Settings also ships **에디토리얼** / Minimal Editorial (white/ink, Space Grotesk + Inter, near-zero radius). See [DESIGN.md](DESIGN.md).
+
+Full IA: signed-out entry is the dedicated `/login` page (not a sheet) reusing `AuthSheet` via a `variant="page"` prop as an archival dossier (Google + email form + guest browse). Signed-in header is two nav tabs (나의 서재 `/`, 서재 통계 `/dashboard`) plus a Find icon (`/search`, also Cmd/Ctrl+K), a light→dark→system theme toggle, and an account avatar (Google photo or ink User squircle) that opens `/settings`. Shelf layout is **Gallery** (default, 4:3 visual poster grid) or **Micro** (`mybrary.shelfLayout`, horizontal media rows) — the accordion/list layout is gone. Micro and Gallery cards open a right-hand `ShelfInspector` on desktop (≥960px) instead of navigating; mobile still navigates to `/scrap/:id`. The shelf workbench strip shows archival count plus a labeled Micro/Gallery segment. `/stick` renders the single-draft review as `Workbench` (3-step rail + CSS 3D cover), not a bare draft card. The type book carousel always shows its 8 fixed sections (전체/책갈피/메모/사진/영상/소리/링크/문서) and goes sticky-compact on desktop scroll. Settings offers language, theme palette (에디토리얼 / 소프트 데클), light·system·dark, Markdown export, and storage reset — no Look switcher and no AI-sensitivity slider. Centered dialogs use the **Protocol Stamp** shell (`.protocol-modal-*` / `AppDialog`), not browser `confirm` or pill auth buttons.
 
 ## Stack now
 
@@ -25,8 +27,8 @@ Shelf and search lists page in (24, then more). Sign media only for the visible 
 - Dualize taggers: Claude in the function, MIME/URL fallback only in `src/lib/tagger.ts`
 - Invent customers, testimonials, download counts, or a 사업자등록번호
 - Use em-dashes in product copy
-- Purple glass SaaS kits, Inter as the UI face under Warm·B, Notion sidebar. Strong `.liquid-glass` stays on button clusters (layout switcher, detail actions, settings tracks, and other control groups). Glass look may lay a weaker blur on cards and bordered panels. Do not put that blur on the hero.
-- Revive Jeju tangerine fridge enamel as the light default (Theme B warm paper is the light system)
+- Purple glass SaaS kits, Inter as the UI face under Warm·B, Notion sidebar. Strong `.liquid-glass` stays on button clusters (layout switcher, detail actions, settings tracks, and other control groups). Protocol Stamp modals use `.protocol-modal-btn-*`, not liquid glass. Glass look may lay a weaker blur on cards and bordered panels. Do not put that blur on the hero.
+- Revive Jeju tangerine fridge enamel or Warm · B / 현무암 as Settings theme options (Soft Deckle is the light default; Editorial is the compare palette)
 - Use door / fridge / “책장을 연다” copy; keep product language on **서재** / library
 
 Read [ARCHITECTURE.md](ARCHITECTURE.md), [PRODUCT.md](PRODUCT.md), [DESIGN.md](DESIGN.md). Env names: [`.env.example`](.env.example).

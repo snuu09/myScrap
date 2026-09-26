@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X } from "lucide-react";
+import { TriangleAlert, X } from "lucide-react";
 import { useT } from "../lib/useT";
 import { useAuth } from "../context/Auth";
 import { usePlan } from "../context/Plan";
@@ -60,46 +60,62 @@ export function GuestMigrateSheet({ open, onClose }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-40 bg-[color-mix(in_srgb,var(--color-ink)_24%,transparent)]"
+      className="protocol-modal-scrim protocol-modal-scrim--under"
       onClick={busy ? undefined : keepLocal}
     >
       <div className="sheet-stage">
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="guest-migrate-title"
-        className={
-          "sheet-panel w-[min(24rem,calc(100vw-24px))] rounded-[32px] border border-paper-line bg-login-wall p-3.5 shadow-[var(--shadow-sheet)]" +
-          sheetGenieClass(presence.closing)
-        }
-        onAnimationEnd={(event) => presence.onEnd(event, "sheet-genie-out")}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="mb-2 flex items-center justify-between gap-1">
-          <h2 id="guest-migrate-title" className="m-0 min-w-0 flex-1 text-[1.0625rem] font-bold">
-            {t("guestMigrateTitle")}
-          </h2>
-          <button
-            type="button"
-            className="grid size-12 shrink-0 place-items-center"
-            disabled={busy}
-            onClick={keepLocal}
-            aria-label={t("close")}
-          >
-            <X className="size-[22px]" strokeWidth={1.8} />
-          </button>
-        </div>
-        <p className="auth-lead">{t("guestMigrateLead", { n: count })}</p>
-        <div className="mt-3 flex flex-col gap-2">
-          <button type="button" className="auth-btn-primary" disabled={busy} onClick={() => void move()}>
-            {busy ? t("guestMigrateWorking") : t("guestMigrateMove")}
-          </button>
-          <button type="button" className="auth-btn-secondary" disabled={busy} onClick={keepLocal}>
-            {t("guestMigrateKeep")}
-          </button>
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="guest-migrate-title"
+          className={
+            "sheet-panel protocol-modal-panel protocol-modal-panel--narrow" +
+            sheetGenieClass(presence.closing)
+          }
+          onAnimationEnd={(event) => presence.onEnd(event, "sheet-genie-out")}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="protocol-modal-head">
+            <div className="protocol-modal-head-copy">
+              <div className="protocol-modal-stamp">
+                <TriangleAlert aria-hidden strokeWidth={1.8} />
+                <span>{t("guestMigrateStamp")}</span>
+              </div>
+              <h2 id="guest-migrate-title" className="protocol-modal-title">
+                {t("guestMigrateTitle")}
+              </h2>
+            </div>
+            <button
+              type="button"
+              className="protocol-modal-close"
+              disabled={busy}
+              onClick={keepLocal}
+              aria-label={t("close")}
+            >
+              <X className="size-5" strokeWidth={1.8} />
+            </button>
+          </div>
+          <p className="protocol-modal-body">{t("guestMigrateLead", { n: count })}</p>
+          <div className="protocol-modal-actions">
+            <button
+              type="button"
+              className="protocol-modal-btn-secondary"
+              disabled={busy}
+              onClick={keepLocal}
+            >
+              {t("guestMigrateKeep")}
+            </button>
+            <button
+              type="button"
+              className="protocol-modal-btn-primary"
+              disabled={busy}
+              onClick={() => void move()}
+            >
+              {busy ? t("guestMigrateWorking") : t("guestMigrateMove")}
+            </button>
+          </div>
           {message ? <p className="auth-feedback-error">{message}</p> : null}
         </div>
-      </div>
       </div>
     </div>
   );

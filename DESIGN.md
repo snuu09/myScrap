@@ -1,6 +1,6 @@
 ---
 name: MyBrary
-description: Personal library from anything you save. Theme B Warm Integrated light system.
+description: Personal library from anything you save. Soft Deckle light default; Editorial compare palette.
 colors:
   magnet: "#95704b"
   magnet-deep: "#7a5a3c"
@@ -198,65 +198,62 @@ components:
 
 ## Overview
 
-**Creative North Star: Theme B — Warm Integrated Library (서재)**
+**Creative North Star: Soft Deckle archival library (서재)**
 
 MyBrary is a personal **서재** (library) built from anything the user saves (text, links, video, files, images). Product voice stays on library language. Do not use door, fridge, or “책장을 연다” copy.
 
-Light default follows **Warm Integrated (Theme B)**: warm paper ground (`#f5f1e9`), soft surfaces (`#fbfaf7`), charcoal ink (`#272521`), restrained warm accent (`#95704b`). Display type is **Newsreader**; UI type is **DM Sans** (SUIT remains a Hangul fallback). Radius centers on ~20px; shadows are soft and deep, not fridge enamel chrome.
+Light default follows **Soft Deckle** (`data-palette="deckle"`): zero-hue archival paper, near-black ink-only magnet, **Newsreader** display + **DM Sans** UI (SUIT Hangul fallback), **JetBrains Mono** for spine labels, near-flat radius (6–8px). Dark Soft Deckle is near-black paper (`#121214`). `/login` folio uses mono **AI BOOKSHELF**; the signed-in header wordmark has no subtitle.
 
-Settings also ships **Minimal Editorial (Theme A)** as a compare palette (`data-palette="editorial"`): white ground, ink `#09090b`, Space Grotesk display + Inter UI, near-zero radius. Inter and Space Grotesk are allowed only under Editorial · A.
+Settings also ships **에디토리얼** / Minimal Editorial (`data-palette="editorial"`): white ground, ink `#09090b`, Space Grotesk display + Inter UI, near-zero radius. Inter and Space Grotesk are allowed only under Editorial.
+
+Warm · B and 현무암 are retired from the Settings theme picker; stored `warm` / `kitchen` / `basalt` migrate to Soft Deckle.
 
 Product promise:
 
 > 내가 모은 모든 것이 나만의 서재가 됩니다.
 
-Auth stays in the header sheet. Stick / classify / find remain the live capture loop. Dark mode is Theme B night enamel (warm charcoal ground, lifted warm accent `#c4a07a`). Basalt palette still swaps only the accent magnet on warm paper (and the night magnet on dark).
+Auth entry is the dedicated `/login` page. Stick / classify / find remain the live capture loop. Dark Soft Deckle stays near-black archival paper; Editorial dark is near-black ink ground.
 
 ## Colors
 
-Warm paper neutrals plus one restrained accent.
+Archival Soft Deckle neutrals (ink-only magnet) plus Editorial white/ink as the compare palette. Legacy Theme B warm paper tokens may remain in CSS `@theme` as unused root fallbacks; the app always sets `data-palette` to `deckle` or `editorial`.
 
-- **Warm accent** (#95704b light): Primary actions, tags, selected segments, focus companion. Ink on accent is `#fbfaf7`.
-- **Accent deep** (#7a5a3c): Hover / pressed accent.
-- **Paper ground** (#f5f1e9): App background / enamel.
-- **Surface** (#fbfaf7): Panels, cards, login sheet.
-- **Raised / soft** (#f2eee7 / #e9dfd1): Nested fills and soft borders.
-- **Line** (#d9d1c5): Borders and hairlines.
-- **Ink / muted** (#272521 / #777168): Primary and secondary copy.
-- **Basalt** (optional palette): Charcoal accent only; do not retint paper ground.
+- **Soft Deckle magnet**: near-black ink on archival paper; no hue wash.
+- **Editorial ink** (#09090b): Primary actions under Editorial.
+- **Paper / surface**: Soft Deckle archival cream (`#faf9f6` family) or Editorial white.
+- **Ink / muted**: Soft Deckle near-black / gray; Editorial zinc scale.
 
 **Key Characteristics:**
 - Wordmark: MyBrary (KO and EN)
-- Light ground is warm paper (`#f5f1e9`); surfaces are soft cream (`#fbfaf7`)
-- Header auth sheet uses surface cream (light) or night enamel (dark)
+- Soft Deckle light ground; Editorial white when that palette is on
+- Header account avatar opens `/settings`
 - Centered capture column on every breakpoint
-- Soft radius (~20px family), restrained warm accent, soft deep shadows
+- Soft Deckle near-flat radius; Editorial near-zero
 - Recency list to read; Stick docked at the thumb
 - Personal voice: stick, peel, 서재 / library
 
 ### Palettes
 
-Header: brand plus settings. Language, **Look** (글라스 / 서재), color theme (**Warm · B** / **Editorial · A** / **현무암**), and light / system / dark live on `/settings`.
+Header: brand, Find, theme toggle, account avatar. Language, **테마** (에디토리얼 / 소프트 데클), and light / system / dark live on `/settings`. No Look switcher and no AI-sensitivity control in Settings.
 
-- Warm · B (default): Accent `#95704b`. Paper ground. Stick dock at the bottom.
-- Editorial · A: Theme A Minimal Editorial. White/ink, Space Grotesk + Inter, near-zero radius. Compare-only until product confirms a single theme.
-- Jeju basalt: Accent charcoal only. Ground stays warm paper.
-- AI celadon: Not in this SPA.
+- Soft Deckle (default): Zero-hue archival paper, JetBrains Mono for spine/mono labels, near-flat radius. Login folio **AI BOOKSHELF**.
+- Editorial: Theme A Minimal Editorial. White/ink, Space Grotesk + Inter, near-zero radius.
+- Warm · B / 현무암 / AI celadon: Not offered in Settings.
 
 ### Named Rules
 **The One Magnet Rule.** One accent at a time. It marks the thing you can press or the tag that names a type. It does not wash backgrounds.
 
-**The Two Magnets Rule.** Default accent is warm brown `#95704b`. 현무암 swaps that accent to Jeju basalt charcoal. Do not retint paper ground when testing basalt. Sample photo SVGs must read `--magnet` at paint time; do not bake old tangerine `#e56f0a`.
+**The Two Magnets Rule.** Soft Deckle and Editorial each own one ink magnet. Sample photo SVGs must read `--magnet` at paint time; do not bake old tangerine `#e56f0a`.
 
-**The Look Axis Rule.** A third prefs axis `data-look` = `glass` | `library` (default glass). A stored `fridge` value reads as glass. Glass keeps capture-box wording and lays a weaker glass than button clusters on cards and bordered panels. Library remaps the same CSS tokens toward library tone and does not get that surface glass. When Look is **library** (서재), UI copy swaps unit nouns (KO 조각→페이지, 떼어내기→서재에서 빼기; EN scrap→page, peel→remove from library) via `useT` / `t(..., look)`.
+**The Look Axis Rule.** Prefs may still carry `data-look` = `glass` | `library` for CSS/copy (default glass). Settings no longer exposes a Look switcher. When Look is **library** (서재), UI copy swaps unit nouns (KO 조각→페이지, 떼어내기→서재에서 빼기; EN scrap→page, peel→remove from library) via `useT` / `t(..., look)`. Storage usage strings always use 페이지/pages.
 
 **The Stick Dock Rule.** After sign-in, Stick is a **fixed floating composer** over the library list (ChatGPT-style), not part of the legal Footer. Library route hides Footer; intro/legal/dashboard keep Footer. Default layout is one compact row `[+][textarea][send]` (`composer-chat-row`); the field grows downward on focus or multiline (cap 160px) with the bar pinned under it. **+** opens an attached menu with a portaled ink+blur viewport scrim; ESC / scrim closes it. Opening Auth or Settings dispatches `mybrary:close-overlays` so only one job is open. Classify draft stacks **above** the pill inside the float. Soft enamel fade sits behind the float. Do not put the composer back above the list or glue it to the footer chrome.
 
 **The AI Comparison Rule.** Celadon editorial is not shipped. Do not add header **AI** in this client unless PRODUCT asks. It must not become a purple chat or zinc-blue SaaS skin.
 
-**The White Doorstep.** Auth is a **header auth sheet** (light: surface cream; dark: night enamel). The intro sits on warm paper / night enamel (or Editorial white when that palette is on). Dark intro is not a white flash.
+**The White Doorstep.** Auth is the dedicated `/login` page (Soft Deckle archival dossier; Editorial white when that palette is on). Dark intro is not a white flash.
 
-**The Cave Check.** Warm · B light ground stays warm paper `#f5f1e9`. Dark mode is Theme B night enamel (`#2a2622` ground → `#1f1c19` deep, surface `#302b26`, magnet `#c4a07a`), not toner black. Editorial · A uses white / near-black instead. Muted copy must stay AA on the ground (≥4.5:1).
+**The Cave Check.** Soft Deckle light ground stays archival paper. Dark Soft Deckle is `#121214`, not toner-black UI chrome. Editorial uses white / near-black instead. Muted copy must stay AA on the ground (≥4.5:1).
 
 ## Type, icon, and control pattern
 
@@ -307,11 +304,11 @@ Auth, Stick, and + share 48px so the door and the header auth sheet feel like on
 **Character:** Warm editorial display with a clean UI grotesque. Newsreader carries the hero promise; DM Sans carries chrome, buttons, tags, and body.
 
 ### Named Rules
-**The Two Face Rule.** Under Warm · B: Newsreader for hero/display; DM Sans for UI and body. Under Editorial · A only: Space Grotesk for display; Inter for UI. Do not use Inter or Space Grotesk as the Warm · B face. Do not revive tangerine fridge enamel as the light ground.
+**The Two Face Rule.** Under Soft Deckle: Newsreader for hero/display; DM Sans for UI and body. Under Editorial only: Space Grotesk for display; Inter for UI. Do not use Inter or Space Grotesk as the Soft Deckle face. Do not revive tangerine fridge enamel as the light ground.
 
 ## Layout
 
-Header, door (main), footer. Compact header is brand, 로그인 when signed out, and settings. The door is the canvas. Intro, empty state, and clippings share a centered column. After entry, Stick is a fixed bottom dock; classify draft stacks above the field.
+Header, door (main), footer. Signed out: compact header is brand and 로그인 (navigates to the dedicated `/login` page, not a sheet). Signed in: header carries two nav tabs — **나의 서재** `/`, **서재 통계** `/dashboard` (i18n `navLibrary`/`navStats`) — plus a Find icon (**페이지 찾기로 이동** / `searchOpen`, also `Cmd/Ctrl+K` → `/search`), the theme-cycle toggle (light → dark → system), and an account avatar that opens `/settings`. The door is the canvas. Intro, empty state, and clippings share a centered column. After entry, Stick is a fixed bottom dock; classify draft stacks above the field.
 
 Intro is a Theme B integrated hero (담기 → AI 분석 → 정리 → 서재). The app capture column stays 36–40rem. Legal routes `/terms` and `/privacy`, and plans route `/upgrade`, reuse the header/footer chrome with Newsreader titles and 서재 voice.
 
@@ -341,7 +338,7 @@ Slight clipping rotation (±0.45deg) on every third scrap is optional texture, n
 
 - **Auth stack:** Email and password in the header 로그인 sheet (32px radius). 48px controls, 15px label. Light sheet is `--login-wall` white. Inline validation under fields. Vertical order follows **The Auth Ladder Rule** (fields → primary → feedback → divider → Google → browse → toggle → find links). **Google로 계속** is tertiary (1px outline). **둘러보기** is secondary (2px magnet outline) on the sheet only. **회원가입** label (not 가입). No Apple. Reusable classes: `auth-btn-*`, `auth-link-*`, `auth-divider`, `auth-callout`, `auth-feedback-*` in [`src/index.css`](src/index.css).
 - **Settings page:** `/settings`, not a header sheet. Follow **The Settings Ladder Rule**. Reusable classes: `settings-section-*`, `settings-seg-*`, `settings-session-chip`, `settings-btn-leave` in [`src/index.css`](src/index.css). Do not open together with the 로그인 sheet.
-- **Palette switch:** Pill track, 40px cells. 기본 (warm accent swatch) and 현무암 (basalt swatch). Lives on `/settings`. Default is warm accent.
+- **Palette switch:** Pill track for **에디토리얼** and **소프트 데클**. Lives on `/settings`. Default is Soft Deckle.
 - **Theme switch:** Light, system, and dark magnets in a pill track, 40px cells, 18px glyphs. Also on `/settings`.
 - **Composer:** Bottom dock after entry. 24px shell; 22px +; 15px field; Stick 48px / 14px. Focus ring follows the 24px shell, not a square on the textarea and not a pill.
 - **Classify draft:** A new **분류하기**, paste, or drop replaces the open classify card in place (no confirm). Only Cancel asks to discard. Upload % sits inside the progress track.
@@ -394,7 +391,7 @@ Disabled opacity 0.6. Pressed scale 0.98.
 
 Binding for [`src/components/SettingsSheet.tsx`](src/components/SettingsSheet.tsx).
 
-**The Settings Ladder Rule.** Settings is the `/settings` page, not a header sheet. Header menu navigates there; the arrow left of the logo returns to the previous screen (or `/` if there is none). The page hides the Stick dock. Three paper cards, not one stacked track. Account: session, plan (tier, trial D-day, storage bar, ad note, link to `/upgrade`), Leave at the bottom of that card. Appearance: language, palette, Look, and theme, each a label on the left and a pill track on the right. Storage: scrap count, media bytes, gauge, and **DB 초기화** last (disabled when empty; own scraps + media only; profiles stay). No auth fields.
+**The Settings Ladder Rule.** Settings is the `/settings` page, opened from the header account avatar (not a nav tab). The arrow left of the logo returns to the previous screen (or `/` if there is none). The page hides the Stick dock. Three paper cards, not one stacked track. Account: session, plan (tier, trial D-day, storage bar, ad note, link to `/upgrade`), Leave at the bottom of that card. Appearance: language, **테마** (에디토리얼 / 소프트 데클), and light·system·dark — each a label on the left, control on the right. A signed-in card with data also offers **Markdown export** (`exportMarkdown`): downloads every one of the user's scraps as one `.md` file, client-side only. Storage: page count, media bytes, gauge, and **DB 초기화** last (disabled when empty; own scraps + media only; profiles stay). No Look switcher, no AI-sensitivity slider, no auth fields.
 
 **The Settings Section Rule.** Each block: caption label (13px muted) then control row. Section gap 12px (`gap-3`). Labels use `settings-section-label`.
 
@@ -404,7 +401,7 @@ Binding for [`src/components/SettingsSheet.tsx`](src/components/SettingsSheet.ts
 
 **The Settings Session Rule.** When signed in, show `settings-session-chip` directly under the header: enamel/paper pill, caption size, ink-soft label plus ink value (email or **둘러보기** for anonymous browse). Truncate long emails.
 
-**The Guest Storage Notice Rule.** Centered overlays share one shell ([`GuestNoticeSheet`](src/components/GuestNoticeSheet.tsx), [`GuestMigrateSheet`](src/components/GuestMigrateSheet.tsx), [`AppDialog`](src/components/AppDialog.tsx), [`RemindSheet`](src/components/RemindSheet.tsx)): 32px `--login-wall` panel, ink scrim, true screen center. Guest notice/migrate fire once per device (`mybrary.guest.notice`, `mybrary.guest.migrateAsked`). AppDialog replaces browser `alert` / `confirm`. Do not repeat that notice as a shelf banner or 계정 만들기 link above the list.
+**The Protocol Stamp Modal Rule.** Centered overlays share one shell ([`AppDialog`](src/components/AppDialog.tsx), [`GuestNoticeSheet`](src/components/GuestNoticeSheet.tsx), [`GuestMigrateSheet`](src/components/GuestMigrateSheet.tsx), [`RemindSheet`](src/components/RemindSheet.tsx), [`LinkBundleSheet`](src/components/LinkBundleSheet.tsx)): ink scrim with light blur, `--login-wall` panel at `var(--radius-md)` (not 32px squircles), mono uppercase **protocol stamp** (warning glyph + label) above a display-face headline, soft body copy, then actions as secondary surface chip + solid primary (`--color-ink` fill, **white** label). Hover keeps dark fill + white text (slightly lifted ink mix only; never invert to light surface + dark ink). Danger confirms add a trash icon on the solid primary (leave-draft: **담기 취소 및 서재로 이동**). Classes: `.protocol-modal-*` in [`src/index.css`](src/index.css). Archival primary CTAs outside modals ([`Workbench`](src/components/Workbench.tsx) shelve, [`FileBatch`](src/components/FileBatch.tsx) classify) reuse `.protocol-modal-btn-primary` the same way; Auth Ladder magnet pills (`auth-btn-*`) stay separate. AppDialog replaces browser `alert` / `confirm`; optional `stamp` on `DialogConfirmOpts` (`""` hides stamp). Guest notice/migrate still fire once per device (`mybrary.guest.notice`, `mybrary.guest.migrateAsked`). Do not invent new centered confirms with pill `auth-btn-*` or browser `confirm()`. Do not repeat the guest notice as a shelf banner or 계정 만들기 link above the list.
 
 ## Motion & interaction
 
@@ -456,9 +453,13 @@ Binding against [ROADMAP.md](ROADMAP.md) Phase 4. Header stays brand + 로그인
 
 **The Day Magnet Rule.** 일자별 is a filter on find, not a calendar product and not a second home. **일자별** lives in the `/search` bar; type filtering is the horizontal **type book carousel** under it. Toggling day opens a month panel (18px radius, paper). Selected day uses magnet fill. Prev/next month, Escape closes. Day, type, query, and tags are AND except tags, which match any selected tag. Do not persist day in localStorage.
 
-**The List Tools Rule.** Search is a header icon on the right (beside dashboard and settings) → `/search`. On that page the header is only back, the search field, and the calendar icon. Entering `/search` expands that field and lifts the page in about 220ms; reduced motion skips it. The month panel opens in the page under the header. Autofocus field, placeholder **검색어를 입력해주세요.**, type books, paper tag chips. More than eight tags collapse behind a chevron (`aria-label` keeps 펼치기/접기). **일자별** is a calendar icon in the search bar (magnet when a day is selected or the panel is open). Shelf list-tools keeps the layout segment. Gallery is the default; list and accordion are options. Accordion groups the filtered window by scrap type (name and count). Several sections can be open at once, and they start closed. Gallery stays a grid of **Theme B library books**: asymmetric cover radius (`~3px / 9px`), manila cover wash by type, Newsreader title, category spine, type mark, and saved date. List, accordion, and search stay one row each, with that same small cover, spine, and type mark on the left, and the title plus saved date on the right. They do not tilt, and they do not show tags under the cover. Spine color matches the type mark: image, video, audio, text, link, document, unknown. **전체** uses magnet. A custom type name hashes to a stable muted color. Type books use that same full-height spine, type mark, name, and count. They stay in the shelf column and center when the row fits; a wider row keeps the viewport scroll. Cards inside a group reuse the book card. Preference persists as `mybrary.shelfLayout`. Type books sit above list-tools. Ad slot and list body stay separate sections below. Lists mount a page of cards, then more when the sentinel nears the viewport. Do not mount the whole shelf at once.
+**The List Tools Rule.** Search is a header icon on the right (beside dashboard and settings) → `/search`. On that page the header is only back, the search field, and the calendar icon. Entering `/search` expands that field and lifts the page in about 220ms; reduced motion skips it. The month panel opens in the page under the header. Autofocus field, placeholder **검색어를 입력해주세요.**, type books, paper tag chips. More than eight tags collapse behind a chevron (`aria-label` keeps 펼치기/접기). **일자별** is a calendar icon in the search bar (magnet when a day is selected or the panel is open). Shelf opens with a **workbench strip** (`.shelf-toolbar`): BookOpen icon, **서재 워크벤치** title, mono `총 {n}건 보관 중` badge, and a labeled layout segment (**마이크로 썸네일** / **비주얼 갤러리**). **Gallery** (default) and **Micro** (`mybrary.shelfLayout`) are the two options; the accordion / row-list layout is retired. Gallery is a **4:3 visual poster grid**: media plate (or type placeholder), mono type badge, optional play overlay, Newsreader title, two-line blurb (`previewText` → `memo` → OG description → `text`), and a caption footer. Micro is a **horizontal media row**: ~11rem 3:2 thumb with left spine stripe, type/date/domain meta, title, two-line blurb, and up to three tag chips. Selected cards (desktop, via `ShelfInspector`) get a `.scrap-card--selected` magnet outline. Spine color matches the type mark: image, video, audio, text, link, document, unknown. **전체** uses magnet. A custom type name hashes to a stable muted color. The **type book carousel** (spine, `spineLabel` i18n) always shows its eight fixed sections when possible — 전체, 책갈피, 메모, 사진, 영상, 소리, 링크, 문서 — including zero-count ones, so the archival index reads as a stable spine, not a shrinking one. Section titles use `--font-mono` (JetBrains Mono) for the SEC 0N archival feel. Cards lift `-2px` on hover (fine pointer). On desktop the carousel goes **sticky** under the header past ~160px of scroll and compacts (`type-book-carousel--sticky.type-book-carousel--compact`); mobile keeps the plain horizontal ribbon, never sticky. They stay in the shelf column and center when the row fits; a wider row keeps the viewport scroll. Preference persists as `mybrary.shelfLayout`. Type books sit below the workbench strip. Ad slot and list body stay separate sections below. Lists mount a page of cards, then more when the sentinel nears the viewport. Do not mount the whole shelf at once.
 
-**The Liquid Glass Rule.** Strong `.liquid-glass` is for button clusters: the gallery / list / accordion pill, the detail action groups, the settings choice tracks, and other control groups such as login, dialog confirm, and tag clusters. It is enamel over paper, an ink-tinted border, and a light blur, visible on a paper panel. Glass look may lay a weaker blur on cards and bordered panels. Do not put that blur on the hero. It is not a purple glass SaaS kit.
+**The Shelf Inspector Rule.** At ≥960px, selecting a Gallery or Micro card (`ScrapBookCard` `onSelect`) does not navigate; it sets `selectedId` and opens [`ShelfInspector`](src/components/ShelfInspector.tsx) as a sticky right-hand panel beside the list (`.shelf-with-inspector`) showing title, media, AI summary bullets, and memo, with a **조각 상세** link into `/scrap/:id` and a close control. Below 960px, the same tap navigates straight to `/scrap/:id`; there is no inspector panel on mobile. Card geometry and hover states stay identical whether or not the inspector is open.
+
+**The Workbench Rule.** The single-draft classify review at `/stick` is [`Workbench`](src/components/Workbench.tsx), not a bare `DraftCard`. It wraps `DraftCard` (`hideActions`) with a three-step mono rail — `01 입력 담기` → `02 AI 구조화 분석` → `03 양장본 분류 담기` (`workbenchStep1-3`) — driven by `draft.analyzing`, plus a right-hand CSS 3D book-cover preview (`.workbench-cover`, spine/cover wash from `spineColor`/`coverWash`) that appears at ≥720px and turns `is-shelved` once analysis finishes. Cancel/담기 (`workbenchShelve`) reuse the existing `classify-draft-actions` row and the same plan gates (`canStick`, `canUpload`) as before; batch review (`FileBatch`) keeps the plain hidden-actions `DraftCard`, not the Workbench.
+
+**The Liquid Glass Rule.** Strong `.liquid-glass` is for button clusters: the gallery / list / accordion pill, the detail action groups, the settings choice tracks, and other control groups such as login and tag clusters. Protocol Stamp modals use solid `.protocol-modal-btn-*` instead of liquid glass on confirms. It is enamel over paper, an ink-tinted border, and a light blur, visible on a paper panel. Glass look may lay a weaker blur on cards and bordered panels. Do not put that blur on the hero. It is not a purple glass SaaS kit.
 
 **The Long List Rule.** Shelf and `/search` render 24 scraps, then the next page on scroll or **더 보기**. Signed media is hydrated for that window only. Document film images mount only within four pages of the current page. Offscreen cards use `content-visibility: auto`. Do not sign every file for search or stats.
 
@@ -468,7 +469,7 @@ Binding against [ROADMAP.md](ROADMAP.md) Phase 4. Header stays brand + 로그인
 
 **The Ad Slot Rule.** When `showAds` is true (Free / Middle tiers), one AdMob banner (`AdSlot` via `adsbygoogle`) sits below **list-tools** and above the recency list. Env: `VITE_ADMOB_PUBLISHER_ID` (ca-pub-…) and `VITE_ADMOB_BANNER_SLOT`. High and Admin hide it. Browser SPAs use the AdSense tag; native Android/iOS shells can overlay native AdMob separately.
 
-**The Dashboard Rule.** Route `/dashboard`, header caption **대시보드** / Dashboard when signed in. Centered **dashboard-door** column max 40rem with **dashboard-panel** Theme B paper cards (`radius-lg`, Newsreader panel labels): shelf storage summary + `StorageGauge`, type counts as an SVG bubble chart, tag counts as bars, recent 10 timeline, top-7 days. Chart taps open search. **유형 관리** / **태그 관리** link to `/dashboard/types` and `/dashboard/tags` for add, rename, delete, and search. A day row opens `/search?day=`. Empty sections use compact shelf-empty. The header logo stays; the arrow to its left returns to the shelf. Not a second home.
+**The Dashboard Rule.** Route `/dashboard`, page title **서재 통계** / Library stats (same as the nav tab) when signed in. Centered **dashboard-door** column max 40rem with **dashboard-panel** Theme B paper cards (`radius-lg`, Newsreader panel labels): shelf storage summary + `StorageGauge`, type counts as an SVG bubble chart, tag counts as bars, recent 10 timeline, top-7 days. Chart taps open search. **유형 관리** / **태그 관리** link to `/dashboard/types` and `/dashboard/tags` for add, rename, delete, and search. A day row opens `/search?day=`. Empty sections use compact shelf-empty. The header logo stays; the arrow to its left returns to the shelf. Search (`/search`) uses the same header back. Not a second home.
 
 **The Plan Usage Rule.** Settings shows Free / Middle / High via [`PlanUsageBlock`](src/components/PlanUsageBlock.tsx) / `PlanTierMeta` (tier + one trial line) and a chevron to `/upgrade`. Dashboard shows shelf storage only (`dbUsageSummary` + `StorageGauge`). Admin unlimited omits the bar. Settings may show an ads note. Limits: Free 100MB / 1 file / ads / no remind; Middle 500MB / 3 files / ads / remind; High 1GB / unlimited batch / no ads / remind.
 
@@ -483,9 +484,9 @@ Binding against [ROADMAP.md](ROADMAP.md) Phase 4. Header stays brand + 로그인
 
 ### Header auth
 
-- 로그인 / Sign in is a 40–48px header control. Open state: paper sheet, `--radius-xl` 24px, email and password. Light sheet is surface cream. Dark sheet is night enamel.
-- Light sheet: `--login-wall` surface. Dark sheet: night enamel.
-- Escape and click-outside close it. One Job: close the sheet before intro hands off to the app. Do not stack with settings.
+- 로그인 / Sign in navigates to the dedicated [`/login`](src/pages/Login.tsx) page (Header 로그인, Intro CTA, and the trial/upgrade prompts all `navigate("/login")`; nothing opens `AuthSheet` as a sheet for entry anymore). The page is an archival dossier entry: watermark grid, B.I. wordmark (header-logo My+Brary + mono **AI BOOKSHELF** + book-squircle mark / favicon), Newsreader headline, and a paper dossier card (`login-dossier`) with spine accent. Auth fields are full-width. Header back: on login root → `/`; on signup/recovery → return to login form (no in-card back). Soft Deckle card order is Google → **또는 이메일로 계속** → email/password → **서재 열기** → browse guest → signup, then **아이디 찾기 · 비밀번호 찾기**. Sheet variant of `AuthSheet` still follows **The Auth Ladder Rule**. No site Footer on `/login` (dossier foot holds terms/privacy). Redirects to `/` if already signed in and hides the header's own 로그인 button while on `/login`.
+- Light panel: `--login-wall` surface. Dark panel: near-black Soft Deckle or Editorial night.
+- Escape and click-outside still close `AuthSheet` when it is used as a sheet (password-recovery deep links can still surface it that way). One Job: close any open sheet before intro hands off to the app. Do not stack with settings.
 - After session: chip + 나가기 on `/settings`. Leave from the app returns to intro.
 
 ### 일자별 filter

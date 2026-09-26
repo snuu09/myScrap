@@ -6,6 +6,8 @@ export type DialogConfirmOpts = {
   body: string;
   confirmLabel?: string;
   cancelLabel?: string;
+  /** Mono uppercase protocol stamp above the title. Pass `""` to hide. */
+  stamp?: string;
   danger?: boolean;
 };
 

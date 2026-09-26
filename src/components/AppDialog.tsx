@@ -1,9 +1,8 @@
 import { useEffect, useRef } from "react";
-import { X } from "lucide-react";
+import { TriangleAlert, Trash2, X } from "lucide-react";
 import { t } from "../i18n";
 import { usePrefs } from "../context/Prefs";
 import type { DialogConfirmOpts } from "../lib/dialog";
-import { GlassCluster } from "./GlassCluster";
 import { sheetGenieClass, usePresence } from "../lib/presence";
 
 type State =
@@ -16,7 +15,7 @@ type Props = {
   onClose: (result: boolean) => void;
 };
 
-/** Centered paper dialog replacing window.alert / window.confirm. */
+/** Protocol Stamp centered dialog replacing window.alert / window.confirm. */
 export function AppDialog({ state, onClose }: Props) {
   const { lang } = usePrefs();
 
@@ -42,68 +41,74 @@ export function AppDialog({ state, onClose }: Props) {
       ? view.title || t(lang, "dialogNotice")
       : view.opts.title || t(lang, "dialogConfirmTitle");
   const body = view.kind === "alert" ? view.message : view.opts.body;
+  const stamp =
+    view.kind === "confirm"
+      ? view.opts.stamp !== undefined
+        ? view.opts.stamp
+        : t(lang, "dialogConfirmStamp")
+      : t(lang, "dialogNoticeStamp");
   const confirmLabel =
     view.kind === "confirm"
       ? view.opts.confirmLabel || t(lang, "dialogOk")
       : t(lang, "dialogOk");
   const cancelLabel =
     view.kind === "confirm" ? view.opts.cancelLabel || t(lang, "cancel") : t(lang, "cancel");
-  const danger = view.kind === "confirm" && view.opts.danger;
-  const confirm = (
-    <button
-      type="button"
-      className={danger ? "auth-btn-primary settings-btn-reset" : "auth-btn-primary"}
-      onClick={() => onClose(true)}
-      autoFocus
-    >
-      {confirmLabel}
-    </button>
-  );
+  const danger = view.kind === "confirm" && Boolean(view.opts.danger);
 
   return (
-    <div
-      className="fixed inset-0 z-50 bg-[color-mix(in_srgb,var(--color-ink)_40%,transparent)]"
-      onClick={() => onClose(false)}
-    >
+    <div className="protocol-modal-scrim" onClick={() => onClose(false)}>
       <div className="sheet-stage">
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="app-dialog-title"
-        className={
-          "sheet-panel w-[min(22rem,calc(100vw-24px))] rounded-[32px] border border-paper-line bg-login-wall p-3.5 shadow-[var(--shadow-sheet)]" +
-          sheetGenieClass(presence.closing)
-        }
-        onAnimationEnd={(event) => presence.onEnd(event, "sheet-genie-out")}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="mb-2 flex items-center justify-between gap-1">
-          <h2 id="app-dialog-title" className="m-0 min-w-0 flex-1 text-[1.0625rem] font-bold">
-            {title}
-          </h2>
-          <button
-            type="button"
-            className="grid size-12 shrink-0 place-items-center"
-            onClick={() => onClose(false)}
-            aria-label={t(lang, "close")}
-          >
-            <X className="size-[22px]" strokeWidth={1.8} />
-          </button>
-        </div>
-        <p className="auth-lead whitespace-pre-wrap">{body}</p>
-        <div className="mt-3 flex flex-col gap-2">
-          {danger ? confirm : (
-            <GlassCluster className="liquid-solo" magnet>
-              {confirm}
-            </GlassCluster>
-          )}
-          {isConfirm ? (
-            <button type="button" className="auth-btn-secondary" onClick={() => onClose(false)}>
-              {cancelLabel}
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="app-dialog-title"
+          className={"sheet-panel protocol-modal-panel" + sheetGenieClass(presence.closing)}
+          onAnimationEnd={(event) => presence.onEnd(event, "sheet-genie-out")}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="protocol-modal-head">
+            <div className="protocol-modal-head-copy">
+              {stamp ? (
+                <div className="protocol-modal-stamp">
+                  <TriangleAlert aria-hidden strokeWidth={1.8} />
+                  <span>{stamp}</span>
+                </div>
+              ) : null}
+              <h2 id="app-dialog-title" className="protocol-modal-title">
+                {title}
+              </h2>
+            </div>
+            <button
+              type="button"
+              className="protocol-modal-close"
+              onClick={() => onClose(false)}
+              aria-label={t(lang, "close")}
+            >
+              <X className="size-5" strokeWidth={1.8} />
             </button>
-          ) : null}
+          </div>
+          <p className="protocol-modal-body">{body}</p>
+          <div className="protocol-modal-actions">
+            {isConfirm ? (
+              <button
+                type="button"
+                className="protocol-modal-btn-secondary"
+                onClick={() => onClose(false)}
+              >
+                {cancelLabel}
+              </button>
+            ) : null}
+            <button
+              type="button"
+              className={danger ? "protocol-modal-btn-danger" : "protocol-modal-btn-primary"}
+              onClick={() => onClose(true)}
+              autoFocus
+            >
+              {danger ? <Trash2 aria-hidden strokeWidth={1.8} /> : null}
+              <span>{confirmLabel}</span>
+            </button>
+          </div>
         </div>
-      </div>
       </div>
     </div>
   );

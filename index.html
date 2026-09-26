@@ -14,7 +14,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Inter:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Space+Grotesk:wght@400;500;600;700&display=swap"
     />
     <link
       rel="stylesheet"
@@ -30,9 +30,11 @@
           document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
           document.documentElement.style.colorScheme = dark ? "dark" : "light";
           var palette = localStorage.getItem("mybrary.palette");
-          var nextPalette =
-            palette === "editorial" ? "editorial" : palette === "basalt" ? "basalt" : "warm";
-          if (palette === "kitchen") nextPalette = "warm";
+          var nextPalette = "warm";
+          if (palette === "editorial") nextPalette = "editorial";
+          else if (palette === "basalt") nextPalette = "basalt";
+          else if (palette === "deckle") nextPalette = "deckle";
+          else if (palette === "kitchen") nextPalette = "warm";
           document.documentElement.setAttribute("data-palette", nextPalette);
           var look = localStorage.getItem("mybrary.look");
           document.documentElement.setAttribute("data-look", look === "library" ? "library" : "glass");

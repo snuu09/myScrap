@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MyBrary · 4분</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/sun-typeface/SUIT@2/fonts/static/woff2/SUIT.css" />
+  <style>
+    :root {
+      --magnet: #e56f0a;
+      --ink: #322c26;
+      --ink-soft: #524940;
+      --muted: #6e665c;
+      --enamel: #fff6f0;
+      --paper: #ffffff;
+      --hairline: rgba(50, 44, 38, 0.12);
+      --shadow: 0 16px 36px rgba(42, 26, 8, 0.1);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; background: #f3e7de; color: var(--ink); }
+    body {
+      font-family: SUIT, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+      overflow: hidden;
+    }
+    button { font-family: inherit; }
+    .stage { position: fixed; inset: 0; display: grid; place-items: center; }
+    .deck {
+      position: relative;
+      width: 1920px;
+      height: 1080px;
+      background: var(--enamel);
+      overflow: hidden;
+      transform-origin: center center;
+    }
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: none;
+      padding: 60px 72px 76px;
+      flex-direction: column;
+    }
+    .slide.on { display: flex; }
+    .kicker {
+      margin: 0 0 10px;
+      color: var(--magnet);
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+    }
+    h1 {
+      margin: 0;
+      font-size: 84px;
+      line-height: 1.08;
+      letter-spacing: -0.045em;
+      font-weight: 800;
+    }
+    h2 {
+      margin: 0;
+      font-size: 52px;
+      line-height: 1.15;
+      letter-spacing: -0.04em;
+      font-weight: 800;
+    }
+    .lead { margin: 16px 0 0; font-size: 32px; line-height: 1.4; color: var(--ink-soft); font-weight: 550; }
+    .quiet { margin: 12px 0 0; color: var(--muted); font-size: 22px; font-weight: 550; }
+    .spread { margin-top: auto; }
+
+    .chips { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 22px; }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      height: 52px;
+      padding: 0 18px 0 14px;
+      border-radius: 999px;
+      background: var(--paper);
+      border: 1px solid var(--hairline);
+      font-size: 22px;
+      font-weight: 700;
+    }
+    .chip img { width: 26px; height: 26px; object-fit: contain; }
+
+    .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin-top: 36px; }
+    .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-top: 26px; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 28px; }
+    .card {
+      background: var(--paper);
+      border: 1px solid var(--hairline);
+      border-radius: 24px;
+      padding: 28px 26px;
+      box-shadow: var(--shadow);
+      min-height: 0;
+    }
+    .card .mark {
+      width: 64px;
+      height: 64px;
+      border-radius: 18px;
+      background: #fff1e4;
+      display: grid;
+      place-items: center;
+      margin-bottom: 18px;
+    }
+    .card .mark img { width: 36px; height: 36px; }
+    .card h3 { margin: 0 0 8px; font-size: 28px; letter-spacing: -0.03em; }
+    .card p { margin: 0; font-size: 22px; color: var(--muted); font-weight: 550; line-height: 1.4; }
+    .card .label {
+      margin: 0 0 10px;
+      color: var(--magnet);
+      font-size: 18px;
+      font-weight: 750;
+      letter-spacing: 0.04em;
+    }
+    .card.compact { padding: 22px 20px; min-height: 190px; }
+    .card.compact h3 { font-size: 24px; }
+    .card.compact p { font-size: 18px; }
+    .card .body {
+      margin: 8px 0 0;
+      font-size: 18px;
+      line-height: 1.45;
+      color: var(--muted);
+      font-weight: 550;
+    }
+
+    .shots {
+      display: flex;
+      align-items: stretch;
+      gap: 20px;
+      margin-top: 20px;
+      flex: 1;
+      min-height: 0;
+    }
+    .desk, .phone-wrap, .shot-frame {
+      background: var(--paper);
+      border: 1px solid var(--hairline);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      min-width: 0;
+    }
+    .desk { flex: 1; }
+    .phone-wrap {
+      flex: 0 0 260px;
+      background: #2a1a08;
+      border-color: #2a1a08;
+      padding: 10px;
+      align-self: stretch;
+    }
+    .desk img, .shot-frame img {
+      display: block;
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+    }
+    .phone-wrap img.shot {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: center top;
+      border-radius: 16px;
+    }
+    .draft-trio {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      flex: 1;
+      min-height: 0;
+    }
+    .draft-trio .shot-frame { min-height: 0; }
+    .draft-trio .shot-frame img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: top center;
+      background: #fbf3ee;
+    }
+    .types-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+      flex: 1;
+      min-height: 0;
+    }
+    .types-grid .shot-frame img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: top center;
+      background: #fbf3ee;
+    }
+    .web-first {
+      display: flex;
+      gap: 18px;
+      margin-top: 18px;
+      flex: 1;
+      min-height: 0;
+    }
+    .web-first .main { flex: 1; min-width: 0; display: flex; flex-direction: column; min-height: 0; }
+    .tag {
+      position: absolute;
+      right: 12px;
+      top: 12px;
+      z-index: 2;
+      background: var(--magnet);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      padding: 5px 11px;
+      border-radius: 999px;
+    }
+
+    .steps { display: flex; gap: 14px; margin-top: 28px; }
+    .step {
+      flex: 1;
+      background: var(--paper);
+      border: 1px solid var(--hairline);
+      border-radius: 20px;
+      padding: 22px 18px;
+      text-align: left;
+    }
+    .step b {
+      display: inline-grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: var(--magnet);
+      color: #fff;
+      font-size: 16px;
+      margin-bottom: 14px;
+    }
+    .step span { display: block; font-size: 24px; font-weight: 750; line-height: 1.3; }
+
+    .tip {
+      margin-top: 22px;
+      background: #fff3df;
+      border-radius: 16px;
+      padding: 16px 20px;
+      font-size: 24px;
+      font-weight: 700;
+    }
+    .feature-grid {
+      display: grid;
+      grid-template-columns: 1.15fr 1fr 1fr;
+      gap: 18px;
+      margin-top: 22px;
+      flex: 1;
+      min-height: 0;
+    }
+    .mini-shot {
+      background: var(--paper);
+      border: 1px solid var(--hairline);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      min-height: 0;
+    }
+    .mini-shot img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #fbf3ee;
+    }
+    .mini-shot.tall { grid-row: span 2; }
+    .mini-shot.cover img { object-fit: contain; object-position: top center; }
+    .problem-split {
+      display: grid;
+      grid-template-columns: 1.35fr 0.9fr;
+      gap: 24px;
+      margin-top: 24px;
+      flex: 1;
+      min-height: 0;
+    }
+    .problem-visual {
+      background: #0b1f14;
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      position: relative;
+    }
+    .problem-visual img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center top;
+    }
+    .problem-icons {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-height: 0;
+    }
+    .problem-icons .card {
+      flex: 1;
+      padding: 14px 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-height: 0;
+    }
+    .problem-icons .card .mark {
+      width: 44px;
+      height: 44px;
+      margin-bottom: 8px;
+      border-radius: 14px;
+    }
+    .problem-icons .card .mark img { width: 24px; height: 24px; }
+    .problem-icons .card h3 { font-size: 22px; margin-bottom: 4px; }
+    .problem-icons .card .body { font-size: 16px; margin-top: 4px; }
+    .problem-icons .card .label { margin-bottom: 4px; }
+
+    table.compare {
+      width: 100%;
+      margin-top: 28px;
+      border-collapse: separate;
+      border-spacing: 0;
+      background: var(--paper);
+      border: 1px solid var(--hairline);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+    .compare th, .compare td {
+      padding: 18px 20px;
+      text-align: left;
+      font-size: 22px;
+      border-bottom: 1px solid var(--hairline);
+      vertical-align: top;
+    }
+    .compare th {
+      background: #fff1e4;
+      color: var(--magnet);
+      font-size: 18px;
+      font-weight: 750;
+      letter-spacing: 0.03em;
+    }
+    .compare tr:last-child td { border-bottom: 0; }
+    .compare td strong { font-weight: 800; }
+
+    .split-list { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 32px; }
+    .split-list ul { margin: 10px 0 0; padding: 0; list-style: none; }
+    .split-list li {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      font-size: 24px;
+      font-weight: 650;
+      margin: 10px 0;
+      line-height: 1.35;
+    }
+    .dot {
+      width: 10px;
+      height: 10px;
+      margin-top: 10px;
+      border-radius: 50%;
+      background: var(--magnet);
+      flex: 0 0 auto;
+    }
+    .dot.soft { background: var(--muted); }
+
+    .reflect {
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      gap: 36px;
+      margin-top: 28px;
+      align-items: stretch;
+      flex: 1;
+      min-height: 0;
+    }
+    .poster {
+      background: #0b1b3a;
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .poster img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center top;
+    }
+    .reflect-copy {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 18px;
+    }
+    .reflect-copy p {
+      margin: 0;
+      font-size: 28px;
+      line-height: 1.45;
+      font-weight: 550;
+      color: var(--ink-soft);
+    }
+
+    .url { margin-top: 22px; font-size: 40px; font-weight: 750; color: var(--magnet); }
+    .byline {
+      margin: 14px 0 0;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+    .demo-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 12px;
+      flex-shrink: 0;
+      color: var(--magnet);
+      font-size: 18px;
+      font-weight: 750;
+      text-decoration: none;
+      border-bottom: 2px solid rgba(229, 111, 10, 0.35);
+      padding-bottom: 2px;
+      width: fit-content;
+    }
+    .demo-link:hover { border-bottom-color: var(--magnet); }
+    a.shot-link {
+      text-decoration: none;
+      color: inherit;
+      cursor: pointer;
+    }
+    a.shot-frame.shot-link {
+      display: flex;
+      height: 100%;
+      min-height: 0;
+    }
+    a.mini-shot.shot-link {
+      display: flex;
+    }
+    a.shot-link:focus-visible {
+      outline: 3px solid var(--magnet);
+      outline-offset: 2px;
+    }
+    .reflect-hero {
+      margin-top: 20px;
+      flex: 1;
+      min-height: 0;
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      background: #0b2a2e;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .reflect-hero img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: center;
+    }
+    .reflect-pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-top: 20px;
+      flex: 1;
+      min-height: 0;
+    }
+    .reflect-panel {
+      position: relative;
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      background: #0b1b3a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 0;
+    }
+    .reflect-panel img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: center;
+    }
+    .qr-close {
+      display: grid;
+      grid-template-columns: 1fr 260px;
+      gap: 36px;
+      align-items: center;
+      flex: 1;
+      max-width: 1400px;
+    }
+    .qr-box {
+      background: var(--paper);
+      border: 1px solid var(--hairline);
+      border-radius: 28px;
+      padding: 28px;
+      box-shadow: var(--shadow);
+    }
+    .qr-box img { display: block; width: 100%; height: auto; }
+    .progress { position: absolute; left: 0; top: 0; height: 6px; background: var(--magnet); z-index: 5; }
+    .count {
+      position: absolute;
+      right: 36px;
+      bottom: 24px;
+      color: var(--muted);
+      font-size: 18px;
+      font-weight: 700;
+    }
+    .nav { position: fixed; left: 22px; bottom: 18px; display: flex; gap: 10px; z-index: 20; }
+    .nav button {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      border: 1px solid var(--hairline);
+      background: var(--paper);
+      color: var(--ink);
+      cursor: pointer;
+      font-size: 18px;
+    }
+    .notes {
+      display: none;
+      position: fixed;
+      left: 24px;
+      right: 24px;
+      bottom: 72px;
+      z-index: 30;
+      background: #2a1a08;
+      color: #fff6f0;
+      border-radius: 16px;
+      padding: 14px 18px;
+      font-size: 18px;
+      line-height: 1.45;
+    }
+    body.show-notes .notes { display: block; }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="deck" id="deck">
+      <div class="progress" id="bar"></div>
+
+      <section class="slide on" data-note="붙여넣으면 AI가 분류해 주는 개인 책장입니다. 4분 이야기입니다.">
+        <p class="kicker">성남청년 AI 캠프 · MVP</p>
+        <h1>MyBrary</h1>
+        <p class="lead">붙여넣으면, AI가 분류해 줘요.</p>
+        <p class="byline">박경진</p>
+        <div class="chips">
+          <span class="chip"><img src="icons/paste.png" alt="" />붙여넣기</span>
+          <span class="chip"><img src="icons/sparkle.png" alt="" />AI 분류</span>
+          <span class="chip"><img src="icons/search.png" alt="" />다시 찾기</span>
+        </div>
+        <p class="quiet spread">개인 스크랩 · 글 · 사진 · 영상 · 소리 · 링크 · 문서</p>
+      </section>
+
+      <section class="slide" data-note="스크랩 서비스는 이미 있습니다. 다만 일부 형태만 받거나, 링크는 직접 열어봐야 합니다. MyBrary는 여러 형태를 한곳에 모으고 미리보기·요약으로 이동 없이 확인합니다.">
+        <p class="kicker">문제</p>
+        <h2>정보는 많은데, 한곳이 없어요.</h2>
+        <p class="quiet">스크랩 서비스는 이미 있습니다. 그래도 모으고 확인하는 흐름은 여전히 불편합니다.</p>
+        <div class="problem-split">
+          <div class="problem-visual">
+            <img src="shots/problem-miricanvas.png" alt="MyBrary 문제 정의 포스터" />
+          </div>
+          <div class="problem-icons">
+            <article class="card">
+              <span class="mark"><img src="icons/pages.png" alt="" /></span>
+              <p class="label">누구</p>
+              <h3>스크랩을 자주 하는 사람</h3>
+              <p class="body">글·링크·파일·영상을 자주 저장하지만, 쓰는 도구가 여러 개로 갈라집니다.</p>
+            </article>
+            <article class="card">
+              <span class="mark"><img src="icons/clipboard.png" alt="" /></span>
+              <p class="label">불편</p>
+              <h3>서비스는 있어도 형태·확인이 불편함</h3>
+              <p class="body">스크랩 서비스는 있지만 일부 자료 형태만 받거나, 링크는 직접 열어봐야 내용을 확인할 수 있습니다.</p>
+            </article>
+            <article class="card">
+              <span class="mark"><img src="icons/search.png" alt="" /></span>
+              <p class="label">왜 안 풀리나</p>
+              <h3>저장과 확인이 따로 움직임</h3>
+              <p class="body">형태마다 앱이 갈라지고, 미리보기·요약이 약해 원문으로 다시 이동해야 합니다.</p>
+            </article>
+            <article class="card" style="background:#fff3df; border-color:transparent; box-shadow:none;">
+              <p class="label">그래서 MyBrary</p>
+              <h3>붙여넣으면 초안이 나와요</h3>
+              <p class="body">여러 형태를 한 책장에 모으고, 미리보기·요약으로 이동 없이 확인할 수 있게 합니다.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="slide" data-note="웹 기준으로 메모·링크·영상 초안을 보여 주세요. 폰은 부가적으로, 같은 흐름이 모바일에서도 됩니다.">
+        <p class="kicker">AI 자동 분류</p>
+        <h2>붙여넣으면, 결과 초안이 먼저 나와요.</h2>
+        <div class="chips">
+          <span class="chip"><img src="icons/text.png" alt="" />제목</span>
+          <span class="chip"><img src="icons/tag.png" alt="" />태그</span>
+          <span class="chip"><img src="icons/bookmark.png" alt="" />분류</span>
+          <span class="chip"><img src="icons/sparkle.png" alt="" />요약·분석</span>
+        </div>
+        <div class="web-first">
+          <div class="main">
+            <div class="draft-trio">
+              <div class="shot-frame">
+                <span class="tag">메모 초안</span>
+                <img src="shots/desktop-draft-memo.png" alt="메모 분류 초안" />
+              </div>
+              <div class="shot-frame">
+                <span class="tag">링크 초안</span>
+                <img src="shots/desktop-draft-link.png" alt="링크 분류 초안" />
+              </div>
+              <div class="shot-frame">
+                <span class="tag">영상 초안</span>
+                <img src="shots/desktop-draft-video.png" alt="영상 분류 초안" />
+              </div>
+            </div>
+          </div>
+          <div class="phone-wrap">
+            <span class="tag">폰 · +</span>
+            <img class="shot" src="shots/mobile-plus.png" alt="폰 추가 메뉴" />
+          </div>
+        </div>
+        <a class="demo-link" href="https://mybrary-snuu09.web.app/" target="_blank" rel="noopener">https://mybrary-snuu09.web.app/</a>
+      </section>
+
+      <section class="slide" data-note="지원 형태를 보여 준 뒤, 시연 링크로 라이브 웹을 엽니다. https://mybrary-snuu09.web.app/">
+        <p class="kicker">핵심 기능 · 지원 형태</p>
+        <h2>여러 형태를, 같은 책장에 모아요.</h2>
+        <div class="chips">
+          <span class="chip"><img src="icons/file.png" alt="" />PDF·문서</span>
+          <span class="chip"><img src="icons/link.png" alt="" />링크</span>
+          <span class="chip"><img src="icons/video.png" alt="" />영상</span>
+          <span class="chip"><img src="icons/audio.png" alt="" />소리</span>
+          <span class="chip"><img src="icons/text.png" alt="" />메모</span>
+          <span class="chip"><img src="icons/image.png" alt="" />사진</span>
+        </div>
+        <div class="web-first">
+          <div class="main">
+            <div class="types-grid">
+              <a class="shot-frame shot-link" href="https://mybrary-snuu09.web.app/" target="_blank" rel="noopener">
+                <span class="tag">PDF</span>
+                <img src="shots/desktop-detail-pdf.png" alt="PDF 상세 화면" />
+              </a>
+              <a class="shot-frame shot-link" href="https://mybrary-snuu09.web.app/" target="_blank" rel="noopener">
+                <span class="tag">링크</span>
+                <img src="shots/desktop-detail-link.png" alt="링크 상세 화면" />
+              </a>
+              <a class="shot-frame shot-link" href="https://mybrary-snuu09.web.app/" target="_blank" rel="noopener">
+                <span class="tag">영상</span>
+                <img src="shots/desktop-detail-video.png" alt="영상 상세 화면" />
+              </a>
+              <a class="shot-frame shot-link" href="https://mybrary-snuu09.web.app/" target="_blank" rel="noopener">
+                <span class="tag">소리</span>
+                <img src="shots/desktop-detail-audio.png" alt="소리 상세 화면" />
+              </a>
+            </div>
+          </div>
+          <div class="phone-wrap">
+            <span class="tag">폰 · 상세</span>
+            <img class="shot" src="shots/mobile-detail.png" alt="모바일 상세 화면" />
+          </div>
+        </div>
+        <a class="demo-link" href="https://mybrary-snuu09.web.app/" target="_blank" rel="noopener">https://mybrary-snuu09.web.app/</a>
+      </section>
+
+      <section class="slide" data-note="MVP 화면을 보여 준 뒤, 시연 링크로 라이브 웹을 엽니다. https://mybrary-snuu09.web.app/">
+        <p class="kicker">MVP 결과</p>
+        <h2>핵심 흐름은 돌아가고, 관리까지 붙었어요.</h2>
+        <div class="feature-grid">
+          <a class="mini-shot tall cover shot-link" href="https://mybrary-snuu09.web.app/" target="_blank" rel="noopener">
+            <span class="tag">책장</span>
+            <img src="shots/desktop-mvp-gallery.png" alt="책장 화면" />
+          </a>
+          <a class="mini-shot cover shot-link" href="https://mybrary-snuu09.web.app/" target="_blank" rel="noopener">
+            <span class="tag">묶음 보기</span>
+            <img src="shots/desktop-mvp-bundled.png" alt="묶음 보기 화면" />
+          </a>
+          <a class="mini-shot cover shot-link" href="https://mybrary-snuu09.web.app/" target="_blank" rel="noopener">
+            <span class="tag">서재 통계</span>
+            <img src="shots/desktop-mvp-dashboard.png" alt="서재 통계 화면" />
+          </a>
+          <article class="card compact">
+            <p class="label">구현됨</p>
+            <h3>붙여넣기 · AI 분류 · 책장</h3>
+            <p>검색 · 상세 · 서재 통계 · 로그인 · 배포</p>
+          </article>
+          <article class="card compact">
+            <p class="label">보완 예정</p>
+            <h3>결제 · 확장 · 공유</h3>
+            <p>내보내기 · 네이티브 앱</p>
+          </article>
+        </div>
+        <a class="demo-link" href="https://mybrary-snuu09.web.app/" target="_blank" rel="noopener">https://mybrary-snuu09.web.app/</a>
+      </section>
+
+      <section class="slide" data-note="바이브 코딩과 안드로이드 개발만 한 내가 web 에 대한 지식을 경험을 기대하여 지원하였고 좋은 기회로 인해 2달 간 값진 경험을 하였다. mvp 단계지만 생각한 아이디어를 바이브 코딩을 통해 구현했고 점점 욕심과 의욕이 생겨 실제 서비스가 될 수 있게 노력할 예정이다">
+        <p class="kicker">소감</p>
+        <div class="reflect-pair">
+          <div class="reflect-panel">
+            <span class="tag">1 · 캠프 포스터</span>
+            <img src="shots/camp-poster.jpg" alt="성남청년 AI 캠프 포스터" />
+          </div>
+          <div class="reflect-panel">
+            <span class="tag">2 · 소개</span>
+            <img src="shots/reflect-intro.jpg" alt="박경진을 소개합니다" />
+          </div>
+        </div>
+      </section>
+
+      <section class="slide" data-note="라이브에서 둘러보기로 바로 열 수 있습니다.">
+        <p class="kicker">감사합니다</p>
+        <div class="qr-close">
+          <div>
+            <h1>한번 붙여넣어 보세요.</h1>
+            <p class="url">mybrary-snuu09.web.app</p>
+            <p class="quiet">QR로 바로 둘러볼 수 있습니다.</p>
+          </div>
+          <div class="qr-box">
+            <img src="shots/site-qr.png" alt="MyBrary 사이트 QR 코드" />
+          </div>
+        </div>
+      </section>
+
+      <div class="count" id="count">01 / 08</div>
+    </div>
+  </div>
+  <div class="notes" id="notes"></div>
+  <div class="nav">
+    <button type="button" id="prev" aria-label="이전">←</button>
+    <button type="button" id="next" aria-label="다음">→</button>
+  </div>
+  <script>
+    const slides = [...document.querySelectorAll(".slide")];
+    const notes = document.getElementById("notes");
+    const bar = document.getElementById("bar");
+    const count = document.getElementById("count");
+    let i = 0;
+    function fit() {
+      const deck = document.getElementById("deck");
+      const s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+      deck.style.transform = "scale(" + s + ")";
+    }
+    function show(n) {
+      i = Math.max(0, Math.min(slides.length - 1, n));
+      slides.forEach((s, idx) => s.classList.toggle("on", idx === i));
+      bar.style.width = ((i + 1) / slides.length * 100) + "%";
+      count.textContent = String(i + 1).padStart(2, "0") + " / " + String(slides.length).padStart(2, "0");
+      notes.textContent = slides[i].dataset.note || "";
+    }
+    document.getElementById("next").onclick = () => show(i + 1);
+    document.getElementById("prev").onclick = () => show(i - 1);
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowRight" || e.key === " ") { e.preventDefault(); show(i + 1); }
+      if (e.key === "ArrowLeft") { e.preventDefault(); show(i - 1); }
+      if (e.key === "n" || e.key === "N") document.body.classList.toggle("show-notes");
+    });
+    window.addEventListener("resize", fit);
+    fit();
+    show(0);
+  </script>
+</body>
+</html>

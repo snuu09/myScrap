@@ -105,7 +105,7 @@ export function FileBatch({
       </ul>
       <button
         type="button"
-        className={"auth-btn-primary px-4" + (saving ? " is-progress" : "")}
+        className={"protocol-modal-btn-primary px-4" + (saving ? " is-progress" : "")}
         disabled={!ready || saving}
         onClick={onConfirm}
       >

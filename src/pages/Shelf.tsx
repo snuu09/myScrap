@@ -11,7 +11,9 @@ import { GlassCluster } from "../components/GlassCluster";
 import { BusyOverlay } from "../components/BusyOverlay";
 import { GuestNoticeSheet } from "../components/GuestNoticeSheet";
 import { ScrapList } from "../components/ScrapList";
+import { ShelfInspector } from "../components/ShelfInspector";
 import { StickDock } from "../components/StickDock";
+import { Workbench } from "../components/Workbench";
 import { requestAnalyze } from "../lib/analyze";
 import { sheetGenieClass, usePresence } from "../lib/presence";
 import { fetchOgPreview } from "../lib/og";
@@ -105,6 +107,23 @@ export function Shelf() {
   const [dropping, setDropping] = useState(false);
   const [error, setError] = useState("");
   const [top, setTop] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [inspectorReady, setInspectorReady] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 960px)");
+    const sync = () => setInspectorReady(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+
+  function selectScrap(id: string) {
+    if (inspectorReady) setSelectedId((cur) => (cur === id ? cur : id));
+    else navigate(`/scrap/${id}`);
+  }
+
+  const selectedScrap = selectedId ? scraps.find((item) => item.id === selectedId) || null : null;
 
   useEffect(() => {
     const q = searchParams.get("q");
@@ -918,10 +937,11 @@ export function Shelf() {
     if (
       !opts?.force &&
       !(await confirm({
+        stamp: "",
         title: t("leaveDraftTitle"),
         body: t("leaveDraftConfirm"),
         confirmLabel: t("leaveDraftDiscard"),
-        cancelLabel: t("cancel"),
+        cancelLabel: t("leaveDraftKeep"),
         danger: true,
       }))
     )
@@ -938,10 +958,11 @@ export function Shelf() {
     if (!pendingDrafts.length || savingBatch) return;
     if (
       !(await confirm({
+        stamp: "",
         title: t("leaveDraftTitle"),
         body: t("leaveDraftConfirm"),
         confirmLabel: t("leaveDraftDiscard"),
-        cancelLabel: t("cancel"),
+        cancelLabel: t("leaveDraftKeep"),
         danger: true,
       }))
     )
@@ -1066,7 +1087,7 @@ export function Shelf() {
     ) : null;
 
   const draftPanel = draft ? (
-    <DraftCard
+    <Workbench
       draft={draft}
       uploadRatio={uploadRatio}
       queueLabel={queueLabel}
@@ -1127,18 +1148,25 @@ export function Shelf() {
           ) : null}
         </div>
       ) : (
-      <div className="shelf-column">
-        {error ? <p className="mx-auto max-w-[40rem] px-[var(--gutter)] pt-3 text-[0.8125rem] text-danger">{error}</p> : null}
-        <ScrapList
-          scraps={scraps}
-          loading={!listReady}
-          typeFilter={typeFilter}
-          onType={setTypeFilter}
-          hasMore={paged.hasMore}
-          onLoadMore={paged.loadMore}
-          sentinelRef={paged.sentinelRef}
-          visible={paged.slice}
-        />
+      <div className={inspectorReady && selectedScrap ? "shelf-with-inspector" : undefined}>
+        <div className="shelf-column">
+          {error ? <p className="mx-auto max-w-[40rem] px-[var(--gutter)] pt-3 text-[0.8125rem] text-danger">{error}</p> : null}
+          <ScrapList
+            scraps={scraps}
+            loading={!listReady}
+            typeFilter={typeFilter}
+            onType={setTypeFilter}
+            hasMore={paged.hasMore}
+            onLoadMore={paged.loadMore}
+            sentinelRef={paged.sentinelRef}
+            visible={paged.slice}
+            selectedId={inspectorReady ? selectedId : null}
+            onSelectScrap={selectScrap}
+          />
+        </div>
+        {inspectorReady && selectedScrap ? (
+          <ShelfInspector scrap={selectedScrap} onClose={() => setSelectedId(null)} />
+        ) : null}
       </div>
       )}
       {composing ? null : (

@@ -2,10 +2,11 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import type { Lang } from "../i18n";
 
 export type ThemeChoice = "light" | "dark" | "system";
-/** warm = Theme B Warm Integrated; editorial = Theme A Minimal Editorial; basalt = charcoal accent on warm. */
-export type Palette = "warm" | "editorial" | "basalt";
+/** editorial = Minimal Editorial; deckle = Soft Deckle Archival (default). Legacy warm/basalt/kitchen migrate to deckle. */
+export type Palette = "editorial" | "deckle";
 export type Look = "glass" | "library";
-export type ShelfLayout = "list" | "gallery" | "accordion";
+/** micro = horizontal media rows; gallery = 4:3 visual poster grid. Legacy list→micro; accordion removed. */
+export type ShelfLayout = "micro" | "gallery";
 
 type Prefs = {
   lang: Lang;
@@ -46,15 +47,21 @@ function readPalette(): Palette {
   try {
     const stored = localStorage.getItem("mybrary.palette");
     if (stored === "editorial") return "editorial";
-    if (stored === "basalt") return "basalt";
-    if (stored === "warm" || stored === "kitchen" || !stored) {
-      if (stored === "kitchen") localStorage.setItem("mybrary.palette", "warm");
-      return "warm";
+    if (stored === "deckle") return "deckle";
+    // Legacy warm / kitchen / basalt / missing → Soft Deckle
+    if (stored === "warm" || stored === "kitchen" || stored === "basalt" || !stored) {
+      localStorage.setItem("mybrary.palette", "deckle");
+      return "deckle";
     }
   } catch {
     /* ignore */
   }
-  return "warm";
+  try {
+    localStorage.setItem("mybrary.palette", "deckle");
+  } catch {
+    /* ignore */
+  }
+  return "deckle";
 }
 
 function readLook(): Look {
@@ -70,12 +77,20 @@ function readLook(): Look {
 
 function readShelfLayout(): ShelfLayout {
   try {
-    if (localStorage.getItem("mybrary.shelfLayoutDefault") !== "gallery") {
+    if (localStorage.getItem("mybrary.shelfLayoutDefault") !== "gallery-v2") {
       localStorage.removeItem("mybrary.shelfLayout");
-      localStorage.setItem("mybrary.shelfLayoutDefault", "gallery");
+      localStorage.setItem("mybrary.shelfLayoutDefault", "gallery-v2");
     }
     const stored = localStorage.getItem("mybrary.shelfLayout");
-    if (stored === "list" || stored === "accordion") return stored;
+    if (stored === "micro") return "micro";
+    if (stored === "list") {
+      localStorage.setItem("mybrary.shelfLayout", "micro");
+      return "micro";
+    }
+    if (stored === "accordion") {
+      localStorage.removeItem("mybrary.shelfLayout");
+      return "gallery";
+    }
   } catch {
     /* ignore */
   }
@@ -94,9 +109,9 @@ function applyChrome(theme: ThemeChoice, palette: Palette, look: Look, lang: Lan
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) {
     if (dark && palette === "editorial") meta.setAttribute("content", "#09090b");
-    else if (dark) meta.setAttribute("content", "#1f1c19");
+    else if (dark && palette === "deckle") meta.setAttribute("content", "#121214");
     else if (palette === "editorial") meta.setAttribute("content", "#ffffff");
-    else meta.setAttribute("content", "#f5f1e9");
+    else meta.setAttribute("content", "#faf9f6");
   }
 }
 
@@ -136,8 +151,7 @@ export function PrefsProvider({ children }: { children: ReactNode }) {
         setThemeState(next);
       },
       setPalette(next) {
-        if (next === "warm") localStorage.removeItem("mybrary.palette");
-        else localStorage.setItem("mybrary.palette", next);
+        localStorage.setItem("mybrary.palette", next);
         setPaletteState(next);
       },
       setLook(next) {
@@ -147,7 +161,7 @@ export function PrefsProvider({ children }: { children: ReactNode }) {
       },
       setShelfLayout(next) {
         if (next === "gallery") localStorage.removeItem("mybrary.shelfLayout");
-        else localStorage.setItem("mybrary.shelfLayout", next);
+        else localStorage.setItem("mybrary.shelfLayout", next === "micro" ? "micro" : next);
         setShelfLayoutState(next);
       },
     }),

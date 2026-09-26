@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type AnimationEvent } from "react";
-import { createPortal } from "react-dom";
-import { Navigate, useSearchParams } from "react-router-dom";
+import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { useAuth } from "../context/Auth";
 import { usePrefs } from "../context/Prefs";
@@ -10,7 +9,8 @@ import { AuthWaiting } from "../components/AuthWaiting";
 import { IconTip } from "../components/IconTip";
 import { DayFilterChip, DayFilterPanel } from "../components/DayFilter";
 import { TypeBookCarousel } from "../components/TypeBookCarousel";
-import { LayoutSwitch, ScrapBookCard, ShelfAccordion } from "../components/ScrapList";
+import { LayoutSwitch, ScrapBookCard } from "../components/ScrapList";
+import { PageEmptyGuide } from "../components/PageEmptyGuide";
 import { TagCluster } from "../components/GlassCluster";
 import { loadScraps, SCRAPS_CHANGED_EVENT, SCRAPS_CLEARED_EVENT } from "../lib/scraps";
 import { usePagedSlice } from "../lib/usePagedSlice";
@@ -22,6 +22,7 @@ const TYPES: ScrapType[] = ["text", "image", "video", "audio", "link", "document
 
 export function SearchPage() {
   const t = useT();
+  const navigate = useNavigate();
   const { shelfLayout } = usePrefs();
   const { user, ready } = useAuth();
   const { setScrapsForUsage } = usePlan();
@@ -37,7 +38,6 @@ export function SearchPage() {
   const [calSlide, setCalSlide] = useState(false);
   const [tagFilter, setTagFilter] = useState<string[]>(() => searchParams.getAll("tag"));
   const [tagsOpen, setTagsOpen] = useState(false);
-  const [headerSlot, setHeaderSlot] = useState<HTMLElement | null>(null);
   const scrapsLoaded = useRef<string | null>(null);
 
   const typeParam = searchParams.get("type") || "";
@@ -63,10 +63,6 @@ export function SearchPage() {
 
   useEffect(() => {
     inputRef.current?.focus();
-  }, []);
-
-  useLayoutEffect(() => {
-    setHeaderSlot(document.getElementById("search-header-slot"));
   }, []);
 
   const refresh = useCallback(async () => {
@@ -210,37 +206,37 @@ export function SearchPage() {
   if (!ready) return <AuthWaiting />;
   if (!user) return <Navigate to="/" replace />;
 
-  const searchBar = (
-      <div className="search-page-bar">
-        <div className="list-tools-search-wrap search-page-field">
-          <input
-            ref={inputRef}
-            value={query}
-            onChange={(e) => updateQuery(e.target.value)}
-            placeholder={t("searchPlaceholder")}
-            className="list-tools-search"
-            aria-label={t("searchLabel")}
-          />
-          {query ? (
-            <IconTip label={t("clearSearch")}>
-              <button
-                type="button"
-                className="list-tools-search-clear"
-                aria-label={t("clearSearch")}
-                onClick={() => updateQuery("")}
-              >
-                <X className="size-[18px]" strokeWidth={1.8} />
-              </button>
-            </IconTip>
-          ) : null}
-        </div>
-        <DayFilterChip dayFilter={dayFilter} open={calendarOpen} onOpenChange={setCalendar} />
-      </div>
-  );
+  const libraryEmpty = !loading && scraps.length === 0;
 
   return (
     <div className="search-page">
-      {headerSlot ? createPortal(searchBar, headerSlot) : searchBar}
+      <div className="search-page-toolbar">
+        <div className="search-page-bar">
+          <div className="list-tools-search-wrap search-page-field">
+            <input
+              ref={inputRef}
+              value={query}
+              onChange={(e) => updateQuery(e.target.value)}
+              placeholder={t("searchPlaceholder")}
+              className="list-tools-search"
+              aria-label={t("searchLabel")}
+            />
+            {query ? (
+              <IconTip label={t("clearSearch")}>
+                <button
+                  type="button"
+                  className="list-tools-search-clear"
+                  aria-label={t("clearSearch")}
+                  onClick={() => updateQuery("")}
+                >
+                  <X className="size-[18px]" strokeWidth={1.8} />
+                </button>
+              </IconTip>
+            ) : null}
+          </div>
+          <DayFilterChip dayFilter={dayFilter} open={calendarOpen} onOpenChange={setCalendar} />
+        </div>
+      </div>
 
       {calendarOpen || calendarClosing ? (
         <div className={"search-cal-slot" + (calSlide && !calendarClosing ? " is-open" : "")}>
@@ -261,89 +257,105 @@ export function SearchPage() {
         </div>
       ) : null}
 
-      <TypeBookCarousel
-        types={visibleTypes}
-        counts={typeCounts}
-        active={typeFilter}
-        loading={loading}
-        contained
-        onSelect={selectType}
-      />
+      {libraryEmpty ? (
+        <PageEmptyGuide
+          eyebrow={t("exploreEmptyAwaiting")}
+          title={t("exploreEmptyTitle")}
+          body={t("exploreEmptyBody")}
+          ctaLabel={t("exploreEmptyCta")}
+          onCta={() => navigate("/")}
+        />
+      ) : (
+        <>
+          <TypeBookCarousel
+            types={visibleTypes}
+            counts={typeCounts}
+            active={typeFilter}
+            loading={loading}
+            contained
+            onSelect={selectType}
+          />
 
-      {tagCounts.length ? (
-        <div className="search-tag-row">
-          <TagCluster>
-            {shownTags.map(([tag, count]) => (
-              <button
-                key={tag}
-                type="button"
-                className="scrap-tag scrap-tag--btn detail-tag-chip search-tag-chip"
-                aria-pressed={tagFilter.includes(tag)}
-                onClick={() => toggleTag(tag)}
-              >
-                {tag}
-                <span className="search-tag-count">{count}</span>
-              </button>
-            ))}
-          </TagCluster>
-          {tagFilter.length > 1 ? (
-            <IconTip label={t("clearTags")}>
-              <button
-                type="button"
-                className="search-tag-more"
-                aria-label={t("clearTags")}
-                onClick={() => writeParams({ tags: [] })}
-              >
-                <X className="size-[18px]" strokeWidth={1.8} />
-              </button>
-            </IconTip>
+          {tagCounts.length ? (
+            <div className="search-tag-row">
+              <TagCluster>
+                {shownTags.map(([tag, count]) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    className="scrap-tag scrap-tag--btn detail-tag-chip search-tag-chip"
+                    aria-pressed={tagFilter.includes(tag)}
+                    onClick={() => toggleTag(tag)}
+                  >
+                    {tag}
+                    <span className="search-tag-count">{count}</span>
+                  </button>
+                ))}
+              </TagCluster>
+              {tagFilter.length > 1 ? (
+                <IconTip label={t("clearTags")}>
+                  <button
+                    type="button"
+                    className="search-tag-more"
+                    aria-label={t("clearTags")}
+                    onClick={() => writeParams({ tags: [] })}
+                  >
+                    <X className="size-[18px]" strokeWidth={1.8} />
+                  </button>
+                </IconTip>
+              ) : null}
+              {tagCounts.length > 8 ? (
+                <IconTip label={t(tagsOpen ? "tagsLess" : "tagsMore")}>
+                  <button
+                    type="button"
+                    className="search-tag-more"
+                    aria-expanded={tagsOpen}
+                    aria-label={t(tagsOpen ? "tagsLess" : "tagsMore")}
+                    onClick={() => setTagsOpen((open) => !open)}
+                  >
+                    {tagsOpen ? (
+                      <ChevronUp className="size-[18px]" strokeWidth={1.8} />
+                    ) : (
+                      <ChevronDown className="size-[18px]" strokeWidth={1.8} />
+                    )}
+                  </button>
+                </IconTip>
+              ) : null}
+            </div>
           ) : null}
-          {tagCounts.length > 8 ? (
-            <IconTip label={t(tagsOpen ? "tagsLess" : "tagsMore")}>
-              <button
-                type="button"
-                className="search-tag-more"
-                aria-expanded={tagsOpen}
-                aria-label={t(tagsOpen ? "tagsLess" : "tagsMore")}
-                onClick={() => setTagsOpen((open) => !open)}
-              >
-                {tagsOpen ? (
-                  <ChevronUp className="size-[18px]" strokeWidth={1.8} />
-                ) : (
-                  <ChevronDown className="size-[18px]" strokeWidth={1.8} />
-                )}
-              </button>
-            </IconTip>
-          ) : null}
-        </div>
-      ) : null}
 
-      <LayoutSwitch />
+          <LayoutSwitch />
 
-      <section className="list-body search-page-results" aria-live="polite">
-        {loading ? (
-          <p className="shelf-empty-hint">{t("shelfLoading")}</p>
-        ) : !visible.length ? (
-          <div className="shelf-empty shelf-empty--compact">
-            <p className="shelf-empty-title">{t("noMatches")}</p>
-          </div>
-        ) : shelfLayout === "accordion" ? (
-          <ShelfAccordion visible={paged.slice} />
-        ) : (
-          <ul className={"scrap-list scrap-list--" + shelfLayout}>
-            {paged.slice.map((item, index) => (
-              <ScrapBookCard key={item.id} item={item} index={index} priority={index < 6} row={shelfLayout !== "gallery"} />
-            ))}
-          </ul>
-        )}
-        {paged.hasMore ? (
-          <div ref={paged.sentinelRef} className="list-page-more">
-            <button type="button" className="auth-link-utility" onClick={paged.loadMore}>
-              {t("loadMore")}
-            </button>
-          </div>
-        ) : null}
-      </section>
+          <section className="list-body search-page-results" aria-live="polite">
+            {loading ? (
+              <p className="shelf-empty-hint">{t("shelfLoading")}</p>
+            ) : !visible.length ? (
+              <div className="shelf-empty shelf-empty--compact">
+                <p className="shelf-empty-title">{t("noMatches")}</p>
+              </div>
+            ) : (
+              <ul className={"scrap-list scrap-list--" + (shelfLayout === "gallery" ? "gallery" : "micro")}>
+                {paged.slice.map((item, index) => (
+                  <ScrapBookCard
+                    key={item.id}
+                    item={item}
+                    index={index}
+                    priority={index < 6}
+                    row={shelfLayout !== "gallery"}
+                  />
+                ))}
+              </ul>
+            )}
+            {paged.hasMore ? (
+              <div ref={paged.sentinelRef} className="list-page-more">
+                <button type="button" className="auth-link-utility" onClick={paged.loadMore}>
+                  {t("loadMore")}
+                </button>
+              </div>
+            ) : null}
+          </section>
+        </>
+      )}
     </div>
   );
 }

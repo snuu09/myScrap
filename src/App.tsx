@@ -5,13 +5,14 @@ import { PlanProvider } from "./context/Plan";
 import { PrefsProvider } from "./context/Prefs";
 import { Header } from "./components/Header";
 import { Footer } from "./components/Footer";
-import { AuthSheet } from "./components/AuthSheet";
+import { AuthSheet, type AuthMode } from "./components/AuthSheet";
 import { GuestMigrateSheet } from "./components/GuestMigrateSheet";
 import { SettingsPage } from "./components/SettingsSheet";
 import { ShelfReveal } from "./components/ShelfReveal";
 import { AuthWaiting } from "./components/AuthWaiting";
 import { CLOSE_OVERLAYS_EVENT } from "./components/StickDock";
 import { Intro } from "./pages/Intro";
+import { Login } from "./pages/Login";
 import { Shelf } from "./pages/Shelf";
 import { Dashboard } from "./pages/Dashboard";
 import { DashboardEditor } from "./pages/DashboardEditor";
@@ -27,11 +28,6 @@ import { DialogProvider } from "./lib/dialog";
 import { t } from "./i18n";
 import { usePrefs } from "./context/Prefs";
 import { usePlan } from "./context/Plan";
-
-function openSheet(setter: (v: boolean) => void) {
-  window.dispatchEvent(new Event(CLOSE_OVERLAYS_EVENT));
-  setter(true);
-}
 
 /** Document-flow chrome: footer sits after content and scrolls with the page. */
 function PageChrome({
@@ -105,7 +101,7 @@ function Home() {
       >
         {t(lang, "skip")}
       </a>
-      <Header onEnter={() => openSheet(setEnter)} onSettings={() => navigate("/settings")} />
+      <Header onEnter={() => navigate("/login")} />
       <main
         id="main"
         className={(user ? "flex min-h-0 flex-1 flex-col" : "min-h-0 p-0") + arrive}
@@ -115,7 +111,7 @@ function Home() {
         ) : user ? (
           <Shelf />
         ) : (
-          <Intro onEnter={() => openSheet(setEnter)} />
+          <Intro onEnter={() => navigate("/login")} />
         )}
       </main>
       {!user ? <Footer /> : null}
@@ -200,8 +196,7 @@ function DashboardPage() {
     <PageChrome
       header={
         <Header
-          onEnter={() => openSheet(setEnter)}
-          onSettings={() => navigate("/settings")}
+          onEnter={() => navigate("/login")}
           back={{ label: t(lang, "backToShelf"), to: "/" }}
         />
       }
@@ -251,8 +246,7 @@ function DashboardEditorPage({ kind }: { kind: "types" | "tags" }) {
     <PageChrome
       header={
         <Header
-          onEnter={() => openSheet(setEnter)}
-          onSettings={() => navigate("/settings")}
+          onEnter={() => navigate("/login")}
           back={{ label: t(lang, "back"), to: "/dashboard" }}
         />
       }
@@ -290,8 +284,7 @@ function ScrapDetailPage() {
     <PageChrome
       header={
         <Header
-          onEnter={() => openSheet(setEnter)}
-          onSettings={() => navigate("/settings")}
+          onEnter={() => navigate("/login")}
           back={{ label: t(lang, "backToShelf"), to: "/" }}
         />
       }
@@ -321,8 +314,7 @@ function SearchPageShell() {
     <PageChrome
       header={
         <Header
-          onEnter={() => openSheet(setEnter)}
-          onSettings={() => navigate("/settings")}
+          onEnter={() => navigate("/login")}
           back={{ label: t(lang, "backToShelf"), to: "/" }}
         />
       }
@@ -362,8 +354,7 @@ function SettingsLayout() {
     <PageChrome
       header={
         <Header
-          onEnter={() => openSheet(setEnter)}
-          onSettings={() => navigate("/settings")}
+          onEnter={() => navigate("/login")}
           back={{ label: t(lang, "back"), onBack: goBack }}
         />
       }
@@ -403,8 +394,7 @@ function PublicDocLayout({
     <PageChrome
       header={
         <Header
-          onEnter={() => openSheet(setEnter)}
-          onSettings={() => navigate("/settings")}
+          onEnter={() => navigate("/login")}
           back={back}
         />
       }
@@ -416,6 +406,30 @@ function PublicDocLayout({
       }
     >
       {children}
+    </PageChrome>
+  );
+}
+
+function LoginLayout() {
+  const { lang } = usePrefs();
+  const navigate = useNavigate();
+  const [pageMode, setPageMode] = useState<AuthMode>("in");
+
+  const headerBack =
+    pageMode === "in"
+      ? { label: t(lang, "back"), to: "/" as const }
+      : {
+          label: t(lang, "backToLogin"),
+          onBack: () => setPageMode("in"),
+        };
+
+  return (
+    <PageChrome
+      header={<Header onEnter={() => navigate("/login")} back={headerBack} />}
+      footer={false}
+      mainClassName="login-page-main min-h-0 flex-1 p-0"
+    >
+      <Login pageMode={pageMode} onPageModeChange={setPageMode} />
     </PageChrome>
   );
 }
@@ -444,6 +458,7 @@ export default function App() {
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/dashboard/types" element={<DashboardEditorPage kind="types" />} />
                 <Route path="/dashboard/tags" element={<DashboardEditorPage kind="tags" />} />
+                <Route path="/login" element={<LoginLayout />} />
                 <Route path="/settings" element={<SettingsLayout />} />
                 <Route path="/search" element={<SearchPageShell />} />
                 <Route path="/scrap/:id" element={<ScrapDetailPage />} />

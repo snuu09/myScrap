@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { User } from "@supabase/supabase-js";
-import { Combine, Search, X } from "lucide-react";
+import { Combine, Search, TriangleAlert, X } from "lucide-react";
 import { usePrefs } from "../context/Prefs";
 import { useT } from "../lib/useT";
 import { sheetGenieClass, usePresence } from "../lib/presence";
@@ -219,28 +219,39 @@ export function LinkBundleSheet({ open, user, item, scraps, onDone, onClose }: P
   if (!presence.shown) return null;
 
   return (
-    <div className="fixed inset-0 z-40 bg-[color-mix(in_srgb,var(--color-ink)_40%,transparent)]" onClick={onClose}>
+    <div className="protocol-modal-scrim protocol-modal-scrim--under" onClick={onClose}>
       <div className="sheet-stage">
         <div
           role="dialog"
           aria-modal="true"
           aria-labelledby="bundle-title"
           className={
-            "sheet-panel w-[min(26rem,calc(100vw-24px))] max-h-[min(90vh,40rem)] overflow-y-auto rounded-[32px] border border-paper-line bg-login-wall p-3.5 shadow-[var(--shadow-sheet)]" +
+            "sheet-panel protocol-modal-panel protocol-modal-panel--wide" +
             sheetGenieClass(presence.closing)
           }
           onAnimationEnd={(event) => presence.onEnd(event, "sheet-genie-out")}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="mb-2 flex items-center justify-between gap-1">
-            <h2 id="bundle-title" className="m-0 text-[1.0625rem] font-bold">
-              {t("bundledAddTitle")}
-            </h2>
-            <button type="button" className="grid size-12 place-items-center" onClick={onClose} aria-label={t("close")}>
-              <X className="size-[22px]" strokeWidth={1.8} />
+          <div className="protocol-modal-head">
+            <div className="protocol-modal-head-copy">
+              <div className="protocol-modal-stamp">
+                <TriangleAlert aria-hidden strokeWidth={1.8} />
+                <span>{t("bundledAddStamp")}</span>
+              </div>
+              <h2 id="bundle-title" className="protocol-modal-title">
+                {t("bundledAddTitle")}
+              </h2>
+            </div>
+            <button
+              type="button"
+              className="protocol-modal-close"
+              onClick={onClose}
+              aria-label={t("close")}
+            >
+              <X className="size-5" strokeWidth={1.8} />
             </button>
           </div>
-          <p className="auth-lead">{t("bundledAddLead")}</p>
+          <p className="protocol-modal-body">{t("bundledAddLead")}</p>
           <div className="bundle-mode-tabs liquid-glass" role="tablist" aria-label={t("bundledAddTitle")}>
             <button
               type="button"
