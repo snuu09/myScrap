@@ -348,7 +348,7 @@ export function DashboardEditor({ scraps, onScrapsChange, kind }: Props) {
 
       {showTypes ? (
       <section className="dashboard-panel" aria-label={t("manageTypes")}>
-        <p className="list-tools-label">{t("statsByType")}</p>
+        <p className="dashboard-panel-label">{t("statsByType")}</p>
         {typeRows.length ? (
           <ul className="dashboard-manage-list">
             {shownTypes.map((type) =>
@@ -476,7 +476,7 @@ export function DashboardEditor({ scraps, onScrapsChange, kind }: Props) {
       </section>
       ) : (
       <section className="dashboard-panel" aria-label={t("manageTags")}>
-        <p className="list-tools-label">{t("statsByTag")}</p>
+        <p className="dashboard-panel-label">{t("statsByTag")}</p>
         {stats.byTag.length ? (
           <ul className="dashboard-manage-list">
             {shownTags.map(([tag, count]) =>

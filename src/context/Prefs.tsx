@@ -2,7 +2,8 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import type { Lang } from "../i18n";
 
 export type ThemeChoice = "light" | "dark" | "system";
-export type Palette = "kitchen" | "basalt";
+/** warm = Theme B Warm Integrated; editorial = Theme A Minimal Editorial; basalt = charcoal accent on warm. */
+export type Palette = "warm" | "editorial" | "basalt";
 export type Look = "glass" | "library";
 export type ShelfLayout = "list" | "gallery" | "accordion";
 
@@ -43,11 +44,17 @@ function readTheme(): ThemeChoice {
 
 function readPalette(): Palette {
   try {
-    if (localStorage.getItem("mybrary.palette") === "basalt") return "basalt";
+    const stored = localStorage.getItem("mybrary.palette");
+    if (stored === "editorial") return "editorial";
+    if (stored === "basalt") return "basalt";
+    if (stored === "warm" || stored === "kitchen" || !stored) {
+      if (stored === "kitchen") localStorage.setItem("mybrary.palette", "warm");
+      return "warm";
+    }
   } catch {
     /* ignore */
   }
-  return "kitchen";
+  return "warm";
 }
 
 function readLook(): Look {
@@ -63,7 +70,6 @@ function readLook(): Look {
 
 function readShelfLayout(): ShelfLayout {
   try {
-    // Gallery is the default. Drop a stored list choice from before that default.
     if (localStorage.getItem("mybrary.shelfLayoutDefault") !== "gallery") {
       localStorage.removeItem("mybrary.shelfLayout");
       localStorage.setItem("mybrary.shelfLayoutDefault", "gallery");
@@ -87,8 +93,10 @@ function applyChrome(theme: ThemeChoice, palette: Palette, look: Look, lang: Lan
   document.documentElement.lang = lang;
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) {
-    if (look === "library") meta.setAttribute("content", dark ? "#1e1c19" : "#ffffff");
-    else meta.setAttribute("content", dark ? "#2a2420" : "#fff7f2");
+    if (dark && palette === "editorial") meta.setAttribute("content", "#09090b");
+    else if (dark) meta.setAttribute("content", "#1f1c19");
+    else if (palette === "editorial") meta.setAttribute("content", "#ffffff");
+    else meta.setAttribute("content", "#f5f1e9");
   }
 }
 
@@ -128,8 +136,8 @@ export function PrefsProvider({ children }: { children: ReactNode }) {
         setThemeState(next);
       },
       setPalette(next) {
-        if (next === "basalt") localStorage.setItem("mybrary.palette", next);
-        else localStorage.removeItem("mybrary.palette");
+        if (next === "warm") localStorage.removeItem("mybrary.palette");
+        else localStorage.setItem("mybrary.palette", next);
         setPaletteState(next);
       },
       setLook(next) {

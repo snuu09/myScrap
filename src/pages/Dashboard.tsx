@@ -143,7 +143,7 @@ export function Dashboard({ scraps }: Props) {
       </div>
 
       <section className="dashboard-panel" aria-label={t("statsStorage")}>
-        <p className="list-tools-label">{t("statsStorage")}</p>
+        <p className="dashboard-panel-label">{t("statsStorage")}</p>
         <p className="dashboard-storage-summary">
           {t("dbUsageSummary", { count: stats.totalCount, bytes: formatBytes(stats.totalBytes) })}
         </p>
@@ -152,7 +152,7 @@ export function Dashboard({ scraps }: Props) {
 
       <section className="dashboard-panel" aria-label={t("statsByType")}>
         <div className="dashboard-panel-head">
-          <p className="list-tools-label">{t("statsByType")}</p>
+          <p className="dashboard-panel-label">{t("statsByType")}</p>
           <Link to="/dashboard/types" className="auth-link-utility no-underline">
             {t("manageTypes")}
           </Link>
@@ -168,7 +168,7 @@ export function Dashboard({ scraps }: Props) {
 
       <section className="dashboard-panel" aria-label={t("statsByTag")}>
         <div className="dashboard-panel-head">
-          <p className="list-tools-label">{t("statsByTag")}</p>
+          <p className="dashboard-panel-label">{t("statsByTag")}</p>
           <Link to="/dashboard/tags" className="auth-link-utility no-underline">
             {t("manageTags")}
           </Link>
@@ -183,7 +183,7 @@ export function Dashboard({ scraps }: Props) {
       </section>
 
       <section className="dashboard-panel" aria-label={t("statsTimeline")}>
-        <p className="list-tools-label">{t("statsTimeline")}</p>
+        <p className="dashboard-panel-label">{t("statsTimeline")}</p>
         {recent.length ? (
           <ul className={listClass}>
             {recent.map((item, index) => (
@@ -198,7 +198,7 @@ export function Dashboard({ scraps }: Props) {
       </section>
 
       <section className="dashboard-panel" aria-label={t("statsByDay")}>
-        <p className="list-tools-label">{t("statsByDay")}</p>
+        <p className="dashboard-panel-label">{t("statsByDay")}</p>
         {stats.topDays.length ? (
           <ul className="dashboard-day-list">
             {stats.topDays.map(([day, count]) => (

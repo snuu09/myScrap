@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { useNavigate } from "react-router-dom";
-import { usePrefs, type Palette, type ThemeChoice } from "../context/Prefs";
+import { Link, useNavigate } from "react-router-dom";
+import { ChevronRight } from "lucide-react";
+import { usePrefs, type ThemeChoice } from "../context/Prefs";
 import { isBrowseUser, useAuth } from "../context/Auth";
 import { usePlan } from "../context/Plan";
 import { clearUserScraps, loadUserDbUsage, SCRAPS_CLEARED_EVENT } from "../lib/scraps";
@@ -10,6 +11,7 @@ import { formatBytes } from "../lib/tagger";
 import { markArriveGenie } from "../lib/pageGenie";
 import { PlanTierMeta, StorageGauge } from "./PlanUsageBlock";
 import { GlassCluster } from "./GlassCluster";
+import { IconTip } from "./IconTip";
 
 function Seg({
   pressed,
@@ -124,7 +126,14 @@ export function SettingsPage() {
           </div>
           <div className="settings-pref-row settings-account-row">
             <p className="settings-section-label">{t("planLabel")}</p>
-            <PlanTierMeta />
+            <div className="settings-plan-value">
+              <PlanTierMeta />
+              <IconTip label={t("upgradeOpen")}>
+                <Link to="/upgrade" className="settings-upgrade-icon" aria-label={t("upgradeOpen")}>
+                  <ChevronRight className="size-5" strokeWidth={1.8} />
+                </Link>
+              </IconTip>
+            </div>
           </div>
           <StorageGauge usageBytes={usageBytes} storageLimit={storageLimit} />
           {showAds ? <span className="plan-ads-note">{t("adPlaceholder")}</span> : null}
@@ -162,8 +171,11 @@ export function SettingsPage() {
           </Seg>
         </PrefRow>
         <PrefRow label={t("paletteSwitch")}>
-          <Seg pressed={palette === "kitchen"} onClick={() => setPalette("kitchen" as Palette)}>
-            {t("paletteKitchen")}
+          <Seg pressed={palette === "warm"} onClick={() => setPalette("warm")}>
+            {t("paletteWarm")}
+          </Seg>
+          <Seg pressed={palette === "editorial"} onClick={() => setPalette("editorial")}>
+            {t("paletteEditorial")}
           </Seg>
           <Seg pressed={palette === "basalt"} onClick={() => setPalette("basalt")}>
             {t("paletteBasalt")}

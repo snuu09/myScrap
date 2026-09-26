@@ -18,6 +18,7 @@ import { DashboardEditor } from "./pages/DashboardEditor";
 import { ScrapDetail } from "./pages/ScrapDetail";
 import { SearchPage } from "./pages/SearchPage";
 import { Legal } from "./pages/Legal";
+import { Upgrade } from "./pages/Upgrade";
 import { loadScraps } from "./lib/scraps";
 import { ARRIVE_GENIE_EVENT, takeArriveGenie, takeSkipPageGenie } from "./lib/pageGenie";
 import { guestMigrateAsked, hasLocalScraps } from "./lib/localScraps";
@@ -374,7 +375,13 @@ function SettingsLayout() {
   );
 }
 
-function LegalLayout() {
+function PublicDocLayout({
+  children,
+  back,
+}: {
+  children: ReactNode;
+  back?: { label: string; to: string };
+}) {
   const { lang } = usePrefs();
   const { recoveryPending } = useAuth();
   const navigate = useNavigate();
@@ -394,7 +401,13 @@ function LegalLayout() {
 
   return (
     <PageChrome
-      header={<Header onEnter={() => openSheet(setEnter)} onSettings={() => navigate("/settings")} />}
+      header={
+        <Header
+          onEnter={() => openSheet(setEnter)}
+          onSettings={() => navigate("/settings")}
+          back={back}
+        />
+      }
       overlays={
         <>
           <AuthSheet open={enter} onClose={() => setEnter(false)} />
@@ -402,8 +415,17 @@ function LegalLayout() {
         </>
       }
     >
-      <Legal />
+      {children}
     </PageChrome>
+  );
+}
+
+function UpgradeLayout() {
+  const { lang } = usePrefs();
+  return (
+    <PublicDocLayout back={{ label: t(lang, "backToShelf"), to: "/" }}>
+      <Upgrade />
+    </PublicDocLayout>
   );
 }
 
@@ -425,8 +447,9 @@ export default function App() {
                 <Route path="/settings" element={<SettingsLayout />} />
                 <Route path="/search" element={<SearchPageShell />} />
                 <Route path="/scrap/:id" element={<ScrapDetailPage />} />
-                <Route path="/terms" element={<LegalLayout />} />
-                <Route path="/privacy" element={<LegalLayout />} />
+                <Route path="/terms" element={<PublicDocLayout><Legal /></PublicDocLayout>} />
+                <Route path="/privacy" element={<PublicDocLayout><Legal /></PublicDocLayout>} />
+                <Route path="/upgrade" element={<UpgradeLayout />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </BrowserRouter>

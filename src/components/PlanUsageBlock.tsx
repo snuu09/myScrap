@@ -3,23 +3,11 @@ import { usePrefs } from "../context/Prefs";
 import { usePlan } from "../context/Plan";
 import { formatBytes } from "../lib/tagger";
 import { formatTrialEndDate } from "../lib/time";
-import type { PlanTier } from "../lib/plans";
+import { planDisplayName } from "../lib/plans";
 
 type Props = {
   showAdsNote?: boolean;
 };
-
-function planName(lang: "ko" | "en", tier: PlanTier | undefined) {
-  const key =
-    tier === "standard"
-      ? "planStandard"
-      : tier === "premium"
-        ? "planPremium"
-        : tier === "admin"
-          ? "planAdmin"
-          : "planFree";
-  return t(lang, key);
-}
 
 export function StorageGauge({
   usageBytes,
@@ -54,7 +42,7 @@ export function StorageGauge({
   );
 }
 
-/** Tier name + trial lines, for a label | value settings row. */
+/** Tier name + compact trial line (max two lines). */
 export function PlanTierMeta() {
   const { lang } = usePrefs();
   const { profile, trialDaysLeft, trialExpired } = usePlan();
@@ -63,20 +51,20 @@ export function PlanTierMeta() {
     return <p className="text-[0.8125rem] text-muted">{t(lang, "noPlanProfile")}</p>;
   }
 
-  const showTrialDate = !trialExpired && trialDaysLeft !== null && profile.trialEndsAt != null;
+  const trialLine =
+    trialExpired
+      ? t(lang, "trialExpiredMsg")
+      : trialDaysLeft !== null && profile.trialEndsAt != null
+        ? t(lang, "trialDaysLeft", { n: trialDaysLeft }) +
+          " · " +
+          formatTrialEndDate(profile.trialEndsAt, lang)
+        : null;
 
   return (
     <div className="plan-usage-meta">
-      <strong className="plan-usage-tier">{planName(lang, profile.planTier)}</strong>
-      {trialExpired ? (
-        <span className="plan-trial-msg plan-trial-msg--danger">{t(lang, "trialExpiredMsg")}</span>
-      ) : trialDaysLeft !== null ? (
-        <span className="plan-trial-msg">{t(lang, "trialDaysLeft", { n: trialDaysLeft })}</span>
-      ) : null}
-      {showTrialDate ? (
-        <span className="plan-trial-date">
-          {t(lang, "trialEndsOn", { date: formatTrialEndDate(profile.trialEndsAt!, lang) })}
-        </span>
+      <strong className="plan-usage-tier">{planDisplayName(profile.planTier)}</strong>
+      {trialLine ? (
+        <span className={"plan-trial-msg" + (trialExpired ? " plan-trial-msg--danger" : "")}>{trialLine}</span>
       ) : null}
     </div>
   );

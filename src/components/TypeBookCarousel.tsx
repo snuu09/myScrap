@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { typeLabel } from "../i18n";
-import { spineColor } from "../lib/typeColor";
+import { coverWash, spineColor } from "../lib/typeColor";
 import { DocumentMark } from "./DocumentMark";
 import { usePrefs } from "../context/Prefs";
 import { useT } from "../lib/useT";
@@ -106,7 +106,10 @@ export function TypeBookCarousel({ types, counts, active, loading, contained, on
               type="button"
               role="listitem"
               className={"type-book" + (pressed ? " type-book--active" : "")}
-              style={{ ["--spine" as string]: spineColor(book.id) }}
+              style={{
+                ["--spine" as string]: spineColor(book.id),
+                ["--cover" as string]: coverWash(book.id),
+              }}
               aria-pressed={pressed}
               disabled={loading}
               onClick={() => onSelect(book.id)}

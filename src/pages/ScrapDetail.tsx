@@ -102,7 +102,7 @@ export function ScrapDetail() {
   const { lang } = usePrefs();
   const t = useT();
   const { user } = useAuth();
-  const { setScrapsForUsage } = usePlan();
+  const { setScrapsForUsage, canRemind } = usePlan();
   const { alert, confirm } = useDialog();
   const [scraps, setScraps] = useState<Scrap[]>([]);
   const [ready, setReady] = useState(false);
@@ -646,7 +646,7 @@ export function ScrapDetail() {
       <div className="detail-page-slot">
         {incoming ? (
           <div className="detail-turn-in" aria-hidden>
-            <h2 className="dashboard-title m-0 truncate">{scrapFaceTitle(incoming, t("untitled"))}</h2>
+            <h2 className="detail-title m-0 truncate">{scrapFaceTitle(incoming, t("untitled"))}</h2>
             <p className="m-0 text-[0.75rem] text-muted">
               {typeLabel(lang, incoming.type)} · {formatWhen(incoming.createdAt, lang)}
             </p>
@@ -676,7 +676,7 @@ export function ScrapDetail() {
             />
           </label>
         ) : (
-          <h1 id="scrap-detail-title" className="dashboard-title m-0 truncate">
+          <h1 id="scrap-detail-title" className="detail-title m-0 truncate">
             {item.title || item.og?.title || t("untitled")}
           </h1>
         )}
@@ -749,7 +749,18 @@ export function ScrapDetail() {
                 className={"detail-action" + (dueRemind ? " detail-action--alert" : "")}
                 aria-label={t("remind")}
                 disabled={busy}
-                onClick={() => setRemindOpen(true)}
+                onClick={() => {
+                  if (!canRemind) {
+                    void confirm({
+                      body: t("remindLockedBody"),
+                      confirmLabel: t("upgradeOpen"),
+                    }).then((go) => {
+                      if (go) navigate("/upgrade");
+                    });
+                    return;
+                  }
+                  setRemindOpen(true);
+                }}
               >
                 {item.remindAt ? <Bell className="size-[18px]" strokeWidth={1.8} /> : <BellOff className="size-[18px]" strokeWidth={1.8} />}
               </button>

@@ -5,7 +5,7 @@ alwaysApply: true
 
 # MyBrary
 
-Personal scrap shelf: stick / classify / find. Live name **MyBrary**; repo folder may still be `myScrap`. Not a team knowledge base, not a recipe app.
+Personal library (서재) from anything you save: stick / classify / find. Live name **MyBrary**; repo folder may still be `myScrap`. Not a team knowledge base, not a recipe app, not a fridge or door metaphor. Product voice is **서재** (library). Light UI default is **Theme B Warm Integrated** (warm paper, Newsreader + DM Sans, accent `#95704b`). Settings also ships **Theme A Minimal Editorial** (white/ink, Space Grotesk + Inter, near-zero radius) and **현무암** (basalt accent on warm paper) so A/B can be compared. See [DESIGN.md](DESIGN.md).
 
 ## Stack now
 
@@ -15,6 +15,8 @@ Primary host is **Firebase Hosting**. Netlify files are a classify/dev twin, not
 
 Shelf and search lists page in (24, then more). Sign media only for the visible window. `/api/og-image` requires the user JWT and does not follow a redirect off HTTPS.
 
+**Plan tiers:** UI names Free / Middle / High (DB ids still `free` / `standard` / `premium` / `admin`). Limits in [`src/lib/plans.ts`](src/lib/plans.ts). `/upgrade` is the compare matrix. Bundle + compare/revert are High preview on that page until gated.
+
 ## Do not
 
 - Revive `js/`, `css/`, `legal/*.html`, or a parallel static client
@@ -23,6 +25,8 @@ Shelf and search lists page in (24, then more). Sign media only for the visible 
 - Dualize taggers: Claude in the function, MIME/URL fallback only in `src/lib/tagger.ts`
 - Invent customers, testimonials, download counts, or a 사업자등록번호
 - Use em-dashes in product copy
-- Purple glass SaaS kits, Inter as the UI face, Notion sidebar. Strong `.liquid-glass` stays on button clusters (layout switcher, detail actions, settings tracks, and other control groups). Glass look may lay a weaker blur on cards and bordered panels. Do not put that blur on the hero.
+- Purple glass SaaS kits, Inter as the UI face under Warm·B, Notion sidebar. Strong `.liquid-glass` stays on button clusters (layout switcher, detail actions, settings tracks, and other control groups). Glass look may lay a weaker blur on cards and bordered panels. Do not put that blur on the hero.
+- Revive Jeju tangerine fridge enamel as the light default (Theme B warm paper is the light system)
+- Use door / fridge / “책장을 연다” copy; keep product language on **서재** / library
 
 Read [ARCHITECTURE.md](ARCHITECTURE.md), [PRODUCT.md](PRODUCT.md), [DESIGN.md](DESIGN.md). Env names: [`.env.example`](.env.example).

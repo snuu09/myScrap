@@ -1,6 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { loadProfile } from "../lib/profiles";
 import {
+  batchMaxFilesFor,
+  canAddBatchFiles,
+  canRemindFor,
   canStickText,
   canUploadBytes,
   computeUsageBytes,
@@ -26,6 +29,9 @@ type PlanState = {
   canStick: () => { ok: boolean; reason?: "trialExpired" };
   showAds: boolean;
   storageLimit: number | null;
+  batchMaxFiles: number | null;
+  canRemind: boolean;
+  canAddBatch: (currentCount: number, addingCount: number) => { ok: boolean; max?: number };
   trialExpired: boolean;
   trialDaysLeft: number | null;
   refreshProfile: () => Promise<void>;
@@ -97,6 +103,16 @@ export function PlanProvider({ children }: { children: ReactNode }) {
       canStick: () => (guest ? { ok: true } : canStickText(profile)),
       showAds: showAdsForProfile(profile),
       storageLimit: guest ? GUEST_TOTAL_LIMIT : storageLimitBytes(profile),
+      batchMaxFiles: guest ? 1 : batchMaxFilesFor(profile),
+      canRemind: guest ? false : canRemindFor(profile),
+      canAddBatch: (currentCount, addingCount) => {
+        if (guest) {
+          if (currentCount + addingCount > 1) return { ok: false, max: 1 };
+          return { ok: true };
+        }
+        const gate = canAddBatchFiles(profile, currentCount, addingCount);
+        return gate.ok ? { ok: true } : { ok: false, max: gate.max };
+      },
       trialExpired: guest ? false : trialExpired(profile),
       trialDaysLeft: guest ? null : trialDaysLeft(profile),
       refreshProfile,

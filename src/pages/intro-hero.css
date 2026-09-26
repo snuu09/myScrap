@@ -1,0 +1,640 @@
+/* Theme B integrated hero (guest Intro). Uses Stage 0 tokens. */
+
+.intro-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100dvh - 62px - 7.5rem);
+  padding: 1.25rem clamp(1rem, 3vw, 1.75rem) 1.5rem;
+  color: var(--color-ink);
+  background: var(--color-enamel);
+}
+
+.intro-hero-copy {
+  text-align: center;
+  max-width: 42rem;
+}
+
+.intro-hero-eyebrow {
+  margin: 0 0 0.8rem;
+  font-family: var(--font-sans);
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--color-magnet);
+}
+
+.intro-hero-title {
+  margin: 0;
+  font-family: var(--font-display), Georgia, serif;
+  font-size: clamp(2.4rem, 5vw, 4.5rem);
+  font-weight: 500;
+  line-height: 0.95;
+  letter-spacing: -0.045em;
+}
+
+.intro-hero-title em {
+  font-style: normal;
+  color: var(--color-magnet);
+}
+
+.intro-hero-sub {
+  margin: 0.9rem auto 0;
+  max-width: 38rem;
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--color-muted);
+}
+
+.intro-hero-types {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.45rem;
+  margin-top: 0.85rem;
+}
+
+.intro-hero-types span {
+  border: 1px solid var(--color-paper-line);
+  background: var(--color-enamel-deep);
+  border-radius: 999px;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.5625rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--color-muted);
+}
+
+.intro-hero-workspace {
+  position: relative;
+  width: min(64rem, 94vw);
+  height: min(30rem, 48vh);
+  margin-top: 1.15rem;
+  border: 1px solid var(--color-paper-line);
+  border-radius: var(--radius-lg);
+  background: var(--color-paper);
+  box-shadow: var(--shadow-sheet);
+  overflow: hidden;
+}
+
+.intro-hero-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 2.4rem;
+  padding: 0 0.9rem;
+  border-bottom: 1px solid var(--color-paper-line);
+  background: var(--color-enamel-deep);
+}
+
+.intro-hero-dots {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.intro-hero-dots i {
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 50%;
+  background: var(--color-paper-line);
+}
+
+.intro-hero-barlabel {
+  font-size: 0.5625rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--color-muted);
+}
+
+.intro-hero-content {
+  position: relative;
+  height: calc(100% - 2.4rem);
+}
+
+.intro-hero-state {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  opacity: 0;
+  transform: translateY(0.6rem);
+  pointer-events: none;
+  transition: opacity 0.45s var(--ease-out), transform 0.45s var(--ease-out);
+}
+
+.intro-hero-state.is-active {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+.intro-hero-add {
+  justify-content: center;
+}
+
+.intro-hero-addbox {
+  width: min(40rem, 84%);
+  border: 1px solid var(--color-paper-line);
+  border-radius: calc(var(--radius-lg) / 2);
+  background: var(--color-paper);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-scrap);
+}
+
+.intro-hero-addbox label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.625rem;
+  color: var(--color-muted);
+}
+
+.intro-hero-inputrow {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.intro-hero-inputrow input {
+  flex: 1;
+  min-width: 0;
+  height: 2.7rem;
+  border: 1px solid var(--color-paper-line);
+  border-radius: calc(var(--radius-lg) / 2);
+  padding: 0 0.75rem;
+  background: var(--color-enamel-deep);
+  color: var(--color-ink);
+  outline: none;
+}
+
+.intro-hero-inputrow input:focus-visible {
+  box-shadow: 0 0 0 3px var(--color-enamel), 0 0 0 5px var(--color-magnet);
+}
+
+.intro-hero-addbtn {
+  height: 2.7rem;
+  border: 0;
+  border-radius: calc(var(--radius-lg) / 2);
+  background: var(--color-ink);
+  color: var(--color-paper);
+  padding: 0 1.05rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.intro-hero-addbtn:active {
+  transform: scale(0.98);
+}
+
+.intro-hero-hint {
+  margin-top: 0.7rem;
+  font-size: 0.625rem;
+  line-height: 1.45;
+  color: var(--color-muted);
+}
+
+.intro-hero-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  justify-content: center;
+  margin-top: 0.65rem;
+}
+
+.intro-hero-preset {
+  border: 1px solid var(--color-paper-line);
+  background: var(--color-enamel-deep);
+  border-radius: 999px;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.5625rem;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.intro-hero-analysis {
+  justify-content: center;
+  text-align: center;
+  padding: 1rem;
+}
+
+.intro-hero-pulse {
+  width: 3rem;
+  height: 3rem;
+  margin-bottom: 1rem;
+  border: 1px solid var(--color-paper-line);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  animation: intro-hero-pulse 1.5s ease-in-out infinite;
+}
+
+.intro-hero-pulse::after {
+  content: "";
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  background: var(--color-ink);
+}
+
+.intro-hero-analysis h3 {
+  margin: 0;
+  font-family: var(--font-display), Georgia, serif;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 500;
+}
+
+.intro-hero-analysis p {
+  margin: 0.4rem 0 0;
+  font-size: 0.7rem;
+  color: var(--color-muted);
+}
+
+.intro-hero-progress {
+  width: min(38rem, 80%);
+  height: 0.3rem;
+  margin-top: 1rem;
+  background: var(--color-enamel-deep);
+  overflow: hidden;
+}
+
+.intro-hero-progress > i {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--color-ink);
+  transition: width 2.4s var(--ease-out);
+}
+
+.intro-hero-progress.is-run > i {
+  width: 100%;
+}
+
+.intro-hero-result {
+  padding: 1.2rem 1.5rem;
+  align-items: stretch;
+}
+
+.intro-hero-resulttop {
+  display: flex;
+  gap: 1.1rem;
+  width: 100%;
+}
+
+.intro-hero-resultcover {
+  flex: 0 0 auto;
+  width: 6.5rem;
+  height: 8.5rem;
+  padding: 0.8rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-radius: 0.25rem 0.5rem 0.5rem 0.25rem;
+  background: var(--color-manila);
+  box-shadow: var(--shadow-scrap);
+}
+
+.intro-hero-resultcover b {
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 1.25rem;
+  font-weight: 500;
+  line-height: 1.1;
+}
+
+.intro-hero-resultcover small,
+.intro-hero-tagline,
+.intro-hero-info b {
+  font-size: 0.5625rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--color-ink-soft);
+}
+
+.intro-hero-resulttext h3 {
+  margin: 0.3rem 0;
+  font-family: var(--font-display), Georgia, serif;
+  font-size: clamp(1.25rem, 2.5vw, 1.85rem);
+  font-weight: 500;
+}
+
+.intro-hero-resulttext p,
+.intro-hero-info p {
+  margin: 0;
+  font-size: 0.625rem;
+  line-height: 1.5;
+  color: var(--color-muted);
+}
+
+.intro-hero-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.75rem;
+}
+
+.intro-hero-chips span {
+  font-size: 0.5625rem;
+  background: var(--color-enamel-ink);
+  border-radius: 999px;
+  padding: 0.3rem 0.5rem;
+}
+
+.intro-hero-resultbottom {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.intro-hero-info {
+  border: 1px solid var(--color-paper-line);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem;
+  background: var(--color-enamel-deep);
+}
+
+.intro-hero-shelf {
+  padding: 1rem 1.4rem 2.8rem;
+  align-items: stretch;
+}
+
+.intro-hero-shelfhead {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.intro-hero-shelfhead h2 {
+  margin: 0;
+  font-family: var(--font-display), Georgia, serif;
+  font-size: clamp(1.35rem, 2.5vw, 1.8rem);
+  font-weight: 500;
+}
+
+.intro-hero-shelfhead p {
+  margin: 0.3rem 0 0;
+  font-size: 0.625rem;
+  color: var(--color-muted);
+}
+
+.intro-hero-count {
+  font-size: 0.5625rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  border: 1px solid var(--color-paper-line);
+  border-radius: 999px;
+  padding: 0.35rem 0.55rem;
+  color: var(--color-muted);
+}
+
+.intro-hero-books {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.9rem;
+  height: 15rem;
+  margin-top: 0.75rem;
+  padding: 0 0.4rem;
+  overflow: hidden;
+}
+
+.intro-hero-book {
+  width: 5.5rem;
+  flex: 0 0 auto;
+  animation: intro-hero-book 0.6s var(--ease-out) both;
+}
+
+.intro-hero-book:nth-child(2) {
+  animation-delay: 0.05s;
+}
+.intro-hero-book:nth-child(3) {
+  animation-delay: 0.1s;
+}
+.intro-hero-book:nth-child(4) {
+  animation-delay: 0.15s;
+}
+.intro-hero-book:nth-child(5) {
+  animation-delay: 0.2s;
+}
+.intro-hero-book:nth-child(6) {
+  animation-delay: 0.25s;
+}
+
+.intro-hero-cover {
+  height: 11.5rem;
+  border-radius: 0.2rem 0.45rem 0.45rem 0.2rem;
+  padding: 0.7rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: var(--shadow-scrap);
+}
+
+.intro-hero-cover.c1 {
+  background: #d8c8b2;
+}
+.intro-hero-cover.c2 {
+  background: #c9d0c4;
+}
+.intro-hero-cover.c3 {
+  background: #d5c3bb;
+}
+.intro-hero-cover.c4 {
+  background: #c8c3cf;
+}
+.intro-hero-cover.c5 {
+  background: #d9c9a9;
+}
+.intro-hero-cover.c6 {
+  background: #c4cfd3;
+}
+
+.intro-hero-cover small {
+  font-size: 0.45rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #6e665b;
+}
+
+.intro-hero-cover strong {
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.05;
+}
+
+.intro-hero-bookname {
+  margin-top: 0.4rem;
+  font-size: 0.5625rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.intro-hero-bookmeta {
+  font-size: 0.5rem;
+  color: var(--color-muted);
+}
+
+.intro-hero-shelfline {
+  position: absolute;
+  left: 1.4rem;
+  right: 1.4rem;
+  bottom: 3.1rem;
+  border-top: 2px solid var(--color-paper-line);
+}
+
+.intro-hero-controls {
+  position: absolute;
+  bottom: 0.7rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0.3rem;
+  background: var(--color-paper);
+  border: 1px solid var(--color-paper-line);
+  border-radius: 999px;
+  padding: 0.25rem;
+  z-index: 2;
+}
+
+.intro-hero-control {
+  border: 0;
+  background: transparent;
+  border-radius: 999px;
+  padding: 0.35rem 0.55rem;
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.intro-hero-control.is-on {
+  background: var(--color-enamel-ink);
+  color: var(--color-ink);
+}
+
+.intro-hero-manual {
+  margin-top: 0.7rem;
+  font-size: 0.625rem;
+  color: var(--color-muted);
+  text-align: center;
+}
+
+.intro-hero-manual button {
+  border: 0;
+  background: none;
+  text-decoration: underline;
+  color: var(--color-ink);
+  cursor: pointer;
+  font: inherit;
+}
+
+.intro-hero-cta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.intro-hero-cta .btn-primary {
+  min-height: 3rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--color-magnet);
+  color: var(--color-magnet-ink);
+  padding: 0 1.25rem;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  cursor: pointer;
+}
+
+.intro-hero-cta .btn-ghost {
+  min-height: 3rem;
+  border: 1px solid var(--color-paper-line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-paper) 80%, transparent);
+  color: var(--color-ink);
+  padding: 0 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+@keyframes intro-hero-pulse {
+  50% {
+    transform: scale(1.08);
+    opacity: 0.7;
+  }
+}
+
+@keyframes intro-hero-book {
+  from {
+    transform: translateY(1.1rem);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+@media (max-width: 700px) {
+  .intro-hero {
+    justify-content: flex-start;
+    min-height: auto;
+    padding: 1.5rem 1rem 2rem;
+  }
+
+  .intro-hero-workspace {
+    width: 100%;
+    height: 28rem;
+  }
+
+  .intro-hero-books {
+    gap: 0.45rem;
+  }
+
+  .intro-hero-book {
+    width: 4.1rem;
+  }
+
+  .intro-hero-cover {
+    height: 9.5rem;
+  }
+
+  .intro-hero-book:nth-child(n + 6) {
+    display: none;
+  }
+
+  .intro-hero-result {
+    padding: 1rem;
+  }
+
+  .intro-hero-resultcover {
+    width: 5.25rem;
+    height: 7rem;
+  }
+
+  .intro-hero-resulttext h3 {
+    font-size: 1.35rem;
+  }
+
+  .intro-hero-resultbottom {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intro-hero-state,
+  .intro-hero-progress > i,
+  .intro-hero-pulse,
+  .intro-hero-book {
+    animation: none !important;
+    transition: none !important;
+  }
+}

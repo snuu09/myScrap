@@ -14,7 +14,7 @@ import { GlassCluster } from "./GlassCluster";
 import type { Scrap, ScrapType } from "../lib/types";
 import { formatWhen } from "../lib/time";
 import { formatBytes, mediaKindOf } from "../lib/tagger";
-import { spineColor, typeBookIds } from "../lib/typeColor";
+import { coverWash, spineColor, typeBookIds } from "../lib/typeColor";
 import { scrapFaceTitle } from "../lib/scrapFace";
 import { FAVICON_HOLDER } from "../lib/audioCover";
 import { prefersReducedMotion } from "../lib/presence";
@@ -153,7 +153,13 @@ function ScrapRow({ item, index, priority = false }: { item: Scrap; index: numbe
   const showPhoto = Boolean(primary) && !exhausted;
 
   return (
-    <li className="scrap-card scrap-card--row" style={{ ["--spine" as string]: spineColor(item.type) }}>
+    <li
+      className="scrap-card scrap-card--row"
+      style={{
+        ["--spine" as string]: spineColor(item.type),
+        ["--cover" as string]: coverWash(item.type),
+      }}
+    >
       {item.bookmarked ? <span className="scrap-bookmark-ribbon" aria-hidden /> : null}
       <span className="scrap-row-pages" aria-hidden />
       <button type="button" className="scrap-card-hit" onClick={() => navigate(`/scrap/${item.id}`)}>
@@ -223,7 +229,10 @@ function ShelfRow({
         (item.bookmarked ? " scrap-card--bookmarked" : "") +
         " scrap-card--book"
       }
-      style={{ ["--spine" as string]: spineColor(item.type) }}
+      style={{
+        ["--spine" as string]: spineColor(item.type),
+        ["--cover" as string]: coverWash(item.type),
+      }}
     >
       {item.bookmarked ? <span className="scrap-bookmark-ribbon" aria-hidden /> : null}
       <button type="button" className="scrap-card-hit" onClick={() => navigate(`/scrap/${item.id}`)}>

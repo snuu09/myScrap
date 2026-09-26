@@ -26,12 +26,7 @@ export function Header({ onEnter, onSettings, back }: Props) {
   const { pathname } = useLocation();
   const searching = pathname === "/search";
   return (
-    <header
-      className={
-        "sticky top-0 z-30 flex min-h-[60px] items-center border-b border-paper-line/60 bg-enamel px-[var(--gutter,clamp(16px,4vw,40px))] py-2.5 pt-[max(0.625rem,env(safe-area-inset-top))]" +
-        (searching ? " header--search gap-2" : " justify-between gap-3")
-      }
-    >
+    <header className={"site-header" + (searching ? " header--search" : "")}>
       <div className="header-brand">
         {back ? (
           <IconTip label={back.label}>
@@ -47,56 +42,47 @@ export function Header({ onEnter, onSettings, back }: Props) {
           </IconTip>
         ) : null}
         {searching ? null : (
-          <Link to="/" className="flex shrink-0 items-center gap-2.5 text-ink no-underline">
-            <img src="/assets/favicon.svg" width={22} height={22} alt="" className="size-[22px] rounded-[6px]" />
-            <span className="text-[1.125rem] font-extrabold tracking-[-0.03em] max-[420px]:sr-only">
-              {t(lang, "appName")}
-            </span>
+          <Link to="/" className="header-logo" aria-label={t(lang, "appName")}>
+            <span className="header-logo-my">My</span>
+            <span className="header-logo-brary">Brary</span>
           </Link>
         )}
       </div>
       {searching ? <div id="search-header-slot" className="header-search-slot" /> : null}
       {searching ? null : (
-      <div className="flex shrink-0 items-center gap-2">
-        {user ? (
-          <IconTip label={tLook("searchOpen")}>
-            <button
-              type="button"
-              className="header-search-icon"
-              onClick={() => navigate("/search")}
-              aria-label={tLook("searchOpen")}
-            >
-              <Search className="size-[20px]" strokeWidth={1.8} />
+        <div className="header-actions">
+          {user ? (
+            <IconTip label={tLook("searchOpen")}>
+              <button
+                type="button"
+                className="header-icon-btn"
+                onClick={() => navigate("/search")}
+                aria-label={tLook("searchOpen")}
+              >
+                <Search className="size-[20px]" strokeWidth={1.8} />
+              </button>
+            </IconTip>
+          ) : null}
+          {!user ? (
+            <button type="button" onClick={onEnter} className="header-login">
+              <LogIn className="size-4" strokeWidth={1.8} aria-hidden />
+              {t(lang, "enter")}
             </button>
-          </IconTip>
-        ) : null}
-        {!user ? (
+          ) : (
+            <Link to="/dashboard" className="header-dash">
+              <BarChart3 className="size-4" strokeWidth={1.8} aria-hidden />
+              <span className="header-dash-label">{t(lang, "dashboard")}</span>
+            </Link>
+          )}
           <button
             type="button"
-            onClick={onEnter}
-            className="inline-flex min-h-10 items-center rounded-full bg-magnet px-3.5 text-[0.8125rem] font-bold tracking-[-0.02em] text-magnet-ink"
+            onClick={onSettings}
+            className="header-icon-btn header-icon-btn--menu"
+            aria-label={t(lang, "settings")}
           >
-            <LogIn className="mr-1.5 size-4" strokeWidth={1.8} />
-            {t(lang, "enter")}
+            <Menu className="size-[20px]" strokeWidth={1.8} />
           </button>
-        ) : (
-          <Link
-            to="/dashboard"
-            className="inline-flex min-h-10 items-center gap-1.5 rounded-full bg-paper px-3 text-[0.8125rem] font-semibold text-ink no-underline max-[520px]:px-2.5"
-          >
-            <BarChart3 className="size-4" strokeWidth={1.8} />
-            <span className="max-[520px]:sr-only">{t(lang, "dashboard")}</span>
-          </Link>
-        )}
-        <button
-          type="button"
-          onClick={onSettings}
-          className="grid size-12 place-items-center rounded-full text-ink"
-          aria-label={t(lang, "settings")}
-        >
-          <Menu className="size-[22px]" strokeWidth={1.8} />
-        </button>
-      </div>
+        </div>
       )}
     </header>
   );

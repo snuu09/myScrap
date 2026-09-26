@@ -1,17 +1,27 @@
 ---
-description: Kitchen fridge-door UI tokens and copy. Palettes and routes in this SPA.
+description: Theme B Warm Integrated UI tokens, Theme A Editorial compare palette, and 서재 copy. Palettes and routes in this SPA.
 globs: src/**/*.tsx,src/index.css,src/i18n.ts
 alwaysApply: false
 ---
 
 # UI in this SPA
 
-Tokens live in [`src/index.css`](src/index.css) `@theme`. Face is SUIT. Magnet default `#e56f0a`; 현무암 swaps the magnet only (`data-palette="basalt"`). Kitchen wall stays porcelain peach / night kitchen.
+Tokens live in [`src/index.css`](src/index.css) `@theme`. Product metaphor is **서재** (personal library). No door / fridge / “책장을 연다” language.
 
-Palettes shipped: **기본** and **현무암**. Do not add header **AI** / celadon in this client unless PRODUCT asks. Do not revive Apple. Auth sheet follows **Auth Ladder** on login, and **Auth Recovery** on find / reset (header back icon → brief → email → primary → feedback → **또는** → Google). Use `auth-back-btn`, `auth-btn-*`, `auth-link-*` from [`src/index.css`](src/index.css). Full rules: [DESIGN.md](DESIGN.md) Auth sheet hierarchy.
+Light default is **Theme B Warm Integrated** (`data-palette="warm"`): paper ground `#f5f1e9`, surface `#fbfaf7`, ink `#272521`, accent `#95704b`. Display face is **Newsreader**; UI face is **DM Sans** (SUIT Hangul fallback). Dark Warm · B is night enamel (`#2a2622` / `#1f1c19`, magnet `#c4a07a`), not toner black.
 
-Routes: `/` intro or shelf, `/terms`, `/privacy`. Intro still: `public/assets/intro-hero.jpg`, full-bleed under the header. Hero **책장을 연다** only (opens auth sheet). No 견본 on the still.
+Settings color themes (compare A/B):
 
-After session: search and list above, Stick dock below (send = **분류하기** / Classify). A new stick/paste/drop replaces an open classify draft. Classify draft is a full sheet over a blur scrim. Email sheet is white (light) / night enamel (dark), 32px radius. Settings sheet follows **Settings Ladder** (session chip → language → palette → theme → Leave) in [DESIGN.md](DESIGN.md).
+- **Warm · B** (`warm`): default Theme B tokens above.
+- **Editorial · A** (`editorial`): Theme A Minimal Editorial — white ground, ink `#09090b`, Space Grotesk display + Inter UI, near-zero radius. Inter/Space Grotesk are allowed only under this palette.
+- **현무암** (`basalt`): charcoal accent only on warm paper; do not retint the ground.
 
-Copy: stick / peel / 나가기; composer send label is **분류하기**. No em-dashes. Empty operator fields: 표시 예정. Honor `prefers-reduced-motion`. Binding visuals: [DESIGN.md](DESIGN.md).
+Do not add header **AI** / celadon in this client unless PRODUCT asks. Do not revive Apple. Auth sheet follows **Auth Ladder** on login, and **Auth Recovery** on find / reset (header back icon → brief → email → primary → feedback → **또는** → Google). Use `auth-back-btn`, `auth-btn-*`, `auth-link-*` from [`src/index.css`](src/index.css). Full rules: [DESIGN.md](DESIGN.md) Auth sheet hierarchy.
+
+Routes: `/` intro or library, `/stick`, `/search`, `/dashboard`, `/settings`, `/upgrade`, `/terms`, `/privacy`, `/scrap/:id`. Intro is Theme B integrated hero demo (담기 → AI 분석 → 정리 → 서재). Hero CTA opens the auth sheet; CTA copy is **내 서재로** / Enter my library.
+
+Plan UI labels are always **Free / Middle / High** (DB ids `free` / `standard` / `premium`). Limits and gates live in [`src/lib/plans.ts`](src/lib/plans.ts). Compare matrix is [`/upgrade`](src/pages/Upgrade.tsx). Trial expiry keeps Stick open and routes classify attempts to `/upgrade`.
+
+After session: search and list above, Stick dock below (send = **분류하기** / Classify). A new stick/paste/drop replaces an open classify draft. Classify draft is a full sheet over a blur scrim. Email sheet is surface cream (light) / night enamel (dark), ~24px radius. Settings follows **Settings Ladder** in [DESIGN.md](DESIGN.md).
+
+Copy: stick / peel / 나가기; composer send label is **분류하기**. Unit nouns stay 조각/scrap under glass Look; Look **서재** (`library`) swaps to 페이지/page and “서재에서 빼기” / remove from library. No em-dashes. Empty operator fields: 표시 예정. Honor `prefers-reduced-motion`. Binding visuals: [DESIGN.md](DESIGN.md).

@@ -11,3 +11,4 @@ firebase-debug.*.log
 .DS_Store
 functions/.env
 functions/lib
+.venv-pptx/

@@ -53,7 +53,7 @@ export function Shelf() {
   const t = useT();
   const { lang } = usePrefs();
   const { user } = useAuth();
-  const { setScrapsForUsage, canUpload, canStick } = usePlan();
+  const { setScrapsForUsage, canUpload, canStick, canAddBatch } = usePlan();
   const { alert, confirm } = useDialog();
   const [searchParams] = useSearchParams();
   const location = useLocation();
@@ -358,12 +358,25 @@ export function Shelf() {
   }
 
   async function guardStick() {
-    const msg = stickBlockedReason();
-    if (msg) {
-      await alert(msg);
+    if (!getSupabase()) {
+      await alert(t("syncError"));
+      return true;
+    }
+    const stick = canStick();
+    if (!stick.ok) {
+      const go = await confirm({
+        body: t("trialExpiredUpgradeBody"),
+        confirmLabel: t("upgradeOpen"),
+      });
+      if (go) navigate("/upgrade");
       return true;
     }
     return false;
+  }
+
+  async function offerUpgrade(body: string) {
+    const go = await confirm({ body, confirmLabel: t("upgradeOpen") });
+    if (go) navigate("/upgrade");
   }
 
   async function replaceOpenDraft() {
@@ -482,6 +495,13 @@ export function Shelf() {
     }
     const files = Array.from(list);
     if (!files.length) return;
+    const adding = files.length;
+    const current = batch.length;
+    const gate = canAddBatch(current, adding);
+    if (!gate.ok) {
+      void offerUpgrade(t("batchLimitUpgradeBody", { n: gate.max ?? 1 }));
+      return;
+    }
     if (files.length === 1 && batch.length === 0 && !draftRef.current && !pendingRef.current.length) {
       void startFromFile(files[0]);
       return;
@@ -591,7 +611,9 @@ export function Shelf() {
     const guestMetaOnly = guest && file.size > GUEST_FILE_LIMIT;
     const blocked = uploadBlockedReason(guestMetaOnly ? 0 : file.size);
     if (blocked) {
-      await alert(blocked);
+      const gate = canUpload(guestMetaOnly ? 0 : file.size);
+      if (gate.reason === "trialExpired") await offerUpgrade(t("trialExpiredUpgradeBody"));
+      else await alert(blocked);
       advanceQueue();
       return;
     }
@@ -931,7 +953,7 @@ export function Shelf() {
     for (const item of doomed) await revokeDraftMedia(item);
   }
 
-  const stickDisabled = !canStick().ok || !getSupabase();
+  const stickDisabled = !getSupabase();
   const reviewingBatch = pendingDrafts.length > 0 && !draft;
   const draftPresence = usePresence(Boolean(draft) || reviewingBatch);
   const batchPresence = usePresence(batch.length > 0);
@@ -1073,7 +1095,7 @@ export function Shelf() {
         e.preventDefault();
         setDropping(false);
         if (stickDisabled) {
-          void alert(stickBlockedReason() || t("trialExpiredMsg"));
+          void alert(t("syncError"));
           return;
         }
         if (e.dataTransfer.files.length) receiveFiles(e.dataTransfer.files);
@@ -1134,7 +1156,7 @@ export function Shelf() {
       {top && !composing ? (
         <button
           type="button"
-          className="fixed right-[var(--gutter)] bottom-[calc(7.75rem+env(safe-area-inset-bottom))] z-20 grid size-12 place-items-center rounded-full bg-magnet text-magnet-ink shadow-[0_10px_22px_rgb(208_102_18/0.26)]"
+          className="fixed right-[var(--gutter)] bottom-[calc(7.75rem+env(safe-area-inset-bottom))] z-20 grid size-12 place-items-center rounded-full bg-magnet text-magnet-ink shadow-[0_10px_22px_rgb(55_44_31/0.18)]"
           aria-label={t("scrollTop")}
           onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
         >

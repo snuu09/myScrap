@@ -35,9 +35,9 @@ With Vite env vars set, email sign in writes scraps per user and 둘러보기 wr
 - [x] Classify-then-save draft: type, tags, memo, skeleton while `/api/analyze` (or MIME fallback) runs. A new Stick replaces an open draft.
 - [x] Recency list, newest first. Type chips, search, **일자별** day filter. Row detail sheet with prev/next on filtered order. Peel from list or detail.
 - [x] KO / EN, 기본 / 현무암, light / system / dark on this device.
-- [x] Plan tiers in `public.profiles` (free / standard / premium / admin). Trial, storage gate, ad placeholder. No payment in MVP.
+- [x] Plan tiers in `public.profiles` (free / standard / premium / admin; UI Free / Middle / High). Trial, storage, batch, remind, ads gates. `/upgrade` compare matrix. No payment in MVP.
 - [x] Dashboard `/dashboard`: type/tag counts, storage, recent timeline, day summary.
-- [x] Intro full-bleed still, legal routes `/terms` `/privacy`, operator 표시 예정.
+- [x] Intro Theme B integrated hero; legal `/terms` `/privacy`; plans `/upgrade`; operator 표시 예정.
 - [x] Firebase Hosting `dist` + SPA rewrite. Cloud Function source for `/api/analyze` (needs Blaze to go live).
 
 ### Not in this SPA (later)

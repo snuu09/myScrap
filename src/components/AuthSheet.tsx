@@ -274,8 +274,7 @@ export function AuthSheet({ open, onClose }: Props) {
   }
 
   const inputClass = (invalid: boolean) =>
-    "min-h-12 rounded-[14px] border bg-paper px-3 text-[0.9375rem] text-ink " +
-    (invalid ? "border-danger" : "border-paper-line");
+    "auth-field" + (invalid ? " is-invalid" : "");
 
   const localCount = localScrapCount();
   const isChooser = mode === "chooser";
@@ -326,22 +325,16 @@ export function AuthSheet({ open, onClose }: Props) {
   }
 
   return (
-    <div
-      className="fixed inset-0 z-30 bg-[color-mix(in_srgb,var(--color-ink)_24%,transparent)]"
-      onClick={onClose}
-    >
+    <div className="auth-sheet-scrim" onClick={onClose}>
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="auth-title"
-        className={
-          "absolute top-[60px] right-[var(--gutter,clamp(16px,4vw,40px))] w-[min(22rem,calc(100vw-24px))] rounded-[32px] border border-paper-line bg-login-wall p-3.5 shadow-[var(--shadow-sheet)]" +
-          sheetGenieClass(presence.closing, "corner")
-        }
+        className={"auth-sheet-panel" + sheetGenieClass(presence.closing, "corner")}
         onAnimationEnd={(event) => presence.onEnd(event, "sheet-genie-out")}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className={`mb-3 flex items-center gap-1 ${showBack ? "" : "justify-between"}`}>
+        <div className={"auth-sheet-head" + (showBack ? " has-back" : "")}>
           {showBack ? (
             <button
               type="button"
@@ -352,12 +345,12 @@ export function AuthSheet({ open, onClose }: Props) {
               <ArrowLeft className="size-[22px]" strokeWidth={1.8} aria-hidden />
             </button>
           ) : null}
-          <h2 id="auth-title" className="m-0 min-w-0 flex-1 text-[1.0625rem] font-bold">
+          <h2 id="auth-title" className="auth-sheet-title">
             {t(lang, titleKey(mode))}
           </h2>
           <button
             type="button"
-            className="grid size-12 shrink-0 place-items-center"
+            className="auth-sheet-close"
             onClick={onClose}
             aria-label={t(lang, "close")}
             disabled={busy}

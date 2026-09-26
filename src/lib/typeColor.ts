@@ -1,11 +1,22 @@
+/** Warm Theme B cover washes (aligned with intro hero c1–c6). */
 const TYPE_SPINE: Record<string, string> = {
   text: "#8a6a3d",
-  image: "#3d6b8a",
-  video: "#6b4a8a",
-  audio: "#4a7a62",
-  link: "#3d5c8a",
+  image: "#6a7a68",
+  video: "#7a5a62",
+  audio: "#5a7060",
+  link: "#5c6a78",
   document: "#8a7a68",
   unknown: "#6e665c",
+};
+
+const TYPE_COVER: Record<string, string> = {
+  text: "#d8c8b2",
+  image: "#c9d0c4",
+  video: "#d5c3bb",
+  audio: "#c4cfd3",
+  link: "#c8c3cf",
+  document: "#d9c9a9",
+  unknown: "#d4cdc2",
 };
 
 function hashHue(name: string) {
@@ -29,4 +40,11 @@ export function spineColor(type: string) {
   if (type === "bookmarked") return "var(--color-magnet-ink)";
   if (TYPE_SPINE[type]) return TYPE_SPINE[type];
   return `hsl(${hashHue(type)} 18% 46%)`;
+}
+
+/** Soft manila cover wash for gallery books (Theme B). */
+export function coverWash(type: string) {
+  if (type === "all" || type === "bookmarked") return "var(--color-manila)";
+  if (TYPE_COVER[type]) return TYPE_COVER[type];
+  return `hsl(${hashHue(type)} 18% 78%)`;
 }

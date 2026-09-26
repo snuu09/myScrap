@@ -15,6 +15,9 @@ export function Footer() {
         <Link to="/privacy" className="font-bold text-magnet">
           {t("privacy")}
         </Link>
+        <Link to="/upgrade" className="text-muted">
+          {t("upgrade")}
+        </Link>
       </nav>
       <p className="m-0 text-[0.75rem] text-muted">
         {t("footerMark")} · {t("legalOperator")} {pending} · {t("legalRep")} {pending} · {pending} ·{" "}
