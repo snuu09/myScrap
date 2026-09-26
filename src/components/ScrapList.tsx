@@ -335,14 +335,13 @@ export function LayoutSwitch() {
               <button
                 key={id}
                 type="button"
-                className="layout-seg-btn layout-seg-btn--labeled"
+                className="layout-seg-btn"
                 aria-pressed={shelfLayout === id}
                 aria-label={t(tipKey)}
                 title={t(labelKey)}
                 onClick={() => setShelfLayout(id)}
               >
                 <Icon className="size-[16px] shrink-0" strokeWidth={1.8} />
-                <span className="layout-seg-label">{t(labelKey)}</span>
               </button>
             ))}
           </GlassCluster>

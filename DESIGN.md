@@ -234,7 +234,7 @@ Archival Soft Deckle neutrals (ink-only magnet) plus Editorial white/ink as the 
 
 ### Palettes
 
-Header: brand, Find, notices bell, account avatar. Language, **테마** (에디토리얼 / 소프트 데클), and light / system / dark live on `/settings` (appearance changes use a short View Transition / fade). No Look switcher and no AI-sensitivity control in Settings.
+Header: brand, Find, notices bell (→ `/notices` history), account avatar. Language, **테마** (에디토리얼 / 소프트 데클), and light / system / dark live on `/settings` (appearance changes use a short View Transition / fade). No Look switcher and no AI-sensitivity control in Settings.
 
 - Soft Deckle (default): Zero-hue archival paper, JetBrains Mono for spine/mono labels, near-flat radius. Login folio **AI BOOKSHELF**.
 - Editorial: Theme A Minimal Editorial. White/ink, Space Grotesk + Inter, near-zero radius.
@@ -308,7 +308,7 @@ Auth, Stick, and + share 48px so the door and the header auth sheet feel like on
 
 ## Layout
 
-Header, door (main), footer. Signed out: compact header is brand and 로그인 (navigates to the dedicated `/login` page, not a sheet). Signed in: header carries two nav tabs — **나의 서재** `/`, **서재 통계** `/dashboard` (i18n `navLibrary`/`navStats`) — plus a Find icon (**장서 탐색** / `searchOpen`, also `Cmd/Ctrl+K` → `/search`), a personal notices bell (onboarding prefs tip once; Free/browse period; storage; browse always shows period + capacity; panel overflow → `/notices`; open state uses a blurred page scrim), and an account avatar that opens `/settings`. Appearance (light / system / dark) lives only on `/settings` and cross-fades on change. The door is the canvas. Intro, empty state, and clippings share a centered column. After entry, Stick is a fixed bottom dock; classify draft stacks above the field.
+Header, door (main), footer. Signed out: compact header is brand and 로그인 (navigates to the dedicated `/login` page, not a sheet). Signed in: header carries two nav tabs — **나의 서재** `/`, **서재 통계** `/dashboard` (i18n `navLibrary`/`navStats`) — plus a Find icon (**장서 탐색** / `searchOpen`, also `Cmd/Ctrl+K` → `/search`), a personal notices bell (onboarding prefs tip once; Free/browse period; storage; browse always shows period + capacity; panel always links to `/notices` for history management with **모두 읽음** / **닫기** / **알림 비우기**; open state uses a blurred page scrim), and an account avatar that opens `/settings`. Appearance (light / system / dark) lives only on `/settings` and cross-fades on change. The door is the canvas. Intro, empty state, and clippings share a centered column; `/notices`, `/dashboard`, and `/search` share the same content-width ladder (48→56→72→88rem). `PageChrome` is a `min-h-dvh` column with `#main { flex: 1 }` so short pages still pin the site footer to the viewport bottom. After entry, Stick is a fixed bottom dock; classify draft stacks above the field.
 
 Intro is a Theme B integrated hero (담기 → AI 분석 → 정리 → 서재). The workspace loops as an in-page Soft Deckle promo film: longer stage dwells, crossfade/scale enters, per-stage micro-beats, and a stage scrubber under the step chips (no MP4). The app capture column stays 36–40rem. Legal routes `/terms` and `/privacy`, and plans route `/upgrade`, reuse the header/footer chrome with Newsreader titles and 서재 voice.
 

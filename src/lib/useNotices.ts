@@ -1,20 +1,26 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { isBrowseUser, useAuth } from "../context/Auth";
 import { usePlan } from "../context/Plan";
 import {
   buildNotices,
+  clearNoticeHistory,
+  dismissNotice,
   dismissOnboardingPrefs,
   isNoticeUnread,
   markNoticesSeen,
   NOTICE_PANEL_MAX,
+  readDismissedNoticeIds,
+  readNoticeLog,
   readSeenNoticeIds,
+  upsertNoticeLog,
   type NoticeItem,
+  type NoticeLogEntry,
 } from "./notices";
 
 export function useNotices() {
   const { user } = useAuth();
   const { profile, trialDaysLeft, trialExpired, usageBytes, storageLimit } = usePlan();
-  const [, setTick] = useState(0);
+  const [tick, setTick] = useState(0);
   const browse = isBrowseUser(user);
   const planTier = browse ? "free" : (profile?.planTier ?? "free");
 
@@ -30,16 +36,38 @@ export function useNotices() {
     };
   }, []);
 
-  const notices: NoticeItem[] = buildNotices({
-    browse,
-    profile,
-    planTier,
-    trialDaysLeft,
-    trialExpired: browse ? false : trialExpired,
-    createdAtIso: user?.created_at,
-    usageBytes,
-    storageLimit,
-  });
+  const live = useMemo(
+    () =>
+      buildNotices({
+        browse,
+        profile,
+        planTier,
+        trialDaysLeft,
+        trialExpired: browse ? false : trialExpired,
+        createdAtIso: user?.created_at,
+        usageBytes,
+        storageLimit,
+      }),
+    [
+      browse,
+      profile,
+      planTier,
+      trialDaysLeft,
+      trialExpired,
+      user?.created_at,
+      usageBytes,
+      storageLimit,
+      tick,
+    ],
+  );
+
+  useEffect(() => {
+    if (upsertNoticeLog(live)) setTick((n) => n + 1);
+  }, [live]);
+
+  const dismissed = readDismissedNoticeIds();
+  const notices = live.filter((item) => !dismissed.has(item.id));
+  const history: NoticeLogEntry[] = readNoticeLog();
 
   const seen = readSeenNoticeIds();
   const unreadIds = notices.filter((item) => isNoticeUnread(item.id, seen)).map((item) => item.id);
@@ -64,9 +92,21 @@ export function useNotices() {
     setTick((n) => n + 1);
   }, [notices]);
 
+  const onDismiss = useCallback((id: string) => {
+    dismissNotice(id);
+    setTick((n) => n + 1);
+  }, []);
+
+  const onClearHistory = useCallback(() => {
+    clearNoticeHistory();
+    setTick((n) => n + 1);
+  }, []);
+
   return {
     notices,
+    history,
     count: notices.length,
+    historyCount: history.length,
     unreadCount,
     isUnread: (id: string) => isNoticeUnread(id, seen),
     panelMax: NOTICE_PANEL_MAX,
@@ -75,5 +115,7 @@ export function useNotices() {
     dismissOnboarding,
     onNoticeActivate,
     markAllSeen,
+    onDismiss,
+    onClearHistory,
   };
 }

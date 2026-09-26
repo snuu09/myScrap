@@ -14,6 +14,10 @@ export const NOTICE_PANEL_MAX = 5;
 
 export const ONBOARDING_PREFS_KEY = "mybrary.notice.onboardingPrefs";
 export const SEEN_NOTICES_KEY = "mybrary.notice.seen";
+export const NOTICE_LOG_KEY = "mybrary.notice.log";
+export const DISMISSED_NOTICES_KEY = "mybrary.notice.dismissed";
+/** Cap persisted history so localStorage stays small. */
+export const NOTICE_LOG_MAX = 40;
 
 export type NoticeSeverity = "info" | "warn" | "urgent";
 export type NoticeKind = "onboardingPrefs" | "periodFree" | "periodPaid" | "storage";
@@ -27,6 +31,16 @@ export type NoticeItem = {
   titleVars?: Record<string, string | number>;
   href: "/upgrade" | "/settings";
 };
+
+export type NoticeLogEntry = NoticeItem & {
+  firstAt: number;
+  lastAt: number;
+  dismissed: boolean;
+};
+
+function emitNoticesChange() {
+  window.dispatchEvent(new Event("mybrary:notices-change"));
+}
 
 type BuildOpts = {
   browse: boolean;
@@ -57,7 +71,7 @@ export function dismissOnboardingPrefs() {
   } catch {
     /* ignore */
   }
-  window.dispatchEvent(new Event("mybrary:notices-change"));
+  emitNoticesChange();
 }
 
 export function readSeenNoticeIds(): Set<string> {
@@ -88,11 +102,141 @@ export function markNoticesSeen(ids: string[]) {
   } catch {
     /* ignore */
   }
-  window.dispatchEvent(new Event("mybrary:notices-change"));
+  emitNoticesChange();
 }
 
 export function isNoticeUnread(id: string, seen = readSeenNoticeIds()) {
   return !seen.has(id);
+}
+
+function readIdSet(key: string): Set<string> {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return new Set();
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return new Set();
+    return new Set(parsed.filter((id): id is string => typeof id === "string"));
+  } catch {
+    return new Set();
+  }
+}
+
+function writeIdSet(key: string, ids: Set<string>) {
+  try {
+    localStorage.setItem(key, JSON.stringify([...ids]));
+  } catch {
+    /* ignore */
+  }
+}
+
+export function readDismissedNoticeIds() {
+  return readIdSet(DISMISSED_NOTICES_KEY);
+}
+
+function isNoticeLogEntry(value: unknown): value is NoticeLogEntry {
+  if (!value || typeof value !== "object") return false;
+  const row = value as Record<string, unknown>;
+  return (
+    typeof row.id === "string" &&
+    typeof row.kind === "string" &&
+    typeof row.severity === "string" &&
+    typeof row.titleKey === "string" &&
+    (row.href === "/upgrade" || row.href === "/settings") &&
+    typeof row.firstAt === "number" &&
+    typeof row.lastAt === "number" &&
+    typeof row.dismissed === "boolean"
+  );
+}
+
+export function readNoticeLog(): NoticeLogEntry[] {
+  try {
+    const raw = localStorage.getItem(NOTICE_LOG_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(isNoticeLogEntry).sort((a, b) => b.lastAt - a.lastAt);
+  } catch {
+    return [];
+  }
+}
+
+function writeNoticeLog(entries: NoticeLogEntry[]) {
+  const trimmed = [...entries]
+    .sort((a, b) => b.lastAt - a.lastAt)
+    .slice(0, NOTICE_LOG_MAX);
+  try {
+    localStorage.setItem(NOTICE_LOG_KEY, JSON.stringify(trimmed));
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Merge live notices into the durable history log. Silent (no event) to avoid render loops. */
+export function upsertNoticeLog(items: NoticeItem[], now = Date.now()): boolean {
+  if (items.length === 0) return false;
+  const byId = new Map(readNoticeLog().map((entry) => [entry.id, entry]));
+  let changed = false;
+  for (const item of items) {
+    const prev = byId.get(item.id);
+    if (prev) {
+      const contentChanged =
+        prev.titleKey !== item.titleKey ||
+        prev.severity !== item.severity ||
+        prev.href !== item.href ||
+        prev.kind !== item.kind ||
+        JSON.stringify(prev.titleVars ?? null) !== JSON.stringify(item.titleVars ?? null);
+      if (!contentChanged) continue;
+      byId.set(item.id, {
+        ...prev,
+        ...item,
+        firstAt: prev.firstAt,
+        lastAt: now,
+        dismissed: prev.dismissed,
+      });
+      changed = true;
+    } else {
+      byId.set(item.id, {
+        ...item,
+        firstAt: now,
+        lastAt: now,
+        dismissed: false,
+      });
+      changed = true;
+    }
+  }
+  if (!changed) return false;
+  writeNoticeLog([...byId.values()]);
+  return true;
+}
+
+/** Hide from the bell panel; keep in history. */
+export function dismissNotice(id: string) {
+  const dismissed = readDismissedNoticeIds();
+  dismissed.add(id);
+  writeIdSet(DISMISSED_NOTICES_KEY, dismissed);
+
+  const log = readNoticeLog();
+  const idx = log.findIndex((entry) => entry.id === id);
+  if (idx >= 0 && !log[idx].dismissed) {
+    log[idx] = { ...log[idx], dismissed: true, lastAt: Date.now() };
+    writeNoticeLog(log);
+  }
+
+  markNoticesSeen([id]);
+  if (id === "onboarding-prefs") dismissOnboardingPrefs();
+  else emitNoticesChange();
+}
+
+/** Wipe history + dismissals + seen flags. Onboarding prefs tip stays dismissed if already closed. */
+export function clearNoticeHistory() {
+  try {
+    localStorage.removeItem(NOTICE_LOG_KEY);
+    localStorage.removeItem(DISMISSED_NOTICES_KEY);
+    localStorage.removeItem(SEEN_NOTICES_KEY);
+  } catch {
+    /* ignore */
+  }
+  emitNoticesChange();
 }
 
 function sessionDaysLeft(createdAtIso: string | undefined, now: number) {

@@ -9,7 +9,7 @@ import { NoticeRow } from "./NoticeRow";
 
 export function HeaderNotices() {
   const t = useT();
-  const { count, unreadCount, panelItems, hasMore, isUnread, onNoticeActivate } = useNotices();
+  const { count, unreadCount, panelItems, historyCount, isUnread, onNoticeActivate } = useNotices();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const panelId = useId();
@@ -70,28 +70,24 @@ export function HeaderNotices() {
           {count === 0 ? (
             <p className="header-notices-empty">{t("noticesEmpty")}</p>
           ) : (
-            <>
-              <ul className="header-notices-list">
-                {panelItems.map((item) => (
-                  <li key={item.id}>
-                    <NoticeRow
-                      item={item}
-                      unread={isUnread(item.id)}
-                      onActivate={(next) => {
-                        onNoticeActivate(next);
-                        setOpen(false);
-                      }}
-                    />
-                  </li>
-                ))}
-              </ul>
-              {hasMore ? (
-                <Link to="/notices" className="header-notices-see-all" onClick={() => setOpen(false)}>
-                  {t("noticesSeeAll")}
-                </Link>
-              ) : null}
-            </>
+            <ul className="header-notices-list">
+              {panelItems.map((item) => (
+                <li key={item.id}>
+                  <NoticeRow
+                    item={item}
+                    unread={isUnread(item.id)}
+                    onActivate={(next) => {
+                      onNoticeActivate(next);
+                      setOpen(false);
+                    }}
+                  />
+                </li>
+              ))}
+            </ul>
           )}
+          <Link to="/notices" className="header-notices-see-all" onClick={() => setOpen(false)}>
+            {historyCount > count ? t("noticesSeeAllHistory") : t("noticesSeeAll")}
+          </Link>
         </div>
       ) : null}
     </div>

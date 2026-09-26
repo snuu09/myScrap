@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ChevronDown, ChevronUp, Filter, SlidersHorizontal, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Check, Filter, SlidersHorizontal, X } from "lucide-react";
 import { spineLabel } from "../i18n";
 import { usePrefs } from "../context/Prefs";
 import { useT } from "../lib/useT";
@@ -355,6 +355,7 @@ export function SearchFacets({
                 <label key={type} className={"search-facets-check" + (checked ? " is-on" : "")}>
                   <input
                     type="checkbox"
+                    className="search-facets-check-input"
                     checked={checked}
                     onChange={() =>
                       setDraftTypes((prev) =>
@@ -362,7 +363,10 @@ export function SearchFacets({
                       )
                     }
                   />
-                  <span>
+                  <span className="search-facets-check-mark" aria-hidden>
+                    {checked ? <Check className="size-3" strokeWidth={2.4} /> : null}
+                  </span>
+                  <span className="search-facets-check-label">
                     {spineLabel(lang, type)} ({typeCounts[type] || 0})
                   </span>
                 </label>
