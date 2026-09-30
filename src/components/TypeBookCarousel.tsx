@@ -39,13 +39,31 @@ export function TypeBookCarousel({ types, counts, active, loading, contained, st
 
   useEffect(() => {
     if (!sticky) return;
-    function onScroll() {
-      const desktop = window.matchMedia("(min-width: 768px)").matches;
-      setCompact(desktop && window.scrollY > 160);
+    const ENTER = 160;
+    const EXIT = 72;
+    function readY() {
+      return Math.max(window.scrollY || 0, document.documentElement.scrollTop || 0);
     }
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    function syncCompact() {
+      const desktop = window.matchMedia("(min-width: 768px)").matches;
+      if (!desktop) {
+        setCompact((prev) => (prev ? false : prev));
+        return;
+      }
+      const y = readY();
+      setCompact((prev) => {
+        if (!prev && y > ENTER) return true;
+        if (prev && y < EXIT) return false;
+        return prev;
+      });
+    }
+    syncCompact();
+    window.addEventListener("scroll", syncCompact, { passive: true });
+    window.addEventListener("resize", syncCompact);
+    return () => {
+      window.removeEventListener("scroll", syncCompact);
+      window.removeEventListener("resize", syncCompact);
+    };
   }, [sticky]);
 
   useLayoutEffect(() => {

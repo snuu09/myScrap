@@ -664,7 +664,7 @@ export function ScrapDetail() {
       >
         {item.bookmarked ? (
           <span className="scrap-bookmark-mark" aria-hidden>
-            <Bookmark className="size-3.5" strokeWidth={2} fill="currentColor" />
+            <Bookmark className="size-3.5" strokeWidth={1.8} fill="currentColor" />
           </span>
         ) : null}
         {editing ? (

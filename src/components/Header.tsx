@@ -101,7 +101,9 @@ export function Header({ onEnter, back }: Props) {
               </button>
             )}
           </IconTip>
-        ) : null}
+        ) : (
+          <span className="header-back header-back--spacer" aria-hidden />
+        )}
         <div className="header-logo-stack">
           <Link
             to="/"
@@ -116,7 +118,7 @@ export function Header({ onEnter, back }: Props) {
           </Link>
         </div>
       </div>
-      {user ? <HeaderNav /> : null}
+      {user ? <HeaderNav /> : <div className="header-nav header-nav--spacer" aria-hidden />}
       <div className="header-actions">
         {user ? (
           <IconTip label={tLook("searchOpen")}>

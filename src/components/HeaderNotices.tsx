@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { Bell, History } from "lucide-react";
+import { sheetGenieClass, usePresence } from "../lib/presence";
 import { useNotices } from "../lib/useNotices";
 import { useT } from "../lib/useT";
 import { IconTip } from "./IconTip";
@@ -11,6 +12,7 @@ export function HeaderNotices() {
   const t = useT();
   const { count, unreadCount, panelItems, isUnread, onNoticeActivate } = useNotices();
   const [open, setOpen] = useState(false);
+  const presence = usePresence(open);
   const rootRef = useRef<HTMLDivElement>(null);
   const panelId = useId();
   const label =
@@ -22,7 +24,7 @@ export function HeaderNotices() {
   const seeAllLabel = t("noticesSeeAllHistory");
 
   useEffect(() => {
-    if (!open) return;
+    if (!presence.shown) return;
     function onKey(event: KeyboardEvent) {
       if (event.key === "Escape") setOpen(false);
     }
@@ -32,7 +34,7 @@ export function HeaderNotices() {
       document.body.classList.remove("notices-open");
       window.removeEventListener("keydown", onKey);
     };
-  }, [open]);
+  }, [presence.shown]);
 
   return (
     <div className="header-notices" ref={rootRef}>
@@ -54,7 +56,7 @@ export function HeaderNotices() {
         </button>
       </IconTip>
 
-      {open && typeof document !== "undefined"
+      {presence.shown && typeof document !== "undefined"
         ? createPortal(
             <div
               className="header-notices-scrim"
@@ -65,8 +67,14 @@ export function HeaderNotices() {
           )
         : null}
 
-      {open ? (
-        <div id={panelId} className="header-notices-panel" role="region" aria-label={t("noticesTitle")}>
+      {presence.shown ? (
+        <div
+          id={panelId}
+          className={"header-notices-panel" + sheetGenieClass(presence.closing, "corner")}
+          role="region"
+          aria-label={t("noticesTitle")}
+          onAnimationEnd={(event) => presence.onEnd(event, "sheet-genie-out")}
+        >
           <div className="header-notices-panel-head">
             <p className="header-notices-title">{t("noticesTitle")}</p>
             <IconTip label={seeAllLabel}>

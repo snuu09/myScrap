@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { AuthProvider, isBrowseUser, useAuth } from "./context/Auth";
 import { PlanProvider } from "./context/Plan";
@@ -8,7 +8,6 @@ import { Footer } from "./components/Footer";
 import { AuthSheet, type AuthMode } from "./components/AuthSheet";
 import { GuestMigrateSheet } from "./components/GuestMigrateSheet";
 import { SettingsPage } from "./components/SettingsSheet";
-import { ShelfReveal } from "./components/ShelfReveal";
 import { AuthWaiting } from "./components/AuthWaiting";
 import { CLOSE_OVERLAYS_EVENT } from "./components/StickDock";
 import { Intro } from "./pages/Intro";
@@ -62,8 +61,7 @@ function Home() {
   const navigate = useNavigate();
   const [enter, setEnter] = useState(false);
   const [migrate, setMigrate] = useState(false);
-  const [reveal, setReveal] = useState(false);
-  const hadUser = useRef(false);
+  const pageGenie = usePageGenie();
 
   useEffect(() => {
     if (recoveryPending) setEnter(true);
@@ -74,17 +72,6 @@ function Home() {
     if (!hasLocalScraps() || guestMigrateAsked()) return;
     setMigrate(true);
   }, [user]);
-
-  useEffect(() => {
-    if (user && !hadUser.current) {
-      setReveal(true);
-    }
-    hadUser.current = Boolean(user);
-    if (!user) setReveal(false);
-  }, [user]);
-
-  const endReveal = useCallback(() => setReveal(false), []);
-  const pageGenie = usePageGenie();
 
   useEffect(() => {
     function onCloseOverlays() {
@@ -118,7 +105,6 @@ function Home() {
       {!user ? <Footer /> : null}
       <AuthSheet open={enter} onClose={() => setEnter(false)} />
       <GuestMigrateSheet open={migrate} onClose={() => setMigrate(false)} />
-      <ShelfReveal active={Boolean(user) && reveal} onDone={endReveal} />
     </div>
   );
 }
@@ -149,16 +135,19 @@ function DashboardPage() {
   const { setScrapsForUsage } = usePlan();
   const pageGenie = usePageGenie();
   const [scraps, setScraps] = useState<Scrap[]>([]);
+  const [listReady, setListReady] = useState(false);
   const [enter, setEnter] = useState(false);
 
   useEffect(() => {
     if (!user) return;
+    setListReady(false);
     void loadScraps(user)
       .then(async (next) => {
         setScraps(next);
         setScrapsForUsage(next);
       })
-      .catch(() => setScraps([]));
+      .catch(() => setScraps([]))
+      .finally(() => setListReady(true));
   }, [user?.id, setScrapsForUsage]);
 
   useEffect(() => {
@@ -187,7 +176,7 @@ function DashboardPage() {
       mainClassName={pageGenie}
       overlays={<AuthSheet open={enter} onClose={() => setEnter(false)} />}
     >
-      <Dashboard scraps={scraps} onScrapsChange={setScraps} />
+      {listReady ? <Dashboard scraps={scraps} onScrapsChange={setScraps} /> : <AuthWaiting />}
     </PageChrome>
   );
 }
@@ -199,16 +188,19 @@ function DashboardEditorPage({ kind }: { kind: "types" | "tags" }) {
   const { setScrapsForUsage } = usePlan();
   const pageGenie = usePageGenie();
   const [scraps, setScraps] = useState<Scrap[]>([]);
+  const [listReady, setListReady] = useState(false);
   const [enter, setEnter] = useState(false);
 
   useEffect(() => {
     if (!user) return;
+    setListReady(false);
     void loadScraps(user)
       .then(async (next) => {
         setScraps(next);
         setScrapsForUsage(next);
       })
-      .catch(() => setScraps([]));
+      .catch(() => setScraps([]))
+      .finally(() => setListReady(true));
   }, [user?.id, setScrapsForUsage]);
 
   useEffect(() => {
@@ -237,7 +229,11 @@ function DashboardEditorPage({ kind }: { kind: "types" | "tags" }) {
       mainClassName={pageGenie}
       overlays={<AuthSheet open={enter} onClose={() => setEnter(false)} />}
     >
-      <DashboardEditor scraps={scraps} onScrapsChange={setScraps} kind={kind} />
+      {listReady ? (
+        <DashboardEditor scraps={scraps} onScrapsChange={setScraps} kind={kind} />
+      ) : (
+        <AuthWaiting />
+      )}
     </PageChrome>
   );
 }

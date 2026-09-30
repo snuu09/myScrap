@@ -9,6 +9,7 @@ import { AuthWaiting } from "../components/AuthWaiting";
 import { IconTip } from "../components/IconTip";
 import { CalendarFilterPanel, CalendarFilterTrigger } from "../components/CalendarFilter";
 import { LayoutSwitch, ScrapBookCard } from "../components/ScrapList";
+import { ScrapListSkeleton } from "../components/ScrapListSkeleton";
 import { PageEmptyGuide } from "../components/PageEmptyGuide";
 import { SearchFacets } from "../components/SearchFacets";
 import { loadScraps, SCRAPS_CHANGED_EVENT, SCRAPS_CLEARED_EVENT } from "../lib/scraps";
@@ -404,7 +405,7 @@ export function SearchPage() {
 
           <section className="list-body search-page-results" aria-live="polite">
             {loading ? (
-              <p className="shelf-empty-hint">{t("shelfLoading")}</p>
+              <ScrapListSkeleton layout={shelfLayout} />
             ) : !visible.length ? (
               <div className="shelf-empty shelf-empty--compact">
                 <p className="shelf-empty-title">{t("noMatches")}</p>

@@ -6,6 +6,8 @@ type Props = {
   children: ReactNode;
   className?: string;
   placement?: "above" | "below";
+  /** When true, hide any visible tip (e.g. while a menu is open). */
+  suppress?: boolean;
 };
 
 function finePointer() {
@@ -13,14 +15,14 @@ function finePointer() {
 }
 
 /** Hover/focus tip for icon-only controls. Keeps aria-label on the child. */
-export function IconTip({ label, children, className = "", placement = "above" }: Props) {
+export function IconTip({ label, children, className = "", placement = "above", suppress = false }: Props) {
   const ref = useRef<HTMLSpanElement>(null);
   const bubbleRef = useRef<HTMLSpanElement>(null);
   const [open, setOpen] = useState(false);
   const [box, setBox] = useState<{ top: number; left: number } | null>(null);
 
   function show() {
-    if (!finePointer()) {
+    if (suppress || !finePointer()) {
       setOpen(false);
       return;
     }
@@ -31,6 +33,12 @@ export function IconTip({ label, children, className = "", placement = "above" }
     setOpen(false);
     setBox(null);
   }
+
+  useEffect(() => {
+    if (!suppress) return;
+    setOpen(false);
+    setBox(null);
+  }, [suppress]);
 
   function onFocus(event: FocusEvent<HTMLSpanElement>) {
     const active = event.target instanceof Element ? event.target : null;
@@ -74,7 +82,7 @@ export function IconTip({ label, children, className = "", placement = "above" }
       onBlur={hide}
     >
       {children}
-      {open && typeof document !== "undefined"
+      {open && !suppress && typeof document !== "undefined"
         ? createPortal(
             <span
               ref={bubbleRef}

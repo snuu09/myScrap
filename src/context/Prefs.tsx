@@ -7,7 +7,7 @@ export type ThemeChoice = "light" | "dark" | "system";
 /** editorial = Minimal Editorial; deckle = Soft Deckle Archival (default). Legacy warm/basalt/kitchen migrate to deckle. */
 export type Palette = "editorial" | "deckle";
 export type Look = "glass" | "library";
-/** micro = horizontal media rows; gallery = 4:3 visual poster grid. Legacy list→micro; accordion removed. */
+/** micro = horizontal List rows (UI: 목록/List); gallery = 4:3 visual poster grid. Legacy list→micro; accordion removed. */
 export type ShelfLayout = "micro" | "gallery";
 export type ReadingScale = 13 | 15 | 17 | 19;
 

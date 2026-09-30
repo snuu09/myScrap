@@ -1,7 +1,7 @@
 import type { AnimationEvent, ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ArrowUp, Camera, Clipboard, FileUp, ImageIcon, Plus } from "lucide-react";
+import { Camera, Clipboard, FileUp, ImageIcon, Link2, Plus, Sparkles } from "lucide-react";
 import { t } from "../i18n";
 import { usePrefs } from "../context/Prefs";
 import { useDialog } from "../lib/dialog";
@@ -56,15 +56,25 @@ export function StickDock({
   if (draftSlot) draftHeld.current = draftSlot;
   const draftPresence = usePresence(Boolean(draftSlot));
   const canSend = Boolean(value.trim()) && !disabled;
-  const expanded = value.includes("\n") || value.length > 48;
+  const expanded = value.includes("\n");
+  const menuOpen = menu && !menuClosing;
+  const pasteShortcut = (() => {
+    if (typeof navigator === "undefined") return t(lang, "pasteShortcutWin");
+    const nav = navigator as Navigator & { userAgentData?: { platform?: string } };
+    const plat = nav.userAgentData?.platform || nav.platform || "";
+    const apple = /mac|iphone|ipad|ipod/i.test(plat) || /Mac OS|iPhone|iPad/i.test(navigator.userAgent || "");
+    return t(lang, apple ? "pasteShortcutMac" : "pasteShortcutWin");
+  })();
 
   useEffect(() => {
     const el = fieldRef.current;
     if (!el) return;
+    if (!expanded) {
+      el.style.height = "1.45rem";
+      return;
+    }
     el.style.height = "auto";
-    const floor = value ? 36 : 48;
-    const next = expanded ? Math.min(el.scrollHeight, 160) : Math.min(el.scrollHeight, floor);
-    el.style.height = `${Math.max(next, floor)}px`;
+    el.style.height = `${Math.min(Math.max(el.scrollHeight, 36), 160)}px`;
   }, [value, expanded]);
 
   function closeMenu() {
@@ -314,16 +324,16 @@ export function StickDock({
           >
             <div className="composer-chat-row">
               <div className="relative shrink-0">
-                <IconTip label={t(lang, "addMenu")}>
+                <IconTip label={t(lang, "addMenu")} suppress={menuOpen}>
                   <button
                     type="button"
-                    className="composer-chat-plus"
+                    className={"composer-chat-plus" + (menuOpen ? " is-open" : "")}
                     aria-label={t(lang, "addMenu")}
-                    aria-expanded={menu && !menuClosing}
+                    aria-expanded={menuOpen}
                     aria-haspopup="menu"
                     disabled={disabled}
                     onClick={() => {
-                      if (menu && !menuClosing) closeMenu();
+                      if (menuOpen) closeMenu();
                       else void openMenu();
                     }}
                   >
@@ -387,43 +397,50 @@ export function StickDock({
                 {t(lang, "composerLabel")}
               </label>
               <div className={"composer-chat-field-wrap" + (value ? "" : " is-empty")}>
-              {!value ? (
-                <span className="composer-chat-hint" aria-hidden>
-                  {t(lang, "placeholder")}
-                </span>
-              ) : null}
-              <textarea
-                id="composer"
-                ref={fieldRef}
-                rows={1}
-                value={value}
-                placeholder=""
-                onChange={(e) => onChange(e.target.value)}
-                onPaste={(e) => {
-                  if (!e.clipboardData.files?.length) return;
-                  e.preventDefault();
-                  onFiles(e.clipboardData.files);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    if (isImeComposing(e)) return;
+                <Link2 className="composer-chat-field-icon" size={16} strokeWidth={1.8} aria-hidden />
+                {!value ? (
+                  <span className="composer-chat-hint" aria-hidden>
+                    {t(lang, "placeholder")}
+                  </span>
+                ) : null}
+                <textarea
+                  id="composer"
+                  ref={fieldRef}
+                  rows={1}
+                  value={value}
+                  placeholder=""
+                  onChange={(e) => onChange(e.target.value)}
+                  onPaste={(e) => {
+                    if (!e.clipboardData.files?.length) return;
                     e.preventDefault();
-                    void submit();
-                  }
-                }}
-                className="composer-chat-field"
-                disabled={disabled}
-              />
+                    onFiles(e.clipboardData.files);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      if (isImeComposing(e)) return;
+                      e.preventDefault();
+                      void submit();
+                    }
+                  }}
+                  className="composer-chat-field"
+                  disabled={disabled}
+                />
+                {!value ? (
+                  <span className="composer-chat-paste-chip" aria-hidden>
+                    {pasteShortcut}
+                  </span>
+                ) : null}
               </div>
-              <IconTip label={t(lang, "send")}>
+              <IconTip label={t(lang, "ingestCta")}>
                 <button
                   type="button"
                   className="composer-chat-send shrink-0"
                   disabled={!canSend}
-                  aria-label={t(lang, "send")}
+                  aria-label={t(lang, "ingestCta")}
                   onClick={() => void submit()}
                 >
-                  <ArrowUp className="size-5" strokeWidth={2.2} />
+                  <Sparkles className="size-4" strokeWidth={1.8} aria-hidden />
+                  <span className="composer-chat-send-label">{t(lang, "ingestCta")}</span>
                 </button>
               </IconTip>
             </div>

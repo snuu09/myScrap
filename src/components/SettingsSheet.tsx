@@ -29,8 +29,10 @@ import { markArriveGenie } from "../lib/pageGenie";
 import { effectivePlanTier, planFeatureRows, PLAN_TRIAL_DAYS } from "../lib/planFeatures";
 import { formatTrialEndDate } from "../lib/time";
 import { dismissOnboardingPrefs } from "../lib/notices";
+import { THEME_PREVIEW_SAMPLE } from "../lib/previewSamples";
 import { PlanTierMeta, StorageGauge } from "./PlanUsageBlock";
 import { ProfileEditSheet } from "./ProfileEditSheet";
+import { ScrapBookCard } from "./ScrapList";
 
 const READING_OPTIONS: { size: ReadingScale; labelKey: string }[] = [
   { size: 13, labelKey: "readingScaleSm" },
@@ -196,8 +198,6 @@ export function SettingsPage() {
     lang === "ko" ? "KO" : "EN",
     theme === "light" ? t("themeLight") : theme === "dark" ? t("themeDark") : t("themeSystem"),
   ].join(" · ");
-
-  const previewSpine = palette === "deckle" ? t("paletteDeckle") : t("paletteEditorial");
 
   async function comingSoon() {
     await alert(t("settingsComingSoon"));
@@ -481,11 +481,19 @@ export function SettingsPage() {
         <div className="settings-live-preview">
           <span className="settings-arch-stamp">{t("settingsLivePreview")}</span>
           <span className="settings-live-preview-badge">{previewBadge}</span>
-          <div className="settings-live-preview-plate">
-            <div className="settings-live-preview-spine">{previewSpine}</div>
-            <div className="settings-live-preview-copy">
-              <strong>{t("settingsPreviewTitle")}</strong>
-              <p>{t("settingsPreviewBody")}</p>
+          <p className="settings-live-preview-lead">{t("settingsPreviewBody")}</p>
+          <div className="settings-live-preview-plate" aria-hidden>
+            <div className="settings-live-preview-lane">
+              <span className="settings-live-preview-lane-label">{t("settingsPreviewList")}</span>
+              <ul className="scrap-list scrap-list--micro settings-live-preview-list">
+                <ScrapBookCard item={THEME_PREVIEW_SAMPLE} index={0} row onSelect={() => {}} />
+              </ul>
+            </div>
+            <div className="settings-live-preview-lane">
+              <span className="settings-live-preview-lane-label">{t("settingsPreviewGallery")}</span>
+              <ul className="scrap-list scrap-list--gallery settings-live-preview-gallery">
+                <ScrapBookCard item={THEME_PREVIEW_SAMPLE} index={0} onSelect={() => {}} />
+              </ul>
             </div>
           </div>
         </div>
@@ -522,10 +530,20 @@ export function SettingsPage() {
                 {t(READING_OPTIONS.find((o) => o.size === readingScale)?.labelKey || "readingScaleMd")}
               </span>
             </div>
-            <p className="settings-font-sample-body" style={{ fontSize: `${readingScale}px` }}>
-              {t("readingScaleQuote")}
-              <cite>{t("readingScaleCite")}</cite>
-            </p>
+            <div className="settings-font-sample-detail" style={{ fontSize: `${readingScale}px` }}>
+              <p className="settings-font-sample-title">{t("readingScaleDetailTitle")}</p>
+              <div className="detail-ai-group settings-font-sample-ai">
+                <div className="detail-ai-block">
+                  <p className="detail-section-title">{t("aiSummary")}</p>
+                  <p className="detail-ai-text">{t("readingScaleDetailSummary")}</p>
+                </div>
+                <div className="detail-ai-block">
+                  <p className="detail-section-title">{t("aiAnalysis")}</p>
+                  <p className="detail-ai-text">{t("readingScaleDetailBody")}</p>
+                </div>
+              </div>
+              <p className="settings-font-sample-memo">{t("readingScaleDetailMemo")}</p>
+            </div>
           </div>
         </div>
       </section>
